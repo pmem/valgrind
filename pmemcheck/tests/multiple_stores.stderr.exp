@@ -1,0 +1,14 @@
+Number of stores not made persistent: 1
+Stores not made persistent properly:
+[0]    at 0x........: main (multiple_stores.c:33)
+	Address: 0x........	size: 8	state: DIRTY
+Total memory not made persistent: 8
+
+Number of overwritten stores: 3
+Overwritten stores before they were made persistent:
+[0]    at 0x........: main (multiple_stores.c:30)
+	Address: 0x........	size: 1	state: DIRTY
+[1]    at 0x........: main (multiple_stores.c:31)
+	Address: 0x........	size: 2	state: DIRTY
+[2]    at 0x........: main (multiple_stores.c:32)
+	Address: 0x........	size: 4	state: DIRTY
