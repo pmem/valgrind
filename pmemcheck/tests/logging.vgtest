@@ -1,0 +1,2 @@
+prog: logging
+vgopts: -q --log-stores=yes --print-summary=no

@@ -1,0 +1,2 @@
+prog: sse_stores
+vgopts: -q
