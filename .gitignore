@@ -1,0 +1,53 @@
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+### C template
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Shared objects (inc. Windows DLLs)
+*.so
+*.so.*
+*.dylib
+
+# by hand
+
+*.Po
+*.diff
+
+Makefile
+*.dirstamp
+*.deps
+*.in
+cachegrind/cg_annotate
+cachegrind/cg_diff
+callgrind/callgrind_annotate
+callgrind/callgrind_control
+config.status
+coregrind/link_tool_exe_darwin
+coregrind/link_tool_exe_linux
+drd/scripts/download-and-build-splash2
+glibc-2.X.supp
+massif/ms_print
+stamp-h1
+valgrind.pc
