@@ -1,0 +1,2 @@
+prog: tmp_store
+vgopts: -q
