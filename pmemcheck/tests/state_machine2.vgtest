@@ -1,0 +1,2 @@
+prog: state_machine2
+vgopts: -q

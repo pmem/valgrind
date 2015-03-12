@@ -4676,6 +4676,9 @@ AC_CONFIG_FILES([
    exp-dhat/Makefile
    exp-dhat/tests/Makefile
    shared/Makefile
+   pmemcheck/Makefile
+   pmemcheck/tests/Makefile
+   pmemcheck/tests/address_specific/Makefile
    solaris/Makefile
 ])
 AC_CONFIG_FILES([coregrind/link_tool_exe_linux],
