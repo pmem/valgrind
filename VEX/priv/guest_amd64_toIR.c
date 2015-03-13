@@ -14202,10 +14202,54 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          goto decode_success;
       }
 
-      /* 0F AE /7 = CLFLUSH -- flush cache line */
-      if (haveNo66noF2noF3(pfx)
-          && !epartIsReg(getUChar(delta)) && gregLO3ofRM(getUChar(delta)) == 7
-          && sz == 4) {
+	  /* New PCOMMIT, CLFLUSHOPT and CLWB insatructions support */
+
+      /* 66 0F AE F8 = PCOMMIT -- persistent commit */
+      if (have66noF2noF3(pfx)
+          && getUChar(delta) == 0xF8
+          && sz == 2) {
+         delta += 1;
+         /* Insert a memory fence.  It's sometimes important that these
+            are carried through to the generated code. */
+         stmt( IRStmt_MBE(Imbe_Fence) );
+         DIP("pcommit\n");
+         goto decode_success;
+      }
+
+      /* 66 0F AE /7 = CLFLUSHOPT -- flush cache line optimized */
+      if (((haveNo66noF2noF3(pfx) && sz == 4)
+           || (have66noF2noF3(pfx) && sz == 2))
+           && !epartIsReg(getUChar(delta)) && gregLO3ofRM(getUChar(delta)) == 7) {
+
+         /* This is something of a hack.  We need to know the size of
+            the cache line containing addr.  Since we don't (easily),
+            assume 256 on the basis that no real cache would have a
+            line that big.  It's safe to invalidate more stuff than we
+            need, just inefficient. */
+         ULong lineszB = 256ULL;
+
+         addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+         delta += alen;
+
+         /* Round addr down to the start of the containing block. */
+         stmt( IRStmt_Put(
+                  OFFB_CMSTART,
+                  binop( Iop_And64,
+                         mkexpr(addr),
+                         mkU64( ~(lineszB-1) ))) );
+
+         stmt( IRStmt_Put(OFFB_CMLEN, mkU64(lineszB) ) );
+
+         jmp_lit(dres, Ijk_InvalICache, (Addr64)(guest_RIP_bbstart+delta));
+
+         DIP("clflush%s %s\n", have66(pfx) ? "opt" : "", dis_buf);
+         goto decode_success;
+      }
+
+      /* 66 0F AE /6 = CLWB -- cache line write back */
+      if (have66noF2noF3(pfx)
+          && !epartIsReg(getUChar(delta)) && gregLO3ofRM(getUChar(delta)) == 6
+          && sz == 2) {
 
          /* This is something of a hack.  We need to know the size of
             the cache line containing addr.  Since we don't (easily),
@@ -14228,7 +14272,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
 
          jmp_lit(dres, Ijk_InvalICache, (Addr64)(guest_RIP_bbstart+delta));
 
-         DIP("clflush %s\n", dis_buf);
+         DIP("clwb %s\n", dis_buf);
          goto decode_success;
       }
 
