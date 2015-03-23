@@ -31,7 +31,8 @@ EXTRA_DIST = \
 		multiple_stores.vgtest \
 	sse_stores.stderr.exp sse_stores.stdout.exp sse_stores.vgtest \
 	logging.stderr.exp logging.stdout.exp logging.vgtest \
-	cas.stderr.exp cas.stdout.exp cas.vgtest
+	cas.stderr.exp cas.stdout.exp cas.vgtest \
+	register_file.stderr.exp register_file.stdout.exp register_file.vgtest
 
 check_PROGRAMS = \
 	const_store \
@@ -41,4 +42,5 @@ check_PROGRAMS = \
 	multiple_stores \
 	sse_stores \
 	logging \
-	cas
+	cas \
+	register_file

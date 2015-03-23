@@ -323,7 +323,7 @@ trace_pmem_store(Addr addr, SizeT size, UWord value)
     /* log the store, regardless if it is a double store */
     if (pmem.log_stores && ( pmem.loggin_on || VG_(OSetGen_Contains)
             (pmem.loggable_regions, store)))
-        VG_(emit)("|STORE;0x%lx;%lu;%lu", addr, value, size);
+        VG_(emit)("|STORE;0x%lx;%lx;%lu", addr, value, size);
 
     struct pmem_st *existing;
     while ((existing = VG_(OSetGen_Lookup)(pmem.pmem_stores, store)) !=
@@ -736,15 +736,19 @@ do_flush(UWord base, UWord size)
     struct pmem_st *being_flushed;
     while ((being_flushed = VG_(OSetGen_Next)(pmem.pmem_stores)) != NULL){
 
-       /* not an interesting entry or not dirty, flush doesn't matter */
-       if ((cmp_pmem_st(&flush_info, being_flushed) != 0) ||
-               (being_flushed->state != STST_DIRTY)) {
+       /* not an interesting entry, flush doesn't matter */
+       if (cmp_pmem_st(&flush_info, being_flushed) != 0) {
+           continue;
+       }
+
+        /* flushing a non-dirty store,  */
+        if (being_flushed->state != STST_DIRTY) {
            /* flushing non dirty store - probably an issue, record */
            pmem.flush_errors[pmem.flush_errors_reg] = VG_(malloc)("pmc.main"
                    ".cpci.2", sizeof (struct pmem_st));
            *(pmem.flush_errors[pmem.flush_errors_reg]) = *being_flushed;
-           continue;
-       }
+            continue;
+        }
 
        being_flushed->state = STST_FLUSHED;
 
@@ -842,6 +846,30 @@ read_cache_line_size(void)
     return ret_val;
 }
 
+/**
+* \brief Tries to register a file mapping.
+* \return Returns -1 on errors, 0  otherwise.
+*/
+static Int
+register_new_file(Int fd, UWord addr, UWord size)
+{
+    char fd_path[128];
+    VG_(sprintf(fd_path, "/proc/self/fd/%d", fd));
+
+    int buf_size = 512;
+    char file_name[buf_size];
+    int read_length = VG_(readlink)(fd_path, file_name, buf_size);
+    if (read_length <= 0)
+        return -1;
+
+    file_name[read_length] = 0;
+
+    /* logging_on shall have no effect on this */
+    if (pmem.log_stores)
+        VG_(emit)("|REGISTER_FILE;%s;0x%lx;%llu", file_name, addr, size);
+    return 0;
+}
+
 
 /**
 * \brief Print tool statistics.
@@ -884,7 +912,7 @@ print_pmem_stats(void)
         }
     }
 
-    if (pmem.track_multiple_stores) {
+    if (pmem.track_multiple_stores && (pmem.multiple_stores_reg > 0)) {
         VG_(umsg)("\nNumber of overwritten stores: %lu\n",
                 pmem.multiple_stores_reg);
         VG_(umsg)("Overwritten stores before they were made persistent:\n");
@@ -1209,10 +1237,11 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
     switch (arg[0]) {
         case VG_USERREQ__PMC_REGISTER_PMEM_MAPPING: {
             struct pmem_st temp_info;
-            temp_info.addr = arg[1];
-            temp_info.size = arg[2];
+            temp_info.addr = arg[2];
+            temp_info.size = arg[3];
 
             add_region(&temp_info, pmem.pmem_mappings);
+            register_new_file(arg[1], arg[2], arg[3]);
             *ret = 1;
             break;
         }
