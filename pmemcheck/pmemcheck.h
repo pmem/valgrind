@@ -73,9 +73,9 @@ typedef
 /* Client-code macros to manipulate pmem mappings */
 
 /** Register a persistent memory mapping region */
-#define VALGRIND_PMC_REGISTER_PMEM_MAPPING(_qzz_addr,_qzz_len)       \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,          \
-                            VG_USERREQ__PMC_REGISTER_PMEM_MAPPING,   \
+#define VALGRIND_PMC_REGISTER_PMEM_MAPPING(_qzz_addr, _qzz_len)             \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
+                            VG_USERREQ__PMC_REGISTER_PMEM_MAPPING,          \
                             (_qzz_addr), (_qzz_len), 0, 0, 0)
 
 /** Remove a persistent memory mapping region */
@@ -97,9 +97,9 @@ typedef
 
 /** Register a CLFLUSH-like operation */
 #define VALGRIND_PMC_DO_FLUSH(_qzz_addr,_qzz_len)                  \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,          \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,        \
                             VG_USERREQ__PMC_DO_FLUSH,              \
-                            (_qzz_addr), (_qzz_len),0, 0, 0)
+                            (_qzz_addr), (_qzz_len), 0, 0, 0)
 
 /** Register an SFENCE */
 #define VALGRIND_PMC_DO_FENCE                                       \
