@@ -13,51 +13,37 @@
  * more details.
  */
 
+#include "../../pmemcheck.h"
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/mman.h>
 
-#include "../pmemcheck.h"
 
-/**
-* \brief Makes and maps a temporary file.
-* \param[in] size The size of the file.
-*/
-void *
-make_map_tmpfile(size_t size)
+int main ( void )
 {
-    static char file_path[] = "./pmemcheck.XXXXXX";
+    static char file_path[] = "/tmp/pmemcheck.testfile";
 
     int fd;
-    if ((fd = mkstemp(file_path)) < 0) {
-        return NULL;
+    if ((fd = open(file_path, O_CREAT | O_RDWR)) < 0) {
+        return 1;
     }
-
-    unlink(file_path);
-
+    int size = 2048;
     if ((errno = posix_fallocate(fd, 0, size)) != 0) {
         int oerrno = errno;
         if (fd != -1)
             close(fd);
         errno = oerrno;
-        return NULL;
+        return 1;
     }
 
-    void *base;
-    if ((base = mmap(NULL, size, PROT_WRITE, MAP_PRIVATE|MAP_NORESERVE, fd,
-            0)) == MAP_FAILED) {
-        int oerrno = errno;
-        if (fd != -1)
-            close(fd);
-        errno = oerrno;
-        return NULL;
-    }
-
+    VALGRIND_PMC_REGISTER_PMEM_MAPPING(100, size);
+    VALGRIND_PMC_REGISTER_PMEM_FILE(fd, 100, size, 0);
+    /* this one will not be logged */
+    VALGRIND_PMC_REGISTER_PMEM_FILE(-1, 100, size, 0);
+    unlink(file_path);
     close(fd);
 
-    VALGRIND_PMC_REGISTER_PMEM_MAPPING(base, size);
-
-    return base;
+    return 0;
 }

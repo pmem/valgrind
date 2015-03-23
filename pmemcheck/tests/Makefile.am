@@ -33,7 +33,6 @@ EXTRA_DIST = \
 	cas.stderr.exp cas.stdout.exp cas.vgtest \
 	flush_check.stderr.exp flush_check.stdout.exp flush_check.vgtest
 
-
 check_PROGRAMS = \
 	const_store \
 	tmp_store \

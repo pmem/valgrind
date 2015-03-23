@@ -51,6 +51,7 @@
 typedef
    enum {
        VG_USERREQ__PMC_REGISTER_PMEM_MAPPING = VG_USERREQ_TOOL_BASE('P','C'),
+       VG_USERREQ__PMC_REGISTER_PMEM_FILE,
        VG_USERREQ__PMC_REMOVE_PMEM_MAPPING,
        VG_USERREQ__PMC_CHECK_IS_PMEM_MAPPING,
        VG_USERREQ__PMC_PRINT_PMEM_MAPPINGS,
@@ -77,6 +78,14 @@ typedef
     VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
                             VG_USERREQ__PMC_REGISTER_PMEM_MAPPING,          \
                             (_qzz_addr), (_qzz_len), 0, 0, 0)
+
+/** Register a persistent memory file */
+#define VALGRIND_PMC_REGISTER_PMEM_FILE(_qzz_desc, _qzz_addr_base,          \
+                                        _qzz_size, _qzz_offset)             \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
+                            VG_USERREQ__PMC_REGISTER_PMEM_FILE,             \
+                            (_qzz_desc), (_qzz_addr_base), (_qzz_size),     \
+                            (_qzz_offset), 0)
 
 /** Remove a persistent memory mapping region */
 #define VALGRIND_PMC_REMOVE_PMEM_MAPPING(_qzz_addr,_qzz_len)         \
