@@ -56,6 +56,9 @@
 /** Max store size */
 #define MAX_DSIZE    256
 
+/** Max allowable path length */
+#define MAX_PATH_SIZE 4096
+
 /** Single store to memory. */
 struct pmem_st {
     Addr addr;
@@ -853,6 +856,38 @@ read_cache_line_size(void)
 }
 
 /**
+* \brief Tries to register a file mapping.
+* \param[in] fd The file descriptor to be registered.
+* \param[in] addr The address at which this file will be mapped.
+* \param[in] size The size of the registered file mapping.
+* \return Returns 1 on success, 0 otherwise.
+*/
+static UInt
+register_new_file(Int fd, UWord base, UWord size, UWord offset)
+{
+    char fd_path[64];
+    VG_(sprintf(fd_path, "/proc/self/fd/%d", fd));
+    UInt retval = 1;
+
+    char *file_name = VG_(malloc)("pmc.main.nfcc", MAX_PATH_SIZE);
+    int read_length = VG_(readlink)(fd_path, file_name, MAX_PATH_SIZE - 1);
+    if (read_length <= 0) {
+        retval = 0;
+        goto out;
+    }
+
+    file_name[read_length] = 0;
+
+    /* logging_on shall have no effect on this */
+    if (pmem.log_stores)
+        VG_(emit)("|REGISTER_FILE;%s;0x%lx;0x%lx;0x%lx", file_name, base,
+                size, offset);
+out:
+    VG_(free)(file_name);
+    return retval;
+}
+
+/**
 * \brief Print tool statistics.
 */
 static void
@@ -1205,6 +1240,7 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
 {
     if (!VG_IS_TOOL_USERREQ('P', 'C', arg[0])
             && VG_USERREQ__PMC_REGISTER_PMEM_MAPPING != arg[0]
+            && VG_USERREQ__PMC_REGISTER_PMEM_FILE != arg[0]
             && VG_USERREQ__PMC_REMOVE_PMEM_MAPPING != arg[0]
             && VG_USERREQ__PMC_CHECK_IS_PMEM_MAPPING != arg[0]
             && VG_USERREQ__PMC_DO_FLUSH != arg[0]
@@ -1243,6 +1279,14 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             remove_region(&temp_info, pmem.pmem_mappings);
             *ret = 1;
             break;
+        }
+
+        case VG_USERREQ__PMC_REGISTER_PMEM_FILE: {
+            *ret = 0;
+            Int fd = (Int)arg[1];
+            if (fd >= 0)
+                *ret = register_new_file(fd, arg[2], arg[3], arg[4]);
+         break;
         }
 
         case VG_USERREQ__PMC_CHECK_IS_PMEM_MAPPING: {
