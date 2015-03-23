@@ -4744,6 +4744,7 @@ AC_CONFIG_FILES([
    pmemcheck/Makefile
    pmemcheck/tests/Makefile
    pmemcheck/tests/address_specific/Makefile
+   pmemcheck/tests/logging_related/Makefile
    solaris/Makefile
 ])
 AC_CONFIG_FILES([coregrind/link_tool_exe_linux],
