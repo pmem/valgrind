@@ -13,36 +13,29 @@
  * more details.
  */
 
+#include "../pmemcheck.h"
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/mman.h>
 
-#include "pmemcheck/pmemcheck.h"
 
-/**
-* \brief Makes and maps a temporary file.
-* \param[in] size The size of the file.
-*/
-void *
-make_map_tmpfile(size_t size)
+int main ( void )
 {
-    static char file_path[] = "./pmemcheck.XXXXXX";
+    static char file_path[] = "./pmemcheck.testfile";
 
     int fd;
-    if ((fd = mkstemp(file_path)) < 0) {
+    if ((fd = open(file_path, O_CREAT | O_RDWR)) < 0) {
         return NULL;
     }
-
-    unlink(file_path);
-
+    int size = 2048;
     if ((errno = posix_fallocate(fd, 0, size)) != 0) {
         int oerrno = errno;
         if (fd != -1)
             close(fd);
         errno = oerrno;
-        return NULL;
+        return 1;
     }
 
     void *base;
@@ -52,13 +45,13 @@ make_map_tmpfile(size_t size)
         if (fd != -1)
             close(fd);
         errno = oerrno;
-        return NULL;
+        return 1;
     }
 
+    VALGRIND_PMC_REGISTER_PMEM_MAPPING(fd, base, size);
+
+    unlink(file_path);
     close(fd);
 
-    /* does not log the file */
-    VALGRIND_PMC_REGISTER_PMEM_MAPPING(-1, base, size);
-
-    return base;
+    return 0;
 }
