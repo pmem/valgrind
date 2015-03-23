@@ -1,0 +1,2 @@
+prog: register_file
+vgopts: -q --log-stores=yes --print-summary=no
