@@ -12,20 +12,14 @@
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
  */
-#include <stdio.h>
+
 #include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/param.h>
-#include <signal.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include <stdint.h>
 #include <sys/mman.h>
-#include <sys/stat.h>
 
-#include "pmemcheck/pmemcheck.h"
+#include "../pmemcheck.h"
 
 /**
 * \brief Makes and maps a temporary file.
@@ -62,7 +56,7 @@ make_map_tmpfile(size_t size)
     }
 
     close(fd);
-
+    
     VALGRIND_PMC_REGISTER_PMEM_MAPPING(base, size);
 
     return base;
