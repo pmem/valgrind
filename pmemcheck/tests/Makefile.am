@@ -13,7 +13,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-SUBDIRS = . address_specific
+SUBDIRS = . address_specific logging_related
 
 dist_noinst_SCRIPTS = \
 	filter_stderr
@@ -30,8 +30,9 @@ EXTRA_DIST = \
 	multiple_stores.stderr.exp multiple_stores.stdout.exp \
 		multiple_stores.vgtest \
 	sse_stores.stderr.exp sse_stores.stdout.exp sse_stores.vgtest \
-	logging.stderr.exp logging.stdout.exp logging.vgtest \
-	cas.stderr.exp cas.stdout.exp cas.vgtest
+	cas.stderr.exp cas.stdout.exp cas.vgtest \
+	flush_check.stderr.exp flush_check.stdout.exp flush_check.vgtest
+
 
 check_PROGRAMS = \
 	const_store \
@@ -40,5 +41,5 @@ check_PROGRAMS = \
 	state_machine2 \
 	multiple_stores \
 	sse_stores \
-	logging \
-	cas
+	cas \
+	flush_check

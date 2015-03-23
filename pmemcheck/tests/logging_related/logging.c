@@ -12,7 +12,7 @@
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
  */
-#include "common.h"
+#include "../common.h"
 
 #define FILE_SIZE (16 * 1024 * 1024)
 

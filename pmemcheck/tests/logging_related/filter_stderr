@@ -1,0 +1,29 @@
+# Persistent memory checker test filter script
+# Copyright (c) 2014-2015, Intel Corporation.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms and conditions of the GNU General Public License,
+# version 2, as published by the Free Software Foundation.
+#
+# This program is distributed in the hope it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+# more details.
+
+#! /bin/sh
+
+dir=`dirname $0`
+
+$dir/../../../tests/filter_stderr_basic |
+
+# Anonymise addresses
+$dir/custom_filter_addresses |
+
+# SSE check filtering.
+sed "s/(emmintrin.h:[0-9,]*)/(emmintrin.h:...)/" |
+
+# Filter out glibc debuginfo if installed.
+perl -p -e "s/\(syscall-template.S:[0-9]*\)/(in \/...libc...)/" |
+perl -p -e "s/\(socket.S:[0-9]*\)/(in \/...libc...)/"
+
+exit 0

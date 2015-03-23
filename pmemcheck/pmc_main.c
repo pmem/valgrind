@@ -36,10 +36,10 @@
 #include "pmemcheck.h"
 
 /* track at max this many multiple overwrites */
-#define MAX_MULT_OVERWRITES 1000000UL
+#define MAX_MULT_OVERWRITES 10000UL
 
 /* track at max this many flush error events */
-#define MAX_FLUSH_ERROR_EVENTS 1000000UL
+#define MAX_FLUSH_ERROR_EVENTS 10000UL
 
 /* build various kinds of expressions */
 #define triop(_op, _arg1, _arg2, _arg3) \
@@ -53,7 +53,7 @@
 #define mkU64(_n)                IRExpr_Const(IRConst_U64(_n))
 #define mkexpr(_tmp)             IRExpr_RdTmp((_tmp))
 
-/** Max store size*/
+/** Max store size */
 #define MAX_DSIZE    256
 
 /** Single store to memory. */
@@ -110,6 +110,9 @@ static struct pmem_ops {
 
     /** Toggles summary printing. */
     Bool print_summary;
+
+    /** Toggles checking multiple flushes of stores */
+    Bool check_flush;
 
     /** The size of the cache line */
     Long flush_align;
@@ -323,7 +326,7 @@ trace_pmem_store(Addr addr, SizeT size, UWord value)
     /* log the store, regardless if it is a double store */
     if (pmem.log_stores && ( pmem.loggin_on || VG_(OSetGen_Contains)
             (pmem.loggable_regions, store)))
-        VG_(emit)("|STORE;0x%lx;%lu;%lu", addr, value, size);
+        VG_(emit)("|STORE;0x%lx;0x%lx;0x%lx", addr, value, size);
 
     struct pmem_st *existing;
     while ((existing = VG_(OSetGen_Lookup)(pmem.pmem_stores, store)) !=
@@ -726,7 +729,7 @@ do_flush(UWord base, UWord size)
 
     if (pmem.log_stores && (pmem.loggin_on
             || (VG_(OSetGen_Size)(pmem.loggable_regions) != 0)))
-        VG_(emit)("|FLUSH;0x%lx;%llu", flush_info.addr, flush_info.size);
+        VG_(emit)("|FLUSH;0x%lx;0x%llx", flush_info.addr, flush_info.size);
 
     /* unfortunately lookup doesn't work here, the oset is an avl tree */
 
@@ -736,13 +739,20 @@ do_flush(UWord base, UWord size)
     struct pmem_st *being_flushed;
     while ((being_flushed = VG_(OSetGen_Next)(pmem.pmem_stores)) != NULL){
 
-       /* not an interesting entry or not dirty, flush doesn't matter */
-       if ((cmp_pmem_st(&flush_info, being_flushed) != 0) ||
-               (being_flushed->state != STST_DIRTY)) {
-           /* flushing non dirty store - probably an issue, record */
-           pmem.flush_errors[pmem.flush_errors_reg] = VG_(malloc)("pmc.main"
-                   ".cpci.2", sizeof (struct pmem_st));
-           *(pmem.flush_errors[pmem.flush_errors_reg]) = *being_flushed;
+       /* not an interesting entry, flush doesn't matter */
+       if (cmp_pmem_st(&flush_info, being_flushed) != 0) {
+           continue;
+       }
+
+       /* check for multiple flushes of stores */
+       if (being_flushed->state != STST_DIRTY) {
+           if (pmem.check_flush) {
+               /* multiple flush of the same store - probably an issue */
+               pmem.flush_errors[pmem.flush_errors_reg] =
+                       VG_(malloc)("pmc.main.cpci.2", sizeof(struct pmem_st));
+               *(pmem.flush_errors[pmem.flush_errors_reg]) = *being_flushed;
+               ++pmem.flush_errors_reg;
+           }
            continue;
        }
 
@@ -765,7 +775,7 @@ do_flush(UWord base, UWord size)
             VG_(OSetGen_ResetIterAt)(pmem.pmem_stores, being_flushed);
        }
 
-        /* end of store is behind max flush */
+       /* end of store is behind max flush */
        if (being_flushed->addr + being_flushed->size > flush_max) {
             /* split and reinsert */
             struct pmem_st *split = VG_(OSetGen_AllocNode)(pmem.pmem_stores,
@@ -842,7 +852,6 @@ read_cache_line_size(void)
     return ret_val;
 }
 
-
 /**
 * \brief Print tool statistics.
 */
@@ -870,9 +879,9 @@ print_pmem_stats(void)
     }
 
     if(pmem.flush_errors_reg) {
-        VG_(umsg)("\nNumber of flushes on non-dirty stores: %lu\n",
+        VG_(umsg)("\nNumber of multiply flushed stores: %lu\n",
                 pmem.flush_errors_reg);
-        VG_(umsg)("Stores flushed when not dirty:\n");
+        VG_(umsg)("Stores flushed multiple times:\n");
         struct pmem_st *tmp = NULL;
         Int i;
         for (i = 0; i < pmem.flush_errors_reg; ++i) {
@@ -884,7 +893,7 @@ print_pmem_stats(void)
         }
     }
 
-    if (pmem.track_multiple_stores) {
+    if (pmem.track_multiple_stores && (pmem.multiple_stores_reg > 0)) {
         VG_(umsg)("\nNumber of overwritten stores: %lu\n",
                 pmem.multiple_stores_reg);
         VG_(umsg)("Overwritten stores before they were made persistent:\n");
@@ -1203,6 +1212,15 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             && VG_USERREQ__PMC_DO_COMMIT != arg[0]
             && VG_USERREQ__PMC_WRITE_STATS != arg[0]
             && VG_USERREQ__GDB_MONITOR_COMMAND != arg[0]
+            && VG_USERREQ__PMC_PRINT_PMEM_MAPPINGS != arg[0]
+            && VG_USERREQ__PMC_LOG_STORES != arg[0]
+            && VG_USERREQ__PMC_NO_LOG_STORES != arg[0]
+            && VG_USERREQ__PMC_ADD_LOG_REGION != arg[0]
+            && VG_USERREQ__PMC_REMOVE_LOG_REGION != arg[0]
+            && VG_USERREQ__PMC_FULL_REORDED != arg[0]
+            && VG_USERREQ__PMC_PARTIAL_REORDER != arg[0]
+            && VG_USERREQ__PMC_ONLY_FAULT != arg[0]
+            && VG_USERREQ__PMC_STOP_REORDER_FAULT != arg[0]
             )
         return False;
 
@@ -1341,7 +1359,7 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
         default:
             VG_(message)(
                     Vg_UserMsg,
-                    "Warning: unknown pmemcheck client request code %llx\n",
+                    "Warning: unknown pmemcheck client request code 0x%llx\n",
                     (ULong)arg[0]
             );
             return False;
@@ -1361,6 +1379,7 @@ pmc_process_cmd_line_option(const HChar *arg)
     else if VG_BINT_CLO(arg, "--indiff", pmem.store_sb_indiff, 0, UINT_MAX) {}
     else if VG_BOOL_CLO(arg, "--log-stores", pmem.log_stores) {}
     else if VG_BOOL_CLO(arg, "--print-summary", pmem.print_summary) {}
+    else if VG_BOOL_CLO(arg, "--flush-check", pmem.check_flush) {}
     else
         return False;
 
@@ -1410,6 +1429,8 @@ pmc_print_usage(void)
             "                               default [no]\n"
             "    --print-summary=<yes|no>   print summary on program exit\n"
             "                               default [yes]\n"
+            "    --flush-check=<yes|no>     register multiple flushes of stores\n"
+            "                               default [no]\n"
     );
 }
 
