@@ -1,0 +1,2 @@
+prog: flush_check
+vgopts: -q --flush-check=yes
