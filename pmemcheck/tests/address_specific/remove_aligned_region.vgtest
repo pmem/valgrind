@@ -1,0 +1,2 @@
+prog: remove_aligned_region
+vgopts: -q --print-summary=no
