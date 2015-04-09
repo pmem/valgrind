@@ -239,11 +239,14 @@ remove_region(struct pmem_st *region, OSet *region_set)
             new_region->addr = region_max_addr;
             new_region->size = mod_entry_max_addr - new_region->addr;
             VG_(OSetGen_Insert)(region_set, new_region);
-        } else if (modified_entry->addr > region->addr) {
+        } else if ((modified_entry->addr >= region->addr) &&
+                (mod_entry_max_addr > region_max_addr)) {
             /* head overlaps */
+            modified_entry->size -= region_max_addr - modified_entry->addr;
             modified_entry->addr = region_max_addr;
             VG_(OSetGen_Insert)(region_set, modified_entry);
-        } else if (mod_entry_max_addr < region_max_addr) {
+        } else if ((mod_entry_max_addr <= region_max_addr) &&
+                (region->addr > modified_entry->addr)) {
             /* tail overlaps */
             modified_entry->size = region->addr - modified_entry->addr;
             VG_(OSetGen_Insert)(region_set, modified_entry);
