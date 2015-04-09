@@ -1,182 +1,591 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
   "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
-[ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
+[<!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities;]>
 
 <chapter id="pmc-manual" xreflabel="Pmemcheck">
-	<title>Pmemcheck: persistent memory analyzer</title>
+  <title>Pmemcheck: persistent memory analyzer</title>
 
-	<para>To use this tool, you must specify<option>--tool=pmemcheck</option>
-	on the Valgrind command line.</para>
+  <para>
+    To use this tool, you must specify<option>--tool=pmemcheck</option>
+    on the Valgrind command line.
+  </para>
 
-	<sect1 id="pmc-manual.overview" xreflabel="Overview">
-		<title>Overview</title>
+  <sect1 id="pmc-manual.overview" xreflabel="Overview">
+	<title>Overview</title>
 
-		<para>Pmemcheck is a persistent memory profiler, which helps analyze the
-		way user applications utilize persistent memory. It helps recognize
-		whether the correct store scheme is used and that data is made
-		persistent. With additional options it can also be used to log all
-		writes to a specific memory region and to identify whether persistent
-		memory is used as volatile memory. Pmemcheck is loosely based on
-		Memcheck.</para>
+	<para>
+      Pmemcheck is a persistent memory profiler, which helps analyze the
+      way user applications utilize persistent memory. It helps recognize
+      whether the correct store scheme is used and that data is made
+      persistent. With additional options it can also be used to log all
+      writes to a specific memory region and to identify whether persistent
+      memory is used as volatile memory. Pmemcheck is loosely based on
+	  Memcheck.
+    </para>
 
-		<sect2 id="pmc-manual.functionality" xreflabel="Functionality">
-			<title>Functionality</title>
+	<sect2 id="pmc-manual.functionality" xreflabel="Functionality">
+	  <title>Functionality</title>
 
-			<para>Pmemcheck instruments client code and tracks all stores
-			made to a user provided range of memory addresses.
-			Writing applications which make use of persistent
-			memory prove to be a challenge, because memory is not
-			reclaimed automatically on reboot. Because of
-			the specific nature of persistent memory, the store scheme
-			has to follow a special pattern. To make the data persistent,
-			preferrably in a failsafe manner, you have to do a
-			<emphasis>STORE->FLUSH->SFENCE->PCOMMIT->SFENCE</emphasis>
-			sequence. Pmemcheck checks if this particular sequence of
-			operations is made to any of the registered persistent memory
-			regions. On program exit pmemcheck informs
-			of all improperly made stores by providing the address,
-			size and state of the store. Additionally if debug
-			information is available, the stack trace of the
-			offending write will be shown. The available states are:</para>
+      <para>
+        Pmemcheck instruments client code and tracks all stores made to a user
+        provided range of memory addresses. Writing applications which make use
+        of persistent memory prove to be a challenge, because memory is not
+        reclaimed automatically on reboot. Because of the specific nature of
+        persistent memory, the store scheme	has to follow a special pattern.
+        To make the data persistent, preferrably in a failsafe manner, you have
+        to do a	<emphasis>STORE->FLUSH->SFENCE->PCOMMIT->SFENCE</emphasis>
+        sequence. Pmemcheck checks if this particular sequence of operations
+        is made to any of the registered persistent memory regions. On program
+        exit pmemcheck informs of all improperly made stores by providing the
+        address, size and state of the store. Additionally if debug information
+        is available, the stack trace of the offending write will be shown.
+        The available states are:
+      </para>
 
-			<itemizedlist>
-				<listitem>
-					<para><option>DIRTY</option> - a write has been made</para>
-				</listitem>
+	  <itemizedlist>
+	    <listitem>
+		  <para>
+            <option>DIRTY</option> - a write has been made
+          </para>
+		</listitem>
 
-				<listitem>
-					<para><option>FLUSHED</option> - the write has been
-					flushed</para>
-				</listitem>
+		<listitem>
+		  <para>
+            <option>FLUSHED</option> - the write has been flushed
+          </para>
+		</listitem>
 
-				<listitem>
-					<para><option>FENCED</option> - a store fence has
-					been issued after the flush</para>
-				</listitem>
+		<listitem>
+		  <para>
+              <option>FENCED</option> - a store fence has been issued after
+              the flush
+          </para>
+		</listitem>
 
-				<listitem>
-					<para><option>COMMITED</option> - a PCOMMIT
-					instruction has been issued after the fence</para>
-				</listitem>
-			</itemizedlist>
+		<listitem>
+		  <para>
+            <option>COMMITED</option> - a PCOMMIT instruction has been issued
+            after the fence
+          </para>
+		</listitem>
+	  </itemizedlist>
 
-			<para>For more information on persistent memory programming,
-			please visit <ulink url="http://pmem.io">pmem.io.</ulink></para>
+      <para>
+        For more information on persistent memory programming, please visit
+        <ulink url="http://pmem.io">pmem.io</ulink>.
+      </para>
 
-			<para>The tool, when run with the <option>
-			<xref linkend="opt.mult-stores"/></option> option, can also
-			track multiple stores to the same location before the
-			data is made persistent - goes through all the states in the
-			right order. This might indicate that there is something
-			wrong with your application, because you are using
-			persistent memory as volatile memory. If this is the
-			desired use, you can remove the volatile region from
-			analysis using the <option><xref linkend="opt.rem_pmem"/>
-			</option>macro.</para>
+      <para>
+        The tool, when run with the <option><xref linkend="opt.mult-stores"/>
+        </option> option, can also track multiple stores to the same location
+        before the data is made persistent - goes through all the states in the
+        right order. This might indicate that there is something wrong with your
+        application, because you are using persistent memory as volatile memory.
+        If this is the desired use, you can remove the volatile region from
+        analysis using the <option><xref linkend="crm.rem_pmem"/></option>
+        macro.
+      </para>
 
-		</sect2>
+    </sect2>
 
-		<sect2 id="pmc-manual.basic_usage" xreflabel="Basic Usage">
-			<title>Basic Usage</title>
-		</sect2>
-	</sect1>
+	<sect2 id="pmc-manual.basic_usage" xreflabel="Basic Usage">
+	  <title>Basic Usage</title>
 
-	<sect1 id="pmc-manual.options" xreflabel="Pmemcheck Command-line Options">
-		<title>Pmemcheck Command-line Options</title>
+      <para>
+        As with most other Valgrind tools, compiling your program with debugging
+        info (the <option>-g</option> option) provides the most valuable output.
+      </para>
 
-		<para>Pmemcheck-specific command-line options are:</para>
+      <para>
+        To run your program under pmemcheck execute:
+        <screen>valgrind --tool=pmemcheck [pmemcheck options] your_program [program options]</screen>
+      </para>
 
-		<variablelist id="pmc.opts.list">
+      <para>
+          For the tool to be able to correctly inspect your program, you should
+          inform it about the persistent memory specific operations your
+          application performs. At the moment, pmemcheck does not automatically
+          recognize persistent memory regions, appropriate flushes, fences or
+          pcommits. Your code has to use special macros specified in
+          <xref linkend="pmc-manual.client_requests"/>.
+      </para>
 
-			<varlistentry id="opt.indiff" xreflabel="--indiff">
-				<term>
-					<option><![CDATA[--indiff=<uint> [default: 0 SBlocks] ]]></option>
-				</term>
-				<listitem>
-					<para>TODO</para>
-				</listitem>
-			</varlistentry>
+      <para>
+        Pmemcheck also has a logging functionality, which when enabled, logs
+        all persistent memory relevant macros as well as all stores made
+        to the registered persistent memory regions. This is especially useful
+        for any kind of postprocessing. To turn this option on, run pmemcheck
+        with <xref linkend="opt.log-stores"/>.
+      </para>
+    </sect2>
 
-			<varlistentry id="opt.mult-stores" xreflabel="--mult-stores">
-				<term>
-					<option><![CDATA[--mult-stores=<no|yes> [default: no] ]]></option>
-				</term>
-				<listitem>
-					<para>TODO</para>
-				</listitem>
-			</varlistentry>
+    <sect2 id="pmc-manual.error_types" xreflabel="Error types">
+      <title>Pmemcheck error types</title>
 
-			<varlistentry id="opt.log-stores" xreflabel="--log-stores">
-				<term>
-					<option><![CDATA[--log-stores=<no|yes> [default: no] ]]></option>
-				</term>
-				<listitem>
-					<para>TODO</para>
-				</listitem>
-			</varlistentry>
+      <para>
+        Pmemcheck is able to catch a couple of possible errors related to
+        programming using persistent memory. The most probable is that some
+        stores are never made persistent, which together with power failures,
+        may leave the persistent memory in an inconsistent state. If debugging
+        symbols are available, the output of such an error looks like this:
+        <programlisting><![CDATA[
+Number of stores not made persistent: 3
+Stores not made persistent properly:
+[0]    at 0x1234: main (state_machine2.c:28)
+	Address: 0x12345	size: 1	state: FENCED
+[1]    at 0x1235: main (state_machine2.c:31)
+	Address: 0x12346	size: 2	state: FLUSHED
+[2]    at 0x1236: main (state_machine2.c:33)
+	Address: 0x12347	size: 4	state: DIRTY
+Total memory not made persistent: 7]]></programlisting>
+        This indicates that three stores made to persistent memory are not
+        guaranteed to be durable in case of power failure. The offending stores
+        are identified by a full stack trace and the state of the store at
+        program exit is shown. However, be aware that having a clean output
+        does <emphasis>NOT</emphasis> make your program fail-safe. Additional
+        tools have to be used to verify whether your use of persistent memory
+        is correct in case of unforseen failures.
+      </para>
 
-			<varlistentry id="opt.print-summary" xreflabel="--print-summary">
-				<term>
-					<option><![CDATA[--print-summary=<no|yes> [default: yes] ]]></option>
-				</term>
-				<listitem>
-					<para>TODO</para>
-				</listitem>
-			</varlistentry>
+      <para>
+        Pmemcheck, when run with the <xref linkend="opt.mult-stores"/> option,
+        can also detect multiple stores made to the same persistent memory
+        address before the first store has been made persistent. This can
+        indicate an issue with your algorithm, where you overwrite a value
+        multiple times, possibly unintentionally. The use of this option
+        is connected with setting the <xref linkend="opt.indiff"/> value.
+        Some implementations of for example
+        <computeroutput>memcpy()</computeroutput>, write the same data multiple
+        times to the same location. The <xref linkend="opt.indiff"/> option
+        tells pmemcheck between how many Valgrind SuperBlocks, multiple stores
+        with the same value, size and address are to be ignored. An example
+        output:<programlisting><![CDATA[
+Number of stores not made persistent: 1
+Stores not made persistent properly:
+[0]    at 0x1234: main (multiple_stores.c:33)
+	Address: 0x12345	size: 8	state: DIRTY
+Total memory not made persistent: 8
 
-		</variablelist>
+Number of overwritten stores: 3
+Overwritten stores before they were made persistent:
+[0]    at 0x1235: main (multiple_stores.c:30)
+	Address: 0x12345	size: 1	state: DIRTY
+[1]    at 0x1236: main (multiple_stores.c:31)
+	Address: 0x12345	size: 2	state: DIRTY
+[2]    at 0x1237: main (multiple_stores.c:32)
+	Address: 0x12345	size: 4	state: DIRTY]]></programlisting>
+        If the values or sizes are different, or the stores overlap somehow,
+        the event will be recorded regardless of the
+        <xref linkend="opt.indiff"/> value.
+      </para>
 
-	</sect1>
+      <para>
+        The third type of errors reported by pmemcheck are related to probably
+        inefficient use of flushes. This is strictly a performance issue and
+        does not have impact on data durability. As such it is disabled by
+        default, use the <xref linkend="opt.flush-check"/> option to turn it on.
+        It reports all occurences of flushes made on non-dirty cache lines. The
+        output from the flush checking analisys can look like this:
+        <programlisting><![CDATA[
+Number of stores not made persistent: 1
+Stores not made persistent properly:
+[0]    at 0x........: main (flush_check.c:27)
+	Address: 0x........	size: 8	state: COMMITED
+Total memory not made persistent: 8
 
-	<sect1 id="pmc-manual.client_requests" xreflabel="Pmemcheck Client Requests">
-		<title>Pmemcheck Client Requests</title>
+Number of multiply flushed stores: 3
+Stores flushed multiple times:
+[0]    at 0x........: main (flush_check.c:27)
+	Address: 0x........	size: 8	state: FLUSHED
+[1]    at 0x........: main (flush_check.c:27)
+	Address: 0x........	size: 8	state: FENCED
+[2]    at 0x........: main (flush_check.c:27)
+	Address: 0x........	size: 8	state: COMMITED]]></programlisting>
+        It indicates that the same store has been flushed multiple times,
+        which is a potential performance issue.
+      </para>
 
-		<para>Pmemcheck-specific client requests are:</para>
+    </sect2>
 
-		<variablelist id="pmc.crm.list">
+  </sect1>
 
-			<varlistentry id="opt.reg_pmem" xreflabel="VALGRIND_PMC_REGISTER_PMEM_MAPPING">
-				<term>
-					<option><![CDATA[VALGRIND_PMC_REGISTER_PMEM_MAPPING(addr, size) ]]></option>
-				</term>
-				<listitem>
-					<para>TODO</para>
-				</listitem>
-			</varlistentry>
+  <sect1 id="pmc-manual.options" xreflabel="Pmemcheck Command-line Options">
+    <title>Pmemcheck Command-line Options</title>
 
-			<varlistentry id="opt.rem_pmem" xreflabel="VALGRIND_PMC_REMOVE_PMEM_MAPPING">
-				<term>
-					<option><![CDATA[VALGRIND_PMC_REMOVE_PMEM_MAPPING(addr, size) ]]></option>
-				</term>
-				<listitem>
-					<para>TODO</para>
-				</listitem>
-			</varlistentry>
+	<para>Pmemcheck-specific command-line options are:</para>
 
-			<varlistentry id="opt.is_pmem" xreflabel="VALGRIND_PMC_CHECK_IS_PMEM_MAPPING">
-				<term>
-					<option><![CDATA[VALGRIND_PMC_CHECK_IS_PMEM_MAPPING(addr, size) ]]></option>
-				</term>
-				<listitem>
-					<para>TODO</para>
-				</listitem>
-			</varlistentry>
+	<variablelist id="pmc.opts.list">
 
-			<varlistentry id="opt.cl_flush" xreflabel="VALGRIND_PMC_DO_CLFLUSH">
-				<term>
-					<option><![CDATA[VALGRIND_PMC_DO_CLFLUSH(addr, size)]]></option>
-				</term>
-				<listitem>
-					<para>TODO</para>
-				</listitem>
-			</varlistentry>
+	  <varlistentry id="opt.indiff" xreflabel="--indiff">
+	    <term>
+		  <option><![CDATA[--indiff=<uint> [default: 0 SBlocks] ]]></option>
+		</term>
 
-		</variablelist>
-	</sect1>
+        <listitem>
+		  <para>
+            This option is only used in conjunction with
+            <xref linkend="opt.mult-stores"/>. Between this many Valgrind
+            SuperBlocks, stores of the same size, address and value will not
+            be counted as an error.
+          </para>
+		</listitem>
+	  </varlistentry>
 
-	<sect1 id="pmc-manual.monitor_commands" xreflabel="Pmemcheck Monitor Commands">
-		<title>Pmemcheck Monitor Commands</title>
-	</sect1>
+	  <varlistentry id="opt.mult-stores" xreflabel="--mult-stores">
+	    <term>
+		  <option><![CDATA[--mult-stores=<no|yes> [default: no] ]]></option>
+		</term>
+		<listitem>
+		  <para>
+            This option enables analyzing multiple stores to the same region
+            of memory between persistent memory barriers. This might indicate
+            erronous usage of persistent memory by your application. If you run
+            into problems which are independent of your application (I have
+            seen <computeroutput>memcpy()</computeroutput> do this on numerous
+            occations), fine tune the <xref linkend="opt.indiff"/> value to get
+            rid of false-positives.
+          </para>
+		</listitem>
+      </varlistentry>
 
+	  <varlistentry id="opt.log-stores" xreflabel="--log-stores">
+	    <term>
+		  <option><![CDATA[--log-stores=<no|yes> [default: no] ]]></option>
+		</term>
+		<listitem>
+		  <para>
+            Turns on logging all peristent memory related events (most
+            <xref linkend="pmc-manual.client_requests"/> and stores to
+            persistent memory) in a human-readable, parsable format. This is
+            useful if some postprocessing or in depth analisys is to be made.
+            Depending on the usage, the log output can be huge - use with
+            caution.
+          </para>
+		</listitem>
+	  </varlistentry>
+
+	  <varlistentry id="opt.print-summary" xreflabel="--print-summary">
+	    <term>
+		  <option><![CDATA[--print-summary=<no|yes> [default: yes] ]]></option>
+		</term>
+		<listitem>
+		  <para>
+            This option enables or inhibits printing the analisys summary.
+            This option is particularly useful together with
+            <xref linkend="opt.log-stores"/>.
+          </para>
+		</listitem>
+	  </varlistentry>
+
+      <varlistentry id="opt.flush-check" xreflabel="--flush-check">
+        <term>
+          <option><![CDATA[--flush-check=<no|yes> [default: no] ]]></option>
+        </term>
+        <listitem>
+          <para>
+            When this option is turned on, pmemcheck checks if your
+            application flushes non-dirty cachelines. Be aware that the tool
+            does not recognize flushes, it depends on your application
+            informing it about the explicit flushes being made. To do that
+            use the <xref linkend="crm.flush"/> macro.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="opt.flush-align" xreflabel="--flush-align">
+        <term>
+          <option><![CDATA[--flush-align=<no|yes> [default: no] ]]></option>
+        </term>
+        <listitem>
+          <para>
+            This flag turns on flush aligning to the native machine's cache
+            line size. It might sometimes prove beneficial to analyze the
+            application with full cache line flushing. Setting this in
+            conjunction with <xref linkend="opt.flush-check"/> might result in
+            false-positives.
+          </para>
+        </listitem>
+      </varlistentry>
+
+	</variablelist>
+
+  </sect1>
+
+  <sect1 id="pmc-manual.client_requests" xreflabel="Pmemcheck Client Requests">
+    <title>Pmemcheck Client Requests</title>
+
+	<para>Pmemcheck-specific client requests are:</para>
+
+	<variablelist id="pmc.crm.list">
+
+	  <varlistentry id="crm.reg_pmem"
+          xreflabel="VALGRIND_PMC_REGISTER_PMEM_MAPPING">
+	    <term>
+		  <option>
+            <![CDATA[VALGRIND_PMC_REGISTER_PMEM_MAPPING(addr, size) ]]>
+          </option>
+		</term>
+		<listitem>
+		  <para>
+            Registers in pmemcheck a persistent memory region. This is the basic
+            macro used for persistent memory analisys. Only stores to one of the
+            registered regions are taken into account in pmemcheck.
+          </para>
+		</listitem>
+	  </varlistentry>
+
+      <varlistentry id="crm.reg_file"
+          xreflabel="VALGRIND_PMC_REGISTER_PMEM_FILE">
+	    <term>
+		  <option>
+            <![CDATA[VALGRIND_PMC_REGISTER_PMEM_FILE(desc, addr_base, size, offset)]]>
+          </option>
+		</term>
+		<listitem>
+		  <para>
+            Register a persistent memory file. This macro does not register
+            a persistent memory region, it is used to link the regions to
+            a specific file. This is especially usefull for any kind of post
+            processing.
+          </para>
+		</listitem>
+	  </varlistentry>
+
+	  <varlistentry id="crm.rem_pmem"
+          xreflabel="VALGRIND_PMC_REMOVE_PMEM_MAPPING">
+	    <term>
+		  <option>
+            <![CDATA[VALGRIND_PMC_REMOVE_PMEM_MAPPING(addr, size) ]]>
+          </option>
+		</term>
+		<listitem>
+		  <para>
+            Remove a region from the pmemcheck persistent memory register.
+            If the removed region overlaps a registered region, it will
+            be spliced. Very useful for carving out parts of persistent memory
+            which are used as volatile memory.
+          </para>
+		</listitem>
+      </varlistentry>
+
+	  <varlistentry id="crm.is_pmem"
+          xreflabel="VALGRIND_PMC_CHECK_IS_PMEM_MAPPING">
+	    <term>
+		  <option>
+            <![CDATA[VALGRIND_PMC_CHECK_IS_PMEM_MAPPING(addr, size) ]]>
+          </option>
+		</term>
+		<listitem>
+		  <para>
+            Checks is a given regions is registered as a persistent memory
+            mapping in pmemcheck. Returns <computeroutput>0</computeroutput>
+            if not, <computeroutput>1</computeroutput> if fully within mapping,
+            <computeroutput>2</computeroutput> if front overlaps and
+            <computeroutput>3</computeroutput> if tail overlaps.
+          </para>
+		</listitem>
+	  </varlistentry>
+
+      <varlistentry id="crm.print_map" xreflabel="VALGRIND_PMC_PRINT_PMEM_MAPPINGS">
+	    <term>
+		  <option><![CDATA[VALGRIND_PMC_PRINT_PMEM_MAPPINGS]]></option>
+		</term>
+		<listitem>
+		  <para>
+            Prints out the registered persistent memory mappings.
+          </para>
+		</listitem>
+	  </varlistentry>
+
+	  <varlistentry id="crm.flush" xreflabel="VALGRIND_PMC_DO_FLUSH">
+	    <term>
+		  <option><![CDATA[VALGRIND_PMC_DO_CLFLUSH(addr, size)]]></option>
+        </term>
+		<listitem>
+		  <para>
+            Simulates a flush on all stores to persistent memory within the
+            given address range. Depending on the
+            <xref linkend="opt.flush-align"/> option the flush address might
+            be aligned to the native machine's cache line size.
+          </para>
+		</listitem>
+	  </varlistentry>
+
+      <varlistentry id="crm.fence" xreflabel="VALGRIND_PMC_DO_FENCE">
+	    <term>
+		  <option><![CDATA[VALGRIND_PMC_DO_FENCE]]></option>
+		</term>
+		<listitem>
+		  <para>
+            Simulates a memory fence for the appropriate stores to registered
+            persistent memory regions.
+          </para>
+		</listitem>
+	  </varlistentry>
+
+      <varlistentry id="crm.commit" xreflabel="VALGRIND_PMC_DO_COMMIT">
+	    <term>
+		  <option><![CDATA[VALGRIND_PMC_DO_COMMIT]]></option>
+		</term>
+		<listitem>
+		  <para>
+            Simulates a commit operation for the appropriate stores to
+            registered persistent memory regions.
+          </para>
+		</listitem>
+	  </varlistentry>
+
+      <varlistentry id="crm.wr_stats" xreflabel="VALGRIND_PMC_WRITE_STATS">
+	    <term>
+		  <option><![CDATA[VALGRIND_PMC_WRITE_STATS]]></option>
+		</term>
+		<listitem>
+		  <para>
+            Writes persistent memory analisys statistics.
+          </para>
+		</listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.log_on" xreflabel="VALGRIND_PMC_LOG_STORES">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_LOG_STORES]]></option>
+        </term>
+        <listitem>
+          <para>
+            Turns on logging of persistent memory related events.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.log_stop" xreflabel="VALGRIND_PMC_NO_LOG_STORES">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_NO_LOG_STORES]]></option>
+        </term>
+        <listitem>
+          <para>
+            Turns on logging of persistent memory related events.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.add_log_reg" xreflabel="VALGRIND_PMC_ADD_LOG_REGION">
+	    <term>
+		  <option><![CDATA[VALGRIND_PMC_ADD_LOG_REGION(addr, size)]]></option>
+		</term>
+		<listitem>
+		  <para>
+            Registers a loggable persistent memory region. Events related to
+            registered loggable regions are always logged, regardless of the
+            <xref linkend="crm.log_on"/> and <xref linkend="crm.log_stop"/>
+            macros.
+          </para>
+		</listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.rm_log_reg" xreflabel="VALGRIND_PMC_REMOVE_LOG_REGION">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_REMOVE_LOG_REGION(addr, size)]]></option>
+        </term>
+        <listitem>
+          <para>
+            Removes a registerd loggable persistent memory region from the
+            appropriate pmemcheck register. Behavior is identical to
+            <xref linkend="crm.rem_pmem"/>.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.full_reor" xreflabel="VALGRIND_PMC_FULL_REORDER">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_FULL_REORDER]]></option>
+        </term>
+        <listitem>
+          <para>
+            Issue a full reorder marker log. Usefull in some types of
+            postprocessing.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.part_reor" xreflabel="VALGRIND_PMC_PARTIAL_REORDER">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_PARTIAL_REORDER]]></option>
+        </term>
+        <listitem>
+          <para>
+            Issue a partial reorder marker log. Usefull in some types of
+            postprocessing.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.fault_only" xreflabel="VALGRIND_PMC_ONLY_FAULT">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_ONLY_FAULT]]></option>
+        </term>
+        <listitem>
+          <para>
+            Issue a no reorder marker log. Usefull in some types of
+            postprocessing.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.no_fault" xreflabel="VALGRIND_PMC_STOP_REORDER_FAULT">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_STOP_REORDER_FAULT]]></option>
+        </term>
+        <listitem>
+          <para>
+            Issue a stop reorder and check marker log. Usefull in some types of
+            postprocessing.
+          </para>
+        </listitem>
+      </varlistentry>
+
+	</variablelist>
+  </sect1>
+
+  <sect1 id="pmc-manual.monitor_commands" xreflabel="Pmemcheck Monitor Commands">
+    <title>Pmemcheck Monitor Commands</title>
+
+      <para>
+        The Pmemcheck tool provides monitor commands handled by the Valgrind
+        gdbserver (see
+        <xref linkend="manual-core-adv.gdbserver-commandhandling"/>). Tool
+        specific monitor commands are:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            <varname>help</varname> prints monitor help message.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <varname>print_stats</varname> prints pmemcheck statistics
+            registered.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <varname>print_pmem_regions</varname> prints registered persistent
+            memory regions.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <varname>print_log_regions</varname> prints registered loggable
+            persistent memory regions.
+          </para>
+        </listitem>
+
+      </itemizedlist>
+  </sect1>
 </chapter>
