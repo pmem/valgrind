@@ -22,8 +22,10 @@ EXTRA_DIST = \
 	region_manipulation.stderr.exp region_manipulation.stdout.exp \
 		region_manipulation.vgtest \
 	remove_regions.stderr.exp remove_regions.stdout.exp \
-		remove_regions.vgtest
-
+		remove_regions.vgtest \
+	remove_aligned_region.stderr.exp remove_aligned_region.stdout.exp \
+		remove_aligned_region.vgtest
 check_PROGRAMS = \
 	region_manipulation \
-	remove_regions
+	remove_regions \
+	remove_aligned_region
