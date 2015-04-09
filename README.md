@@ -25,9 +25,19 @@ these command at the top level:
 	$ make
 ```
 
-To build and run the unit tests:
+To build tests:
 ```
-	$ make 
+	$ make check
+```
+
+To run all regression tests:
+```
+	$ make regtest
+```
+
+To run pmemcheck tests only:
+```
+	$ perl tests/vg_regtest pmemcheck
 ```
 
 To install Valgrind run (possibly as root if destination permissions
