@@ -1,9 +1,9 @@
 Number of stores not made persistent: 3
 Stores not made persistent properly:
-[0]    at 0x........: main (state_machine2.c:28)
+[0]    at 0x........: main (state_machine2.c:29)
 	Address: 0x........	size: 1	state: FENCED
-[1]    at 0x........: main (state_machine2.c:31)
+[1]    at 0x........: main (state_machine2.c:32)
 	Address: 0x........	size: 2	state: FLUSHED
-[2]    at 0x........: main (state_machine2.c:33)
+[2]    at 0x........: main (state_machine2.c:34)
 	Address: 0x........	size: 4	state: DIRTY
 Total memory not made persistent: 7
