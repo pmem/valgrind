@@ -13,6 +13,7 @@
  * more details.
  */
 #include "common.h"
+#include <stdint.h>
 
 #define FILE_SIZE (16 * 1024 * 1024)
 
@@ -22,9 +23,9 @@ int main ( void )
     void *base = make_map_tmpfile(FILE_SIZE);
 
     int8_t *i8p = base;
-    int16_t *i16p = base+8;
-    int32_t *i32p = base+16;
-    int64_t *i64p = base+24;
+    int16_t *i16p = (int16_t *)((uintptr_t)base + 8);
+    int32_t *i32p = (int32_t *)((uintptr_t)base + 16);
+    int64_t *i64p = (int64_t *)((uintptr_t)base + 24);
 
     __sync_bool_compare_and_swap(i8p, *i8p, 1);
     __sync_bool_compare_and_swap(i16p, *i16p + 1, 1);
