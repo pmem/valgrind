@@ -13,6 +13,7 @@
  * more details.
  */
 #include "common.h"
+#include <stdint.h>
 
 #define FILE_SIZE (16 * 1024 * 1024)
 
@@ -22,21 +23,21 @@ int main ( void )
     void *base = make_map_tmpfile(FILE_SIZE);
 
     int8_t *i8p = base;
-    int16_t *i16p = base+8;
-    int32_t *i32p = base+16;
+    int16_t *i16p = (int16_t *)((uintptr_t)base + 8);
+    int32_t *i32p = (int32_t *)((uintptr_t)base + 16);
 
     /* dirty stores */
     *i8p = 1;
     /* full persist */
-    VALGRIND_PMC_DO_FLUSH(base, 8);
+    VALGRIND_PMC_DO_FLUSH(i8p, 8);
     VALGRIND_PMC_DO_FENCE;
     VALGRIND_PMC_DO_COMMIT;
     VALGRIND_PMC_DO_FENCE;
     *i16p = 2;
-    VALGRIND_PMC_DO_FLUSH(base+8, 8);
+    VALGRIND_PMC_DO_FLUSH(i16p, 8);
     VALGRIND_PMC_DO_FENCE;
     VALGRIND_PMC_DO_COMMIT;
     *i32p = 3;
-    VALGRIND_PMC_DO_FLUSH(base+16, 8);
+    VALGRIND_PMC_DO_FLUSH(i32p, 8);
     return 0;
 }
