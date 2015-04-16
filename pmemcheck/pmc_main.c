@@ -71,7 +71,7 @@ struct pmem_st {
         STST_DIRTY,
         STST_FLUSHED,
         STST_FENCED,
-        STST_COMMITED
+        STST_COMMITTED
     } state;
 };
 
@@ -118,7 +118,10 @@ static struct pmem_ops {
     Bool check_flush;
 
     /** The size of the cache line */
-    Long flush_align;
+    Long flush_align_size;
+
+    /** Force flush alignment to native cache line size */
+    Bool force_flush_align;
 } pmem;
 
 /*
@@ -664,8 +667,8 @@ add_event_dw(IRSB *sb, IRAtom *daddr, Int dsize, IRAtom *value)
 /**
 * \brief Register a fence.
 *
-* Marks flushed stores as fenced and commited stores as persistent.
-* The proper state transitions are DIRTY->FLUSHED->FENCED->COMMITED->CLEAN.
+* Marks flushed stores as fenced and committed stores as persistent.
+* The proper state transitions are DIRTY->FLUSHED->FENCED->COMMITTED->CLEAN.
 * The CLEAN state is not registered, the store is removed from the set.
 */
 static void
@@ -681,7 +684,7 @@ do_fence(void)
     while ((being_fenced = VG_(OSetGen_Next)(pmem.pmem_stores)) != NULL) {
         if (being_fenced->state == STST_FLUSHED) {
             being_fenced->state = STST_FENCED;
-        } else if (being_fenced->state == STST_COMMITED) {
+        } else if (being_fenced->state == STST_COMMITTED) {
             /* remove it from the oset */
             struct pmem_st temp = *being_fenced;
             VG_(OSetGen_Remove)(pmem.pmem_stores, being_fenced);
@@ -695,9 +698,9 @@ do_fence(void)
 /**
 * \brief Register a memory commit.
 *
-* Marks fenced stores as commited. To make commited stores persistent
+* Marks fenced stores as committed. To make committed stores persistent
 * for sure, a fence is needed afterwards. The proper state transitions
-* are DIRTY->FLUSHED->FENCED->COMMITED->CLEAN. The CLEAN state is not
+* are DIRTY->FLUSHED->FENCED->COMMITTED->CLEAN. The CLEAN state is not
 * registered, the store is removed from the set.
 */
 static void
@@ -711,7 +714,7 @@ do_commit(void)
     struct pmem_st *being_fenced = NULL;
     while ((being_fenced = VG_(OSetGen_Next)(pmem.pmem_stores)) != NULL) {
         if (being_fenced->state == STST_FENCED)
-            being_fenced->state = STST_COMMITED;
+            being_fenced->state = STST_COMMITTED;
     }
 }
 
@@ -719,7 +722,7 @@ do_commit(void)
 * \brief Register a flush.
 *
 * Marks dirty stores as flushed. The proper state transitions are
-* DIRTY->FLUSHED->FENCED->COMMITED->CLEAN. The CLEAN state is not registered,
+* DIRTY->FLUSHED->FENCED->COMMITTED->CLEAN. The CLEAN state is not registered,
 * the store is removed from the set.
 *
 * \param[in] base The base address of the flush.
@@ -729,9 +732,15 @@ static void
 do_flush(UWord base, UWord size)
 {
     struct pmem_st flush_info;
-    /* Align flushed memory */
-    flush_info.addr = base & ~(pmem.flush_align - 1);
-    flush_info.size = roundup(size, pmem.flush_align);
+
+    if (LIKELY(pmem.force_flush_align == False)) {
+        flush_info.addr = base;
+        flush_info.size = size;
+    } else {
+        /* align flushed memory */
+        flush_info.addr = base & ~(pmem.flush_align_size - 1);
+        flush_info.size = roundup(size, pmem.flush_align_size);
+    }
 
     if (pmem.log_stores && (pmem.loggin_on
             || (VG_(OSetGen_Size)(pmem.loggable_regions) != 0)))
@@ -769,13 +778,15 @@ do_flush(UWord base, UWord size)
             /* split and reinsert */
             struct pmem_st *split = VG_(OSetGen_AllocNode)(pmem.pmem_stores,
                     (SizeT)sizeof (struct pmem_st));
-            split->addr = being_flushed->addr;
+            *split = *being_flushed;
             split->size = flush_info.addr - being_flushed->addr;
             split->state = STST_DIRTY;
+
             /* adjust original */
             VG_(OSetGen_Remove)(pmem.pmem_stores, being_flushed);
             being_flushed->addr = flush_info.addr;
             being_flushed->size -= split->size;
+            VG_(OSetGen_Insert)(pmem.pmem_stores, split);
             VG_(OSetGen_Insert)(pmem.pmem_stores, being_flushed);
             /* reset iter */
             VG_(OSetGen_ResetIterAt)(pmem.pmem_stores, being_flushed);
@@ -786,6 +797,7 @@ do_flush(UWord base, UWord size)
             /* split and reinsert */
             struct pmem_st *split = VG_(OSetGen_AllocNode)(pmem.pmem_stores,
                     (SizeT)sizeof (struct pmem_st));
+            *split = *being_flushed;
             split->addr = flush_max;
             split->size = being_flushed->addr + being_flushed->size - flush_max;
             split->state = STST_DIRTY;
@@ -816,8 +828,8 @@ store_state_to_string(enum store_state state)
             return "FLUSHED";
         case STST_FENCED:
             return "FENCED";
-        case STST_COMMITED:
-            return "COMMITED";
+        case STST_COMMITTED:
+            return "COMMITTED";
         default:
             return NULL;
     }
@@ -1427,6 +1439,7 @@ pmc_process_cmd_line_option(const HChar *arg)
     else if VG_BOOL_CLO(arg, "--log-stores", pmem.log_stores) {}
     else if VG_BOOL_CLO(arg, "--print-summary", pmem.print_summary) {}
     else if VG_BOOL_CLO(arg, "--flush-check", pmem.check_flush) {}
+    else if VG_BOOL_CLO(arg, "--flush-align", pmem.force_flush_align) {}
     else
         return False;
 
@@ -1455,7 +1468,7 @@ pmc_post_clo_init(void)
     pmem.loggable_regions = VG_(OSetGen_Create)(/*keyOff*/0, cmp_pmem_st,
             VG_(malloc), "pmc.main.cpci.5", VG_(free));
 
-    pmem.flush_align = read_cache_line_size();
+    pmem.flush_align_size = read_cache_line_size();
 
     if(pmem.log_stores)
         VG_(umsg)("START");
@@ -1478,6 +1491,8 @@ pmc_print_usage(void)
             "                               default [yes]\n"
             "    --flush-check=<yes|no>     register multiple flushes of stores\n"
             "                               default [no]\n"
+            "    --flush-align=<yes|no>     force flush alignment to native cache\n"
+            "                               line size default [no]\n"
     );
 }
 

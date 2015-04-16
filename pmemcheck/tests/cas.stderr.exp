@@ -1,7 +1,7 @@
 Number of stores not made persistent: 2
 Stores not made persistent properly:
-[0]    at 0x........: main (cas.c:29)
+[0]    at 0x........: main (cas.c:30)
 	Address: 0x........	size: 1	state: DIRTY
-[1]    at 0x........: main (cas.c:32)
+[1]    at 0x........: main (cas.c:33)
 	Address: 0x........	size: 8	state: DIRTY
 Total memory not made persistent: 9
