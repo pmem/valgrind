@@ -1,2 +1,2 @@
 prog: flush_check
-vgopts: -q --flush-check=yes
+vgopts: -q --flush-check=yes --flush-align=yes
