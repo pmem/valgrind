@@ -33,7 +33,8 @@ EXTRA_DIST = \
 	cas.stderr.exp cas.stdout.exp cas.vgtest \
 	flush_check.stderr.exp flush_check.stdout.exp flush_check.vgtest \
 	state_no_flush_align.stderr.exp state_no_flush_align.stdout.exp \
-		state_no_flush_align.vgtest
+		state_no_flush_align.vgtest \
+	nt_stores.stderr.exp nt_stores.stdout.exp nt_stores.vgtest
 
 check_PROGRAMS = \
 	const_store \
@@ -44,4 +45,5 @@ check_PROGRAMS = \
 	sse_stores \
 	cas \
 	flush_check \
-	state_no_flush_align
+	state_no_flush_align \
+	nt_stores
