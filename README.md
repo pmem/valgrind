@@ -1,6 +1,8 @@
 Valgrind: an enhanced version for pmem
 ======================================
 
+[![Build Status](https://travis-ci.org/pmem/valgrind.svg)](https://travis-ci.org/pmem/valgrind)
+
 This is the top-level README.md the enhanced version on Valgrind.
 This version has support for the new CLFLUSHOPT, PCOMMIT and CLWB
 instructions. It also introduces a new tool called pmemcheck which
