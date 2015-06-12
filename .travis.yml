@@ -1,0 +1,7 @@
+language: c
+before_install:
+  - sudo apt-get update -qq
+compiler:
+  - gcc
+  - clang
+script: ./configure && make && make check
