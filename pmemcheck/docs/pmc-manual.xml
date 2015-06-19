@@ -143,7 +143,7 @@ Total memory not made persistent: 7]]></programlisting>
         guaranteed to be durable in case of power failure. The offending stores
         are identified by a full stack trace and the state of the store at
         program exit is shown. However, be aware that having a clean output
-        does <emphasis>NOT</emphasis> make your program fail-safe. Additional
+        does <emphasis>NOT</emphasis> make your program fail-safe. External
         tools have to be used to verify whether your use of persistent memory
         is correct in case of unforseen failures.
       </para>
@@ -186,12 +186,12 @@ Overwritten stores before they were made persistent:
         does not have impact on data durability. As such it is disabled by
         default, use the <xref linkend="opt.flush-check"/> option to turn it on.
         It reports all occurences of flushes made on non-dirty cache lines. The
-        output from the flush checking analisys can look like this:
+        output from the flush checking analysis can look like this:
         <programlisting><![CDATA[
 Number of stores not made persistent: 1
 Stores not made persistent properly:
 [0]    at 0x........: main (flush_check.c:27)
-	Address: 0x........	size: 8	state: COMMITED
+	Address: 0x........	size: 8	state: COMMITTED
 Total memory not made persistent: 8
 
 Number of multiply flushed stores: 3
@@ -201,7 +201,7 @@ Stores flushed multiple times:
 [1]    at 0x........: main (flush_check.c:27)
 	Address: 0x........	size: 8	state: FENCED
 [2]    at 0x........: main (flush_check.c:27)
-	Address: 0x........	size: 8	state: COMMITED]]></programlisting>
+	Address: 0x........	size: 8	state: COMMITTED]]></programlisting>
         It indicates that the same store has been flushed multiple times,
         which is a potential performance issue.
       </para>
@@ -240,10 +240,10 @@ Stores flushed multiple times:
 		  <para>
             This option enables analyzing multiple stores to the same region
             of memory between persistent memory barriers. This might indicate
-            erronous usage of persistent memory by your application. If you run
+            erroneous usage of persistent memory by your application. If you run
             into problems which are independent of your application (I have
             seen <computeroutput>memcpy()</computeroutput> do this on numerous
-            occations), fine tune the <xref linkend="opt.indiff"/> value to get
+            occasions), fine tune the <xref linkend="opt.indiff"/> value to get
             rid of false-positives.
           </para>
 		</listitem>
@@ -258,7 +258,7 @@ Stores flushed multiple times:
             Turns on logging all peristent memory related events (most
             <xref linkend="pmc-manual.client_requests"/> and stores to
             persistent memory) in a human-readable, parsable format. This is
-            useful if some postprocessing or in depth analisys is to be made.
+            useful if some postprocessing or in depth analysis is to be made.
             Depending on the usage, the log output can be huge - use with
             caution.
           </para>
@@ -271,7 +271,7 @@ Stores flushed multiple times:
 		</term>
 		<listitem>
 		  <para>
-            This option enables or inhibits printing the analisys summary.
+            This option enables or inhibits printing the analysis summary.
             This option is particularly useful together with
             <xref linkend="opt.log-stores"/>.
           </para>
@@ -329,7 +329,7 @@ Stores flushed multiple times:
 		<listitem>
 		  <para>
             Registers in pmemcheck a persistent memory region. This is the basic
-            macro used for persistent memory analisys. Only stores to one of the
+            macro used for persistent memory analysis. Only stores to one of the
             registered regions are taken into account in pmemcheck.
           </para>
 		</listitem>
@@ -346,7 +346,7 @@ Stores flushed multiple times:
 		  <para>
             Register a persistent memory file. This macro does not register
             a persistent memory region, it is used to link the regions to
-            a specific file. This is especially usefull for any kind of post
+            a specific file. This is especially useful for any kind of post
             processing.
           </para>
 		</listitem>
@@ -378,7 +378,7 @@ Stores flushed multiple times:
 		</term>
 		<listitem>
 		  <para>
-            Checks is a given regions is registered as a persistent memory
+            Checks if a given regions is registered as a persistent memory
             mapping in pmemcheck. Returns <computeroutput>0</computeroutput>
             if not, <computeroutput>1</computeroutput> if fully within mapping,
             <computeroutput>2</computeroutput> if front overlaps and
@@ -442,7 +442,7 @@ Stores flushed multiple times:
 		</term>
 		<listitem>
 		  <para>
-            Writes persistent memory analisys statistics.
+            Writes persistent memory analysis statistics.
           </para>
 		</listitem>
       </varlistentry>
@@ -464,7 +464,7 @@ Stores flushed multiple times:
         </term>
         <listitem>
           <para>
-            Turns on logging of persistent memory related events.
+            Turns off logging of persistent memory related events.
           </para>
         </listitem>
       </varlistentry>
@@ -489,7 +489,7 @@ Stores flushed multiple times:
         </term>
         <listitem>
           <para>
-            Removes a registerd loggable persistent memory region from the
+            Removes a registered loggable persistent memory region from the
             appropriate pmemcheck register. Behavior is identical to
             <xref linkend="crm.rem_pmem"/>.
           </para>
@@ -502,7 +502,7 @@ Stores flushed multiple times:
         </term>
         <listitem>
           <para>
-            Issue a full reorder marker log. Usefull in some types of
+            Issues a full reorder marker log. Useful in some types of
             postprocessing.
           </para>
         </listitem>
@@ -514,7 +514,7 @@ Stores flushed multiple times:
         </term>
         <listitem>
           <para>
-            Issue a partial reorder marker log. Usefull in some types of
+            Issues a partial reorder marker log. Useful in some types of
             postprocessing.
           </para>
         </listitem>
@@ -526,7 +526,7 @@ Stores flushed multiple times:
         </term>
         <listitem>
           <para>
-            Issue a no reorder marker log. Usefull in some types of
+            Issues a no reorder marker log. Useful in some types of
             postprocessing.
           </para>
         </listitem>
@@ -538,7 +538,7 @@ Stores flushed multiple times:
         </term>
         <listitem>
           <para>
-            Issue a stop reorder and check marker log. Usefull in some types of
+            Issues a stop reorder and check marker log. Useful in some types of
             postprocessing.
           </para>
         </listitem>
@@ -567,8 +567,7 @@ Stores flushed multiple times:
 
         <listitem>
           <para>
-            <varname>print_stats</varname> prints pmemcheck statistics
-            registered.
+            <varname>print_stats</varname> prints registered pmemcheck statistics.
           </para>
         </listitem>
 
