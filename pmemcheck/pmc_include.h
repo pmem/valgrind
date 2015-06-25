@@ -49,9 +49,11 @@ void remove_region(const struct pmem_st *region, OSet *region_set);
 Word cmp_pmem_st(const void *key, const void *elem);
 
 /* Check and update the given warning event register. */
-void
-add_warning_event(struct pmem_st **event_register, UWord *nevents,
+void add_warning_event(struct pmem_st **event_register, UWord *nevents,
                   struct pmem_st *event, UWord limit, void (*err_msg)(UWord));
+
+/* Check if regions overlap */
+UWord check_overlap(const struct pmem_st *lhs, const struct pmem_st *rhs);
 
 /*------------------------------------------------------------*/
 /*--- Transactions related                                 ---*/
