@@ -1,0 +1,18 @@
+Number of stores not made persistent: 1
+Stores not made persistent properly:
+[0]    at 0x........: main (trans_cache_overl.c:47)
+	Address: 0x........	size: 1	state: DIRTY
+Total memory not made persistent: 1
+
+Number of stores made outside of transactions: 1
+Stores made outside of transactions:
+[0]    at 0x........: main (trans_cache_overl.c:47)
+	Address: 0x........	size: 1
+
+Number of overlapping regions registered in different transactions: 1
+Overlapping regions:
+[0]    at 0x........: main (trans_cache_overl.c:32)
+	Address: 0x........	size: 1	tx_id: ...
+   First registered here:
+[0]'   at 0x........: main (trans_cache_overl.c:31)
+	Address: 0x........	size: 4	tx_id: ...
