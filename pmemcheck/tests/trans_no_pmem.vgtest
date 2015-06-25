@@ -1,0 +1,2 @@
+prog: trans_no_pmem
+vgopts: -q
