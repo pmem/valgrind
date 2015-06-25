@@ -21,6 +21,8 @@ EXTRA_DIST = docs/pmc-manual.xml
 
 pkginclude_HEADERS = pmemcheck.h
 
+noinst_HEADERS = pmc_include.h
+
 #----------------------------------------------------------------------------
 # pmemcheck-<platform>
 #----------------------------------------------------------------------------
@@ -31,7 +33,9 @@ noinst_PROGRAMS += pmemcheck-@VGCONF_ARCH_SEC@-@VGCONF_OS@
 endif
 
 PMEMCHECK_SOURCES_COMMON = \
-	pmc_main.c
+	pmc_main.c \
+	pmc_tx.c \
+	pmc_common.c
 
 pmemcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_SOURCES      = \
 	$(PMEMCHECK_SOURCES_COMMON)
