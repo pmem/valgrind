@@ -1536,7 +1536,7 @@ pmc_post_clo_init(void)
     init_transactions(pmem.transactions_only);
 
     if (pmem.log_stores)
-        VG_(umsg)("START");
+        VG_(emit)("START");
 }
 
 /**
@@ -1581,7 +1581,7 @@ static void
 pmc_fini(Int exitcode)
 {
     if (pmem.log_stores)
-        VG_(umsg)("|STOP\n");
+        VG_(emit)("|STOP\n");
 
     if (pmem.print_summary)
         print_pmem_stats(False);
