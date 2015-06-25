@@ -40,7 +40,9 @@ EXTRA_DIST = \
 	trans_impl_nest.stderr.exp trans_impl_nest.vgtest \
 	trans_no_pmem.stderr.exp trans_no_pmem.vgtest \
 	trans_excl.stderr.exp trans_excl.vgtest \
-	trans_only.stderr.exp trans_only.vgtest
+	trans_only.stderr.exp trans_only.vgtest \
+	trans_cache_overl.stderr.exp trans_cache_overl.vgtest \
+	trans_cache_flush.stderr.exp trans_cache_flush.vgtest
 
 check_PROGRAMS = \
 	const_store \
@@ -61,4 +63,6 @@ check_PROGRAMS = \
 	trans_impl_nest \
 	trans_no_pmem \
 	trans_excl \
-	trans_only
+	trans_only \
+	trans_cache_overl \
+	trans_cache_flush

@@ -16,8 +16,6 @@
 
 #include "../pmemcheck.h"
 
-#define FILE_SIZE (16 * 1024 * 1024)
-
 int main ( void )
 {
 
@@ -29,7 +27,6 @@ int main ( void )
     VALGRIND_PMC_START_TX;
 
     VALGRIND_PMC_ADD_TO_TX(&i16, sizeof (i16));
-    /* dirty stores */
     i16 = 2;
 
     VALGRIND_PMC_ADD_TO_TX(&i8, sizeof (i8));

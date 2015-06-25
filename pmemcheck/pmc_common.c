@@ -21,12 +21,53 @@
 #include "pmc_include.h"
 
 /**
+* \brief A compare function for regions stored in the OSetGen.
+* \param[in] key The key to compare.
+* \param[in] elem The element to compare with.
+* \return -1 if key is smaller, 1 if key is greater and 0 if key is equal
+* to elem. This means that the region is either before, after or overlaps.
+*/
+Word
+cmp_pmem_st(const void *key, const void *elem)
+{
+    struct pmem_st *lhs = (struct pmem_st *) (key);
+    struct pmem_st *rhs = (struct pmem_st *) (elem);
+
+    if (lhs->addr + lhs->size <= rhs->addr)
+        return -1;
+    else if (lhs->addr >= rhs->addr + rhs->size)
+        return 1;
+    else
+        return 0;
+}
+
+/**
+ * \brief Check if regions overlap.
+ * \param lhs Region to check.
+ * \param rhs Region to check against.
+ * \return 0 if lhs and rhs do not overlap, 1 if lhs is within rhs, 2 otherwise.
+ */
+UWord
+check_overlap(const struct pmem_st *lhs, const struct pmem_st *rhs)
+{
+    if (cmp_pmem_st(lhs, rhs))
+        /* regions do not overlap */
+        return 0;
+    else if ((lhs->addr < rhs->addr)
+            || (lhs->addr + lhs->size) > (rhs->addr + rhs->size))
+        /* partial overlap */
+        return 2;
+    else
+        /* region fully within the mapping */
+        return 1;
+}
+
+/**
 * \brief Check if the given region is in the set.
 * \param[in] region Region to find.
 * \param[in] region_set Region set to check.
 * \return 0 if not in set, 1 if fully in the set, 2 if it overlaps over
-* the head of an existing mapping, 3 if it overlaps over the tail of an existing
-* mapping.
+* an existing mapping.
 */
 UWord
 is_in_mapping_set(const struct pmem_st *region, OSet *region_set)
@@ -36,18 +77,7 @@ is_in_mapping_set(const struct pmem_st *region, OSet *region_set)
         return 0;
     }
 
-    struct pmem_st *found_region = VG_(OSetGen_Lookup)(region_set, region);
-
-    if (region->addr < found_region->addr)
-        /* front overlaps */
-        return 2;
-    else if ((region->addr + region->size) > (found_region->addr +
-            found_region->size))
-        /* tail overlaps */
-        return 3;
-
-    /* region fully within the mapping */
-    return 1;
+    return check_overlap(region, VG_(OSetGen_Lookup)(region_set, region));
 }
 
 /**
@@ -130,26 +160,6 @@ remove_region(const struct pmem_st *region, OSet *region_set)
     }
 }
 
-/**
-* \brief A compare function for regions stored in the OSetGen.
-* \param[in] key The key to compare.
-* \param[in] elem The element to compare with.
-* \return -1 if key is smaller, 1 if key is greater and 0 if key is equal
-* to elem.
-*/
-Word
-cmp_pmem_st(const void *key, const void *elem)
-{
-    struct pmem_st *lhs = (struct pmem_st *) (key);
-    struct pmem_st *rhs = (struct pmem_st *) (elem);
-
-    if (lhs->addr + lhs->size <= rhs->addr)
-        return -1;
-    else if (lhs->addr >= rhs->addr + rhs->size)
-        return 1;
-    else
-        return 0;
-}
 
 /**
  * \brief Check and update the given warning event register.
