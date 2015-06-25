@@ -67,7 +67,19 @@ typedef
        VG_USERREQ__PMC_PARTIAL_REORDER,
        VG_USERREQ__PMC_ONLY_FAULT,
        VG_USERREQ__PMC_STOP_REORDER_FAULT,
-       VG_USERREQ__PMC_SET_CLEAN
+       VG_USERREQ__PMC_SET_CLEAN,
+       /* transaction support */
+       VG_USERREQ__PMC_START_TX,
+       VG_USERREQ__PMC_START_TX_N,
+       VG_USERREQ__PMC_END_TX,
+       VG_USERREQ__PMC_END_TX_N,
+       VG_USERREQ__PMC_ADD_TO_TX,
+       VG_USERREQ__PMC_ADD_TO_TX_N,
+       VG_USERREQ__PMC_REMOVE_FROM_TX,
+       VG_USERREQ__PMC_REMOVE_FROM_TX_N,
+       VG_USERREQ__PMC_ADD_THREAD_TO_TX_N,
+       VG_USERREQ__PMC_REMOVE_THREAD_FROM_TX_N,
+       VG_USERREQ__PMC_ADD_TO_GLOBAL_TX_IGNORE
    } Vg_PMemCheckClientRequest;
 
 
@@ -89,76 +101,77 @@ typedef
                             (_qzz_offset), 0)
 
 /** Remove a persistent memory mapping region */
-#define VALGRIND_PMC_REMOVE_PMEM_MAPPING(_qzz_addr,_qzz_len)         \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,          \
-                            VG_USERREQ__PMC_REMOVE_PMEM_MAPPING,     \
+#define VALGRIND_PMC_REMOVE_PMEM_MAPPING(_qzz_addr,_qzz_len)                \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
+                            VG_USERREQ__PMC_REMOVE_PMEM_MAPPING,            \
                             (_qzz_addr), (_qzz_len), 0, 0, 0)
 
 /** Check if the given range is a registered persistent memory mapping */
-#define VALGRIND_PMC_CHECK_IS_PMEM_MAPPING(_qzz_addr,_qzz_len)       \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,          \
-                            VG_USERREQ__PMC_CHECK_IS_PMEM_MAPPING,   \
+#define VALGRIND_PMC_CHECK_IS_PMEM_MAPPING(_qzz_addr,_qzz_len)              \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
+                            VG_USERREQ__PMC_CHECK_IS_PMEM_MAPPING,          \
                             (_qzz_addr), (_qzz_len), 0, 0, 0)
 
 /** Register an SFENCE */
-#define VALGRIND_PMC_PRINT_PMEM_MAPPINGS                                       \
-    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_PRINT_PMEM_MAPPINGS,       \
+#define VALGRIND_PMC_PRINT_PMEM_MAPPINGS                                    \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_PRINT_PMEM_MAPPINGS,    \
                                     0, 0, 0, 0, 0)
 
 /** Register a CLFLUSH-like operation */
-#define VALGRIND_PMC_DO_FLUSH(_qzz_addr,_qzz_len)                  \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,        \
-                            VG_USERREQ__PMC_DO_FLUSH,              \
+#define VALGRIND_PMC_DO_FLUSH(_qzz_addr,_qzz_len)                           \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
+                            VG_USERREQ__PMC_DO_FLUSH,                       \
                             (_qzz_addr), (_qzz_len), 0, 0, 0)
 
 /** Register an SFENCE */
-#define VALGRIND_PMC_DO_FENCE                                       \
-    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_DO_FENCE,       \
+#define VALGRIND_PMC_DO_FENCE                                               \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_DO_FENCE,               \
                                     0, 0, 0, 0, 0)
 
 /** Register a PCOMMIT */
-#define VALGRIND_PMC_DO_COMMIT                                      \
-    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_DO_COMMIT,      \
+#define VALGRIND_PMC_DO_COMMIT                                              \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_DO_COMMIT,              \
                                     0, 0, 0, 0, 0)
 
 /** Write tool stats */
-#define VALGRIND_PMC_WRITE_STATS                                     \
-    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_WRITE_STATS,     \
+#define VALGRIND_PMC_WRITE_STATS                                            \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_WRITE_STATS,            \
                                     0, 0, 0, 0, 0)
 
 /** Start logging memory operations */
-#define VALGRIND_PMC_LOG_STORES                                     \
-    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_LOG_STORES,     \
+#define VALGRIND_PMC_LOG_STORES                                             \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_LOG_STORES,             \
                                     0, 0, 0, 0, 0)
+
 /** Stop logging memory operations */
-#define VALGRIND_PMC_NO_LOG_STORES                                     \
-    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_NO_LOG_STORES,     \
+#define VALGRIND_PMC_NO_LOG_STORES                                          \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_NO_LOG_STORES,          \
                                     0, 0, 0, 0, 0)
 
 /** Add a region of persistent memory, for which all operations will be
 * logged */
-#define VALGRIND_PMC_ADD_LOG_REGION(_qzz_addr,_qzz_len)       \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,          \
-                            VG_USERREQ__PMC_ADD_LOG_REGION,   \
+#define VALGRIND_PMC_ADD_LOG_REGION(_qzz_addr,_qzz_len)                     \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
+                            VG_USERREQ__PMC_ADD_LOG_REGION,                 \
                             (_qzz_addr), (_qzz_len), 0, 0, 0)
 
 /** Remove the loggable persistent memory region */
-#define VALGRIND_PMC_REMOVE_LOG_REGION(_qzz_addr,_qzz_len)       \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,          \
-                            VG_USERREQ__PMC_REMOVE_LOG_REGION,   \
+#define VALGRIND_PMC_REMOVE_LOG_REGION(_qzz_addr,_qzz_len)                  \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
+                            VG_USERREQ__PMC_REMOVE_LOG_REGION,              \
                             (_qzz_addr), (_qzz_len), 0, 0, 0)
 
 /** Issue a full reorder log */
-#define VALGRIND_PMC_FULL_REORDER                                     \
-    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_FULL_REORDED,     \
+#define VALGRIND_PMC_FULL_REORDER                                           \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_FULL_REORDED,           \
                                     0, 0, 0, 0, 0)
 /** Issue a partial reorder log */
-#define VALGRIND_PMC_PARTIAL_REORDER                                     \
-    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_PARTIAL_REORDER,     \
+#define VALGRIND_PMC_PARTIAL_REORDER                                        \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_PARTIAL_REORDER,        \
                                     0, 0, 0, 0, 0)
 /** Issue a log to disable reordering */
-#define VALGRIND_PMC_ONLY_FAULT                                     \
-    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_ONLY_FAULT,     \
+#define VALGRIND_PMC_ONLY_FAULT                                             \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_ONLY_FAULT,             \
                                     0, 0, 0, 0, 0)
 
 /** Issue a log to disable reordering and faults */
@@ -166,11 +179,75 @@ typedef
     VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_STOP_REORDER_FAULT,     \
                                     0, 0, 0, 0, 0)
 
-/** Remove a persistent memory mapping region */
-#define VALGRIND_PMC_SET_CLEAN(_qzz_addr,_qzz_len)                      \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,             \
-                            VG_USERREQ__PMC_SET_CLEAN,                  \
+/** Set a region of persistent memory as clean */
+#define VALGRIND_PMC_SET_CLEAN(_qzz_addr,_qzz_len)                          \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
+                            VG_USERREQ__PMC_SET_CLEAN,                      \
                             (_qzz_addr), (_qzz_len), 0, 0, 0)
 
-#endif
+/** Support for transactions */
 
+/** Start an implicit persistent memory transaction */
+#define VALGRIND_PMC_START_TX                                               \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_START_TX,               \
+                                    0, 0, 0, 0, 0)
+
+/** Start an explicit persistent memory transaction */
+#define VALGRIND_PMC_START_TX_N(_qzz_txn)                                   \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
+                            VG_USERREQ__PMC_START_TX_N,                     \
+                            (_qzz_txn), 0, 0, 0, 0)
+
+/** End an implicit persistent memory transaction */
+#define VALGRIND_PMC_END_TX                                                 \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_END_TX,                 \
+                                    0, 0, 0, 0, 0)
+
+/** End an explicit persistent memory transaction */
+#define VALGRIND_PMC_END_TX_N(_qzz_txn)                                     \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
+                            VG_USERREQ__PMC_END_TX_N,                       \
+                            (_qzz_txn), 0, 0, 0, 0)
+
+/** Add a persistent memory region to the implicit transaction */
+#define VALGRIND_PMC_ADD_TO_TX(_qzz_addr,_qzz_len)                          \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
+                            VG_USERREQ__PMC_ADD_TO_TX,                      \
+                            (_qzz_addr), (_qzz_len), 0, 0, 0)
+
+/** Add a persistent memory region to an explicit transaction */
+#define VALGRIND_PMC_ADD_TO_TX_N(_qzz_txn,_qzz_addr,_qzz_len)               \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
+                            VG_USERREQ__PMC_ADD_TO_TX_N,                    \
+                            (_qzz_txn), (_qzz_addr), (_qzz_len), 0, 0)
+
+/** Remove a persistent memory region from the implicit transaction */
+#define VALGRIND_PMC_REMOVE_FROM_TX(_qzz_addr,_qzz_len)                     \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
+                            VG_USERREQ__PMC_REMOVE_FROM_TX,                 \
+                            (_qzz_addr), (_qzz_len), 0, 0, 0)
+
+/** Remove a persistent memory region from an explicit transaction */
+#define VALGRIND_PMC_REMOVE_FROM_TX_N(_qzz_txn,_qzz_addr,_qzz_len)          \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
+                            VG_USERREQ__PMC_REMOVE_FROM_TX_N,               \
+                            (_qzz_txn), (_qzz_addr), (_qzz_len), 0, 0)
+
+/** End an explicit persistent memory transaction */
+#define VALGRIND_PMC_ADD_THREAD_TX_N(_qzz_txn)                              \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
+                            VG_USERREQ__PMC_ADD_THREAD_TO_TX_N,             \
+                            (_qzz_txn), 0, 0, 0, 0)
+
+/** End an explicit persistent memory transaction */
+#define VALGRIND_PMC_REMOVE_THREAD_FROM_TX_N(_qzz_txn)                      \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
+                            VG_USERREQ__PMC_REMOVE_THREAD_FROM_TX_N,        \
+                            (_qzz_txn), 0, 0, 0, 0)
+
+/** Remove a persistent memory region from the implicit transaction */
+#define VALGRIND_PMC_ADD_TO_GLOBAL_TX_IGNORE(_qzz_addr,_qzz_len)            \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_ADD_TO_GLOBAL_TX_IGNORE,\
+                                    (_qzz_addr), (_qzz_len), 0, 0, 0)
+
+#endif

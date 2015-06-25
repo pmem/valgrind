@@ -19,13 +19,10 @@ dist_noinst_SCRIPTS = \
 	filter_stderr
 
 EXTRA_DIST = \
-	region_manipulation.stderr.exp region_manipulation.stdout.exp \
-		region_manipulation.vgtest \
-	remove_regions.stderr.exp remove_regions.stdout.exp \
-		remove_regions.vgtest \
-	remove_aligned_region.stderr.exp remove_aligned_region.stdout.exp \
-		remove_aligned_region.vgtest \
-	flush_align.stderr.exp flush_align.stdout.exp flush_align.vgtest
+	region_manipulation.stderr.exp region_manipulation.vgtest \
+	remove_regions.stderr.exp remove_regions.vgtest \
+	remove_aligned_region.stderr.exp remove_aligned_region.vgtest \
+	flush_align.stderr.exp flush_align.vgtest
 
 check_PROGRAMS = \
 	region_manipulation \
