@@ -33,7 +33,7 @@
         of persistent memory prove to be a challenge, because memory is not
         reclaimed automatically on reboot. Because of the specific nature of
         persistent memory, the store scheme	has to follow a special pattern.
-        To make the data persistent, preferrably in a failsafe manner, you have
+        To make the data persistent, preferably in a failsafe manner, you have
         to do a	<emphasis>STORE->FLUSH->SFENCE->PCOMMIT->SFENCE</emphasis>
         sequence. Pmemcheck checks if this particular sequence of operations
         is made to any of the registered persistent memory regions. On program
@@ -145,7 +145,7 @@ Total memory not made persistent: 7]]></programlisting>
         program exit is shown. However, be aware that having a clean output
         does <emphasis>NOT</emphasis> make your program fail-safe. External
         tools have to be used to verify whether your use of persistent memory
-        is correct in case of unforseen failures.
+        is correct in case of unforeseen failures.
       </para>
 
       <para>
@@ -185,7 +185,7 @@ Overwritten stores before they were made persistent:
         inefficient use of flushes. This is strictly a performance issue and
         does not have impact on data durability. As such it is disabled by
         default, use the <xref linkend="opt.flush-check"/> option to turn it on.
-        It reports all occurences of flushes made on non-dirty cache lines. The
+        It reports all occurrences of flushes made on non-dirty cache lines. The
         output from the flush checking analysis can look like this:
         <programlisting><![CDATA[
 Number of redundantly flushed stores: 3
@@ -199,6 +199,7 @@ Stores flushed multiple times:
         It indicates that the same store has been flushed multiple times,
         which is a potential performance issue.
       </para>
+
       <para>
 	In case when no stores were made to the flushed region, the program will
 	yield the following output:
@@ -210,6 +211,145 @@ Number of unnecessary flushes: 3
 	Address: 0x4fec040	size: 128
 [2]    at 0x400B71: main (missed_flush.c:31)
 	Address: 0x0	size: 64]]></programlisting>
+      </para>
+
+      <para>
+	Pmemcheck also allows tracking of persistent memory transactions.
+	To learn more about the built-in transaction support in pmemcheck
+	see <xref linkend="pmc-manual.transactions"/>. The primary type of issue
+	found by pmemcheck are stores made to regions of memory not tracked
+	by transactions.  An example output of the out-of-transaction stores
+	has the following form:
+	<programlisting><![CDATA[
+Number of stores made outside of transactions: 2
+Stores made outside of transactions:
+[0]    at 0x400C3E: main (trans_impl_nest.c:39)
+	Address: 0x4fec000	size: 1
+[1]    at 0x400C58: main (trans_impl_nest.c:42)
+	Address: 0x4fec018	size: 8]]></programlisting>
+      </para>
+
+      <para>
+	A different type of error message related to the transactions
+	functionality within pmemcheck, are active transactions on program exit.
+	This kind of error shows that some transactions have not finished
+	properly. This can lead to data corruption and possibly performance
+	degradation.  If any transactions are active on exit, a report with the
+	following form is issued:
+	<programlisting><![CDATA[
+Number of active transactions: 1
+[0]    at 0x400AE5: main (trans_impl_nest.c:32)
+	tx_id: 1	 nesting: 1]]></programlisting>
+      </para>
+
+      <para>
+	Another type of consistency error might occur when different
+	transactions are tracking the same memory region. Let's say for example
+	the implementation of your application uses an undo log and two separate
+	transactions add the same memory region to their undo lists. If one of
+	them fails, the changes get rolled back and the resulting state of the
+	whole persistent memory "pool" might be inconsistent. The warning
+	message for this issue has the following form:
+	<programlisting><![CDATA[
+Number of overlapping regions registered in different transactions: 1
+Overlapping regions:
+[0]    at 0x400C9C: make_tx (trans_mt.c:35)
+   by 0x4C2F181: start_thread (pthread_create.c:312)
+   by 0x4F3F47C: clone (clone.S:111)
+	Address: 0x520a010	size: 4	tx_id: 3
+   First registered here:
+[0]'   at 0x400C9C: make_tx (trans_mt.c:35)
+   by 0x4C2F181: start_thread (pthread_create.c:312)
+   by 0x4F3F47C: clone (clone.S:111)
+	Address: 0x520a010	size: 4	tx_id: 2]]></programlisting>
+      </para>
+
+    </sect2>
+
+    <sect2 id="pmc-manual.transactions" xreflabel="Transactions">
+      <title>Pmemcheck transaction support</title>
+
+      <para>
+	Contemporary hardware architectures guarantee that only stores up to
+	a certain size can be made atomically. Here atomicity refers to non-torn
+	writes and not concurrency safety. At the time of writing this
+	documentation the x86-64 architecture supports 8 byte atomic writes.
+	This in most cases is insufficient in real world applications.
+	Therefore the need to introduce transactions, which allow larger ranges
+	of persistent memory to be changed atomically. Whether transactions
+	are rolled-back, redone or employ some other technique is of no
+	importance to pmemcheck. What is important is that pmemcheck knows
+	which regions of persistent memory are tracked by the transaction and
+	can be modified freely while the transaction is active.
+      </para>
+
+      <para>
+	Transaction support cannot be turned off, however the runtime overhead
+	is negligible if no transactions are made in the analyzed application.
+	To inform pmemcheck of a new transaction start, use one of two available
+	macros <xref linkend="crm.start_tx"/> or
+	<xref linkend="crm.start_tx_n"/>. Depending on whether your application
+	uses flattened, implicit per-thread transactions or explicit
+	thread-independent transactions, use the appropriate macro to ensure
+	the transactions are tracked correctly. Internally each thread has a
+	list of transactions it contributes to and each transactions has a list
+	of persistent memory regions which belong to the transaction. When a new
+	thread starts a transaction, a new entry for the transactions is created
+	with an empty persistent memory regions list. At the same time a new
+	thread entry is created and the id of the transaction is added to its
+	list of active transactions. If different threads are to contribute to
+	the same transaction, pmemcheck has to be informed about the relation
+	between threads and transactions the thread is to contribute to. To
+	do this use the <xref linkend="crm.add_thread_to_tx_n"/> and
+	<xref linkend="crm.remove_thread_from_tx_n"/> macros.
+      </para>
+
+      <para>
+	Once the transaction is started, pmemcheck has to be informed of the
+	regions which will be tracked by the transaction. To do that call
+	either the <xref linkend="crm.add_to_tx"/> or the
+	<xref linkend="crm.add_to_tx_n"/> macro. The two flavors are analogous
+	to the <xref linkend="crm.start_tx"/> and
+	<xref linkend="crm.start_tx_n"/> macros. The first one is for implicit
+	transactions and the second for explicit transactions. Both of these
+	macros will add the given region to the list of tracked persistent
+	memory regions within the given transaction (implicit or explicit).
+	Please note that changes made to volatile memory will
+	<emphasis>NOT</emphasis> be reported for obvious reasons.
+	If there is a need to remove any of the regions	from the transaction,
+	the <xref linkend="crm.remove_from_tx"/> or the
+	<xref linkend="crm.remove_from_tx_n"/> macros can be used. To add
+	regions of memory which are not to be checked throughout the whole
+	duration of the application run, use the
+	<xref linkend="crm.add_global_tx_ignore"/> macro.
+      </para>
+
+      <para>
+	To end a transaction call either the <xref linkend="crm.end_tx"/> or
+	<xref linkend="crm.end_tx_n"/>. As before the
+	<computeroutput>_N</computeroutput> suffixed versions are for
+	applications using explicit transactions. Once a transaction is ended
+	the transaction entry is removed along with the registered regions.
+	At the same time all active thread entries have the corresponding
+	transaction removed from their index. Once a thread has no more active
+	transactions, it is also removed from the list of active threads. If
+	you nest a transaction with the same id (which is always the case with
+	implicit transactions), you bump up the nesting counter. A transaction
+	will not be removed until the nesting counter hits 0. The
+	counter is decremented on each transaction end.
+      </para>
+
+      <para>
+	Once a transaction is started, pmemcheck tracks all stores made by any
+	given thread and checks whether they are made to a persistent memory
+	region that is part of a transaction. If it is not, the store is
+	registered and will be reported on program exit. Changes made outside
+	of transactions are a possible data consistency concern, should the
+	transaction be interrupted in any way. Each such event should be
+	carefully analyzed. Additionally when the tool is run with
+	<xref linkend="opt.tx_only"/>, all changes to persistent memory must be
+	made within a transaction (excluding the regions added by the
+	<xref linkend="crm.add_global_tx_ignore"/> macro).
       </para>
 
     </sect2>
@@ -225,8 +365,8 @@ Number of unnecessary flushes: 3
 
 	  <varlistentry id="opt.indiff" xreflabel="--indiff">
 	    <term>
-		  <option><![CDATA[--indiff=<uint> [default: 0 SBlocks] ]]></option>
-		</term>
+	     <option><![CDATA[--indiff=<uint> [default: 0 SBlocks] ]]></option>
+	    </term>
 
         <listitem>
 		  <para>
@@ -240,7 +380,7 @@ Number of unnecessary flushes: 3
 
 	  <varlistentry id="opt.mult-stores" xreflabel="--mult-stores">
 	    <term>
-		  <option><![CDATA[--mult-stores=<no|yes> [default: no] ]]></option>
+		  <option><![CDATA[--mult-stores=<yes|no> [default: no] ]]></option>
 		</term>
 		<listitem>
 		  <para>
@@ -257,11 +397,11 @@ Number of unnecessary flushes: 3
 
 	  <varlistentry id="opt.log-stores" xreflabel="--log-stores">
 	    <term>
-		  <option><![CDATA[--log-stores=<no|yes> [default: no] ]]></option>
+		  <option><![CDATA[--log-stores=<yes|no> [default: no] ]]></option>
 		</term>
 		<listitem>
 		  <para>
-            Turns on logging all peristent memory related events (most
+            Turns on logging all persistent memory related events (most
             <xref linkend="pmc-manual.client_requests"/> and stores to
             persistent memory) in a human-readable, parsable format. This is
             useful if some postprocessing or in depth analysis is to be made.
@@ -273,7 +413,7 @@ Number of unnecessary flushes: 3
 
 	  <varlistentry id="opt.print-summary" xreflabel="--print-summary">
 	    <term>
-		  <option><![CDATA[--print-summary=<no|yes> [default: yes] ]]></option>
+		  <option><![CDATA[--print-summary=<yes|no> [default: yes] ]]></option>
 		</term>
 		<listitem>
 		  <para>
@@ -286,7 +426,7 @@ Number of unnecessary flushes: 3
 
       <varlistentry id="opt.flush-check" xreflabel="--flush-check">
         <term>
-          <option><![CDATA[--flush-check=<no|yes> [default: no] ]]></option>
+          <option><![CDATA[--flush-check=<yes|no> [default: no] ]]></option>
         </term>
         <listitem>
           <para>
@@ -301,7 +441,7 @@ Number of unnecessary flushes: 3
 
       <varlistentry id="opt.flush-align" xreflabel="--flush-align">
         <term>
-          <option><![CDATA[--flush-align=<no|yes> [default: no] ]]></option>
+          <option><![CDATA[--flush-align=<yes|no> [default: no] ]]></option>
         </term>
         <listitem>
           <para>
@@ -314,7 +454,25 @@ Number of unnecessary flushes: 3
         </listitem>
       </varlistentry>
 
-	</variablelist>
+      <varlistentry id="opt.tx_only" xreflabel="--tx_only">
+        <term>
+          <option><![CDATA[--tx_only=<yes|no> [default: no] ]]></option>
+        </term>
+        <listitem>
+          <para>
+            This flag turns on strict transaction checks in pmemcheck.
+	    When turned on, pmemcheck will track all changes made to memory,
+	    which were not registered as being part of a transaction. This is
+	    a potential data consistency issue, as these changes will not be
+	    rolled-back/redone on transaction recovery, after an interruption.
+	    All changes, also those made without a running transaction, will
+	    be reported by the tool. For more information on transaction support
+	    built into pmemcheck see <xref linkend="pmc-manual.transactions"/>.
+          </para>
+        </listitem>
+      </varlistentry>
+
+    </variablelist>
 
   </sect1>
 
@@ -353,7 +511,9 @@ Number of unnecessary flushes: 3
             Register a persistent memory file. This macro does not register
             a persistent memory region, it is used to link the regions to
             a specific file. This is especially useful for any kind of post
-            processing.
+            processing. Returns <computeroutput>1</computeroutput>
+	    when the given file could not be found
+	    <computeroutput>0</computeroutput> otherwise.
           </para>
 		</listitem>
 	  </varlistentry>
@@ -562,7 +722,173 @@ Number of unnecessary flushes: 3
         </listitem>
       </varlistentry>
 
-	</variablelist>
+      <varlistentry id="crm.start_tx" xreflabel="VALGRIND_PMC_START_TX">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_START_TX]]></option>
+        </term>
+        <listitem>
+          <para>
+            Starts a transaction with an implicit transaction id. The id will be
+            the id of the thread which issues the client request. Nesting
+            transactions is allowed - the nesting counter of the transaction
+            is incremented by <computeroutput>1</computeroutput>.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.start_tx_n" xreflabel="VALGRIND_PMC_START_TX_N">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_START_TX_N(txn)]]></option>
+        </term>
+        <listitem>
+          <para>
+            Starts a transaction with the given transaction id.  Nesting
+            transactions is allowed - the nesting counter of the transaction
+            is incremented by <computeroutput>1</computeroutput>.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.end_tx" xreflabel="VALGRIND_PMC_END_TX">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_END_TX]]></option>
+        </term>
+        <listitem>
+          <para>
+            Ends a transaction with an implicit transaction id. The id will be
+            the id of the thread which issues the client request. The nesting
+            counter of the transaction is decremented by
+            <computeroutput>1</computeroutput>. If it hits
+            <computeroutput>0</computeroutput>, the transaction is no longer
+            tracked by pmemcheck. Returns <computeroutput>1</computeroutput>
+            when no matching and <computeroutput>0</computeroutput> otherwise.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.end_tx_n" xreflabel="VALGRIND_PMC_END_TX_N">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_END_TX_N(txn)]]></option>
+        </term>
+        <listitem>
+          <para>
+            Ends a transaction with the given transaction id. The nesting
+            counter of the transaction is decremented by
+            <computeroutput>1</computeroutput>. If it hits
+            <computeroutput>0</computeroutput>, the transaction is no longer
+            tracked by pmemcheck. Returns <computeroutput>1</computeroutput>
+            when no matching and <computeroutput>0</computeroutput> otherwise.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.add_to_tx" xreflabel="VALGRIND_PMC_ADD_TO_TX">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_ADD_TO_TX(addr, size)]]></option>
+        </term>
+        <listitem>
+          <para>
+            Adds a persistent memory region to the implicit transaction. Stores
+            made during the transaction to persistent memory outside of the
+            registered regions will be reported as a potential data consistency
+            issue. Returns <computeroutput>1</computeroutput> when no matching
+            transaction was found, <computeroutput>2</computeroutput> when
+            the current thread does not participate in this transaction and
+            <computeroutput>0</computeroutput> otherwise.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.add_to_tx_n" xreflabel="VALGRIND_PMC_ADD_TO_TX_N">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_ADD_TO_TX_N(txn, addr, size)]]></option>
+        </term>
+        <listitem>
+          <para>
+            Adds a persistent memory region to the given transaction. Stores
+            made during the transaction to persistent memory outside of the
+            registered regions will be reported as a potential data consistency
+            issue. Returns <computeroutput>1</computeroutput> when no matching
+            transaction was found, <computeroutput>2</computeroutput> when
+            the current thread does not participate in this transaction and
+            <computeroutput>0</computeroutput> otherwise.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.remove_from_tx" xreflabel="VALGRIND_PMC_REMOVE_FROM_TX">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_REMOVE_FROM_TX(addr, size)]]></option>
+        </term>
+        <listitem>
+          <para>
+            Removes a persistent memory region from the implicit transaction.
+            Returns <computeroutput>1</computeroutput> when no matching
+            transaction was found, <computeroutput>2</computeroutput> when
+            the current thread does not participate in this transaction and
+            <computeroutput>0</computeroutput> otherwise.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.remove_from_tx_n" xreflabel="VALGRIND_PMC_REMOVE_FROM_TX_N">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_REMOVE_FROM_TX_N(txn, addr, size)]]></option>
+        </term>
+        <listitem>
+          <para>
+            Removes a persistent memory region from the given transaction.
+            Returns <computeroutput>1</computeroutput> when no matching
+            transaction was found, <computeroutput>2</computeroutput> when
+            the current thread does not participate in this transaction and
+            <computeroutput>0</computeroutput> otherwise.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.add_thread_to_tx_n" xreflabel="VALGRIND_PMC_ADD_THREAD_TO_TX_N">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_ADD_THREAD_TO_TX_N(txn)]]></option>
+        </term>
+        <listitem>
+          <para>
+            Adds the current thread to the given transaction. Returns
+            <computeroutput>1</computeroutput> when no matching
+            transaction was found, <computeroutput>0</computeroutput> otherwise.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.remove_thread_from_tx_n" xreflabel="VALGRIND_PMC_REMOVE_THREAD_FROM_TX_N">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_REMOVE_THREAD_FROM_TX_N(txn,)]]></option>
+        </term>
+        <listitem>
+          <para>
+            Removes the current thread from the given transaction.
+            Returns <computeroutput>1</computeroutput> when no matching
+            transaction was found, <computeroutput>2</computeroutput> when
+            the current thread does not participate in this transaction and
+            <computeroutput>0</computeroutput> otherwise.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry id="crm.add_global_tx_ignore" xreflabel="VALGRIND_PMC_ADD_TO_GLOBAL_TX_IGNORE">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_ADD_TO_GLOBAL_TX_IGNORE(addr, size)]]></option>
+        </term>
+        <listitem>
+          <para>
+            Adds a persistent memory region to the global ignore list. Once
+            added the memory region cannot be removed until the end of the
+            execution of the application. Out of transaction writes to these
+            regions will not be reported.
+          </para>
+        </listitem>
+      </varlistentry>
+
+    </variablelist>
   </sect1>
 
   <sect1 id="pmc-manual.monitor_commands" xreflabel="Pmemcheck Monitor Commands">

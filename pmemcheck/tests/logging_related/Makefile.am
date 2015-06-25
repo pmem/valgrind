@@ -19,8 +19,8 @@ dist_noinst_SCRIPTS = \
 	filter_stderr
 
 EXTRA_DIST = \
-	logging.stderr.exp logging.stdout.exp logging.vgtest \
-	register_file.stderr.exp register_file.stdout.exp register_file.vgtest
+	logging.stderr.exp logging.vgtest \
+	register_file.stderr.exp register_file.vgtest
 
 check_PROGRAMS = \
 	logging \

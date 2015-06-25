@@ -1,0 +1,2 @@
+prog: trans_only
+vgopts: -q --tx_only=yes

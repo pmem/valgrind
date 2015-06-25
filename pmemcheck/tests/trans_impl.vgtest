@@ -1,0 +1,2 @@
+prog: trans_impl
+vgopts: -q
