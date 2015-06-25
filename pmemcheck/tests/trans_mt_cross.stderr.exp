@@ -1,0 +1,7 @@
+Number of stores not made persistent: 1
+Stores not made persistent properly:
+[0]    at 0x........: make_tx (trans_mt_cross.c:43)
+   by 0x........: start_thread (pthread_create.c:312)
+   by 0x........: clone (clone.S:111)
+	Address: 0x........	size: 4	state: DIRTY
+Total memory not made persistent: 4

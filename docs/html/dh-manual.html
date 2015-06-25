@@ -26,9 +26,9 @@
 <dt><span class="sect1"><a href="dh-manual.html#dh-manual.overview">10.1. Overview</a></span></dt>
 <dt><span class="sect1"><a href="dh-manual.html#dh-manual.understanding">10.2. Understanding DHAT's output</a></span></dt>
 <dd><dl>
-<dt><span class="sect2"><a href="dh-manual.html#idp63506832">10.2.1. Interpreting the max-live, tot-alloc and deaths fields</a></span></dt>
-<dt><span class="sect2"><a href="dh-manual.html#idp63408752">10.2.2. Interpreting the acc-ratios fields</a></span></dt>
-<dt><span class="sect2"><a href="dh-manual.html#idp65901984">10.2.3. Interpreting "Aggregated access counts by offset" data</a></span></dt>
+<dt><span class="sect2"><a href="dh-manual.html#idp65699216">10.2.1. Interpreting the max-live, tot-alloc and deaths fields</a></span></dt>
+<dt><span class="sect2"><a href="dh-manual.html#idp69474384">10.2.2. Interpreting the acc-ratios fields</a></span></dt>
+<dt><span class="sect2"><a href="dh-manual.html#idp69433712">10.2.3. Interpreting "Aggregated access counts by offset" data</a></span></dt>
 </dl></dd>
 <dt><span class="sect1"><a href="dh-manual.html#dh-manual.options">10.3. DHAT Command-line Options</a></span></dt>
 </dl>
@@ -90,9 +90,9 @@ Most of the art of using it is in interpretation of the resulting
 numbers.  That is best illustrated via a set of examples.</p>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="idp63506832"></a>10.2.1. Interpreting the max-live, tot-alloc and deaths fields</h3></div></div></div>
+<a name="idp65699216"></a>10.2.1. Interpreting the max-live, tot-alloc and deaths fields</h3></div></div></div>
 <div class="sect3"><div class="titlepage"><div><div><h4 class="title">
-<a name="idp63507536"></a>10.2.1.1. A simple example</h4></div></div></div></div>
+<a name="idp65699920"></a>10.2.1.1. A simple example</h4></div></div></div></div>
 <pre class="screen">
    ======== SUMMARY STATISTICS ========
 
@@ -123,7 +123,7 @@ instructions.  From the summary statistics we see that the program ran
 for 1,045,339,534 instructions, and so the average age at death is
 about 2% of the program's total run time.</p>
 <div class="sect3"><div class="titlepage"><div><div><h4 class="title">
-<a name="idp65645856"></a>10.2.1.2. Example of a potential process-lifetime leak</h4></div></div></div></div>
+<a name="idp66930112"></a>10.2.1.2. Example of a potential process-lifetime leak</h4></div></div></div></div>
 <p>This next example (from a different program than the above)
 shows a potential process lifetime leak.  A process lifetime leak
 occurs when a program keeps allocating data, but only frees the
@@ -158,9 +158,9 @@ for the second half, and then freed just before exit.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="idp63408752"></a>10.2.2. Interpreting the acc-ratios fields</h3></div></div></div>
+<a name="idp69474384"></a>10.2.2. Interpreting the acc-ratios fields</h3></div></div></div>
 <div class="sect3"><div class="titlepage"><div><div><h4 class="title">
-<a name="idp63409504"></a>10.2.2.1. A fairly harmless allocation point record</h4></div></div></div></div>
+<a name="idp69475136"></a>10.2.2.1. A fairly harmless allocation point record</h4></div></div></div></div>
 <pre class="screen">
    max-live:    49,398 in 808 blocks
    tot-alloc:   1,481,940 in 24,240 blocks (avg size 61.13)
@@ -193,7 +193,7 @@ varying sizes, so DHAT can't perform such an analysis.  We can see
 that they must have varying sizes since the average block size, 61.13,
 isn't a whole number.</p>
 <div class="sect3"><div class="titlepage"><div><div><h4 class="title">
-<a name="idp63935184"></a>10.2.2.2. A more suspicious looking example</h4></div></div></div></div>
+<a name="idp65973168"></a>10.2.2.2. A more suspicious looking example</h4></div></div></div></div>
 <pre class="screen">
    max-live:    180,224 in 22 blocks
    tot-alloc:   180,224 in 22 blocks (avg size 8192.00)
@@ -213,7 +213,7 @@ could be removed.</p>
 DHAT can tell us, that Memcheck can't, is that not only are the blocks
 leaked, they are also never used.</p>
 <div class="sect3"><div class="titlepage"><div><div><h4 class="title">
-<a name="idp58988992"></a>10.2.2.3. Another suspicious example</h4></div></div></div></div>
+<a name="idp68691280"></a>10.2.2.3. Another suspicious example</h4></div></div></div></div>
 <p>Here's one where blocks are allocated, written to,
 but never read from.  We see this immediately from the zero read
 access ratio.  They do get freed, though:</p>
@@ -241,7 +241,7 @@ determine when those transitions are made.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="idp65901984"></a>10.2.3. Interpreting "Aggregated access counts by offset" data</h3></div></div></div>
+<a name="idp69433712"></a>10.2.3. Interpreting "Aggregated access counts by offset" data</h3></div></div></div>
 <p>For allocation points that always allocate blocks of the same
 size, and which are 4096 bytes or smaller, DHAT counts accesses
 per offset, for example:</p>
