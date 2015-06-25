@@ -40,6 +40,9 @@ struct tx_info {
 
     /** Regions of memory tracked by the transaction. */
     OSet *regions;
+
+    /** The last added region - cached. */
+    struct pmem_st cached_region;
 };
 
 /** Thread to transaction descriptor. */
@@ -276,6 +279,18 @@ create_get_thread_entry(UWord thread_id)
 }
 
 /**
+ * \brief Check if given store is exactly the same region as the cached value.
+ * \param store The store to check.
+ * \param tx The transaction against which cache the comparison is made.
+ * \return True on exact match, false otherwise.
+ */
+static Bool
+is_in_cache(const struct pmem_st *store, struct tx_info *tx) {
+    return ((store->addr == tx->cached_region.addr)
+            && (store->size == tx->cached_region.size));
+}
+
+/**
  * \brief Add a new transaction
  * \param[in] tx_id The transaction id to track - must be unique
  */
@@ -293,6 +308,8 @@ register_new_tx(UWord tx_id)
         new_tx->context = VG_(record_ExeContext)(thread_id, 0);
         new_tx->regions = VG_(OSetGen_Create)(/*keyOff*/0, cmp_pmem_st,
                                 VG_(malloc), "pmc.trans.cpci.1", VG_(free));
+        new_tx->cached_region.addr = 0;
+        new_tx->cached_region.size = 0;
         VG_(OSetGen_Insert)(trans.transactions, new_tx);
     }
 
@@ -383,6 +400,18 @@ is_tx_in_thread(UWord tx_id)
 }
 
 /**
+ * \brief Flush tx cache to main region tree.
+ * \param[in,out] tx Transaction whose cache is to be flushed.
+ */
+static void
+flush_cache(struct tx_info *tx)
+{
+    add_region(&(tx->cached_region), tx->regions);
+    tx->cached_region.addr = 0;
+    tx->cached_region.size = 0;
+}
+
+/**
  * \brief Add a memory region to a transaction.
  * \param[in] tx_id The id of the transaction the object will be added to.
  * \param[in] base The starting address of the region to be added.
@@ -422,12 +451,32 @@ add_obj_to_tx(UWord tx_id, UWord base, UWord size)
         /* omit self */
         if (tx_iter->tx_id == tx_id)
             continue;
-        if (is_in_mapping_set(&reg, tx_iter->regions))
+        if (cmp_pmem_st(&reg, &(tx_iter->cached_region)) == 0)
+            register_cross_event(&tx_iter->cached_region, tx_iter->tx_id,
+                                 &reg, tx_id);
+        else if (is_in_mapping_set(&reg, tx_iter->regions))
             register_cross_event(VG_(OSetGen_Lookup)(tx_iter->regions, &reg),
                                  tx_iter->tx_id, &reg, tx_id);
     }
 
-    add_region(&reg, tx->regions);
+    /* cache not empty, consider options */
+    if (LIKELY((tx->cached_region.addr != 0)
+            && (tx->cached_region.size != 0))) {
+        UWord overlap = check_overlap(&(tx->cached_region), &reg);
+
+        if (LIKELY(overlap == 0)) {
+            /* no overlap - insert old cached region */
+            flush_cache(tx);
+        } else if (UNLIKELY(overlap == 2)) {
+            /* partial overlap - cut out new cache from regions */
+            flush_cache(tx);
+            remove_region(&reg, tx->regions);
+        }
+        /* overlap == 1 - do nothing, new cache includes old cache */
+    }
+
+    /* update cache */
+    tx->cached_region = reg;
     return 0;
 }
 
@@ -462,6 +511,19 @@ remove_obj_from_tx(UWord tx_id, UWord base, UWord size)
     struct pmem_st reg = {0};
     reg.addr = base;
     reg.size = size;
+
+    /* check for cache match */
+    if (is_in_cache(&reg, tx)){
+        /* clear cache */
+        tx->cached_region.addr = 0;
+        tx->cached_region.size = 0;
+        return 0;
+    } else if (cmp_pmem_st(&reg, &(tx->cached_region)) == 0) {
+        /* partial match, add to main storage for splicing */
+        add_region(&(tx->cached_region), tx->regions);
+    }
+
+    /* remove region from main storage */
     remove_region(&reg, tx->regions);
     return 0;
 }
@@ -483,6 +545,13 @@ is_store_in_tx(const struct pmem_st *store, UWord tx_id)
             VG_(dmsg)("no matching transaction found\n");
         return False;
     }
+
+    /* check for exact match in cache cache */
+    if (is_in_cache(store, tx))
+        return True;
+
+    /* flush cache because of possible coalescing */
+    flush_cache(tx);
 
     /* return true only if store is fully within one of the regions */
     if (is_in_mapping_set(store, tx->regions) == 1)
@@ -607,6 +676,13 @@ handle_tx_store(const struct pmem_st *store)
         if (is_store_in_tx(store, tx_id))
             return;
     }
+
+//    if (trans.verbose) {
+    VG_(OSetWord_ResetIter)(tinfo->tx_ids);
+    while (VG_(OSetWord_Next)(tinfo->tx_ids, &tx_id)) {
+        print_regions(tx_id);
+    }
+//    }
 
     /* report if not */
     record_store(store, tinfo);
