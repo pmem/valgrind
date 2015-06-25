@@ -39,7 +39,7 @@ int main ( void )
 
     /* start setting the Test_struct as clean */
 
-    int16_t *slice = &(Test_struct.b);
+    int16_t *slice = (void *)&(Test_struct.b);
     VALGRIND_PMC_SET_CLEAN(slice - 1, sizeof (int64_t));
 
     VALGRIND_PMC_WRITE_STATS;
