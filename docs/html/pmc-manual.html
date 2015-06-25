@@ -28,6 +28,7 @@
 <dt><span class="sect2"><a href="pmc-manual.html#pmc-manual.functionality">14.1.1. Functionality</a></span></dt>
 <dt><span class="sect2"><a href="pmc-manual.html#pmc-manual.basic_usage">14.1.2. Basic Usage</a></span></dt>
 <dt><span class="sect2"><a href="pmc-manual.html#pmc-manual.error_types">14.1.3. Pmemcheck error types</a></span></dt>
+<dt><span class="sect2"><a href="pmc-manual.html#pmc-manual.transactions">14.1.4. Pmemcheck transaction support</a></span></dt>
 </dl></dd>
 <dt><span class="sect1"><a href="pmc-manual.html#pmc-manual.options">14.2. Pmemcheck Command-line Options</a></span></dt>
 <dt><span class="sect1"><a href="pmc-manual.html#pmc-manual.client_requests">14.3. Pmemcheck Client Requests</a></span></dt>
@@ -59,7 +60,7 @@
         of persistent memory prove to be a challenge, because memory is not
         reclaimed automatically on reboot. Because of the specific nature of
         persistent memory, the store scheme	has to follow a special pattern.
-        To make the data persistent, preferrably in a failsafe manner, you have
+        To make the data persistent, preferably in a failsafe manner, you have
         to do a	<span class="emphasis"><em>STORE-&gt;FLUSH-&gt;SFENCE-&gt;PCOMMIT-&gt;SFENCE</em></span>
         sequence. Pmemcheck checks if this particular sequence of operations
         is made to any of the registered persistent memory regions. On program
@@ -155,7 +156,7 @@ Total memory not made persistent: 7</pre>
         program exit is shown. However, be aware that having a clean output
         does <span class="emphasis"><em>NOT</em></span> make your program fail-safe. External
         tools have to be used to verify whether your use of persistent memory
-        is correct in case of unforseen failures.
+        is correct in case of unforeseen failures.
       </p>
 <p>
         Pmemcheck, when run with the <a class="xref" href="pmc-manual.html#opt.mult-stores">--mult-stores</a> option,
@@ -195,7 +196,7 @@ Overwritten stores before they were made persistent:
         inefficient use of flushes. This is strictly a performance issue and
         does not have impact on data durability. As such it is disabled by
         default, use the <a class="xref" href="pmc-manual.html#opt.flush-check">--flush-check</a> option to turn it on.
-        It reports all occurences of flushes made on non-dirty cache lines. The
+        It reports all occurrences of flushes made on non-dirty cache lines. The
         output from the flush checking analysis can look like this:
         </p>
 <pre class="programlisting">
@@ -225,6 +226,142 @@ Number of unnecessary flushes: 3
 	Address: 0x0	size: 64</pre>
 <p>
       </p>
+<p>
+	Pmemcheck also allows tracking of persistent memory transactions.
+	To learn more about the built-in transaction support in pmemcheck
+	see <a class="xref" href="pmc-manual.html#pmc-manual.transactions" title="14.1.4. Pmemcheck transaction support">Transactions</a>. The primary type of issue
+	found by pmemcheck are stores made to regions of memory not tracked
+	by transactions.  An example output of the out-of-transaction stores
+	has the following form:
+	</p>
+<pre class="programlisting">
+Number of stores made outside of transactions: 2
+Stores made outside of transactions:
+[0]    at 0x400C3E: main (trans_impl_nest.c:39)
+	Address: 0x4fec000	size: 1
+[1]    at 0x400C58: main (trans_impl_nest.c:42)
+	Address: 0x4fec018	size: 8</pre>
+<p>
+      </p>
+<p>
+	A different type of error message related to the transactions
+	functionality within pmemcheck, are active transactions on program exit.
+	This kind of error shows that some transactions have not finished
+	properly. This can lead to data corruption and possibly performance
+	degradation.  If any transactions are active on exit, a report with the
+	following form is issued:
+	</p>
+<pre class="programlisting">
+Number of active transactions: 1
+[0]    at 0x400AE5: main (trans_impl_nest.c:32)
+	tx_id: 1	 nesting: 1</pre>
+<p>
+      </p>
+<p>
+	Another type of consistency error might occur when different
+	transactions are tracking the same memory region. Let's say for example
+	the implementation of your application uses an undo log and two separate
+	transactions add the same memory region to their undo lists. If one of
+	them fails, the changes get rolled back and the resulting state of the
+	whole persistent memory "pool" might be inconsistent. The warning
+	message for this issue has the following form:
+	</p>
+<pre class="programlisting">
+Number of overlapping regions registered in different transactions: 1
+Overlapping regions:
+[0]    at 0x400C9C: make_tx (trans_mt.c:35)
+   by 0x4C2F181: start_thread (pthread_create.c:312)
+   by 0x4F3F47C: clone (clone.S:111)
+	Address: 0x520a010	size: 4	tx_id: 3
+   First registered here:
+[0]'   at 0x400C9C: make_tx (trans_mt.c:35)
+   by 0x4C2F181: start_thread (pthread_create.c:312)
+   by 0x4F3F47C: clone (clone.S:111)
+	Address: 0x520a010	size: 4	tx_id: 2</pre>
+<p>
+      </p>
+</div>
+<div class="sect2">
+<div class="titlepage"><div><div><h3 class="title">
+<a name="pmc-manual.transactions"></a>14.1.4. Pmemcheck transaction support</h3></div></div></div>
+<p>
+	Contemporary hardware architectures guarantee that only stores up to
+	a certain size can be made atomically. Here atomicity refers to non-torn
+	writes and not concurrency safety. At the time of writing this
+	documentation the x86-64 architecture supports 8 byte atomic writes.
+	This in most cases is insufficient in real world applications.
+	Therefore the need to introduce transactions, which allow larger ranges
+	of persistent memory to be changed atomically. Whether transactions
+	are rolled-back, redone or employ some other technique is of no
+	importance to pmemcheck. What is important is that pmemcheck knows
+	which regions of persistent memory are tracked by the transaction and
+	can be modified freely while the transaction is active.
+      </p>
+<p>
+	Transaction support cannot be turned off, however the runtime overhead
+	is negligible if no transactions are made in the analyzed application.
+	To inform pmemcheck of a new transaction start, use one of two available
+	macros <a class="xref" href="pmc-manual.html#crm.start_tx">VALGRIND_PMC_START_TX</a> or
+	<a class="xref" href="pmc-manual.html#crm.start_tx_n">VALGRIND_PMC_START_TX_N</a>. Depending on whether your application
+	uses flattened, implicit per-thread transactions or explicit
+	thread-independent transactions, use the appropriate macro to ensure
+	the transactions are tracked correctly. Internally each thread has a
+	list of transactions it contributes to and each transactions has a list
+	of persistent memory regions which belong to the transaction. When a new
+	thread starts a transaction, a new entry for the transactions is created
+	with an empty persistent memory regions list. At the same time a new
+	thread entry is created and the id of the transaction is added to its
+	list of active transactions. If different threads are to contribute to
+	the same transaction, pmemcheck has to be informed about the relation
+	between threads and transactions the thread is to contribute to. To
+	do this use the <a class="xref" href="pmc-manual.html#crm.add_thread_to_tx_n">VALGRIND_PMC_ADD_THREAD_TO_TX_N</a> and
+	<a class="xref" href="pmc-manual.html#crm.remove_thread_from_tx_n">VALGRIND_PMC_REMOVE_THREAD_FROM_TX_N</a> macros.
+      </p>
+<p>
+	Once the transaction is started, pmemcheck has to be informed of the
+	regions which will be tracked by the transaction. To do that call
+	either the <a class="xref" href="pmc-manual.html#crm.add_to_tx">VALGRIND_PMC_ADD_TO_TX</a> or the
+	<a class="xref" href="pmc-manual.html#crm.add_to_tx_n">VALGRIND_PMC_ADD_TO_TX_N</a> macro. The two flavors are analogous
+	to the <a class="xref" href="pmc-manual.html#crm.start_tx">VALGRIND_PMC_START_TX</a> and
+	<a class="xref" href="pmc-manual.html#crm.start_tx_n">VALGRIND_PMC_START_TX_N</a> macros. The first one is for implicit
+	transactions and the second for explicit transactions. Both of these
+	macros will add the given region to the list of tracked persistent
+	memory regions within the given transaction (implicit or explicit).
+	Please note that changes made to volatile memory will
+	<span class="emphasis"><em>NOT</em></span> be reported for obvious reasons.
+	If there is a need to remove any of the regions	from the transaction,
+	the <a class="xref" href="pmc-manual.html#crm.remove_from_tx">VALGRIND_PMC_REMOVE_FROM_TX</a> or the
+	<a class="xref" href="pmc-manual.html#crm.remove_from_tx_n">VALGRIND_PMC_REMOVE_FROM_TX_N</a> macros can be used. To add
+	regions of memory which are not to be checked throughout the whole
+	duration of the application run, use the
+	<a class="xref" href="pmc-manual.html#crm.add_global_tx_ignore">VALGRIND_PMC_ADD_TO_GLOBAL_TX_IGNORE</a> macro.
+      </p>
+<p>
+	To end a transaction call either the <a class="xref" href="pmc-manual.html#crm.end_tx">VALGRIND_PMC_END_TX</a> or
+	<a class="xref" href="pmc-manual.html#crm.end_tx_n">VALGRIND_PMC_END_TX_N</a>. As before the
+	<code class="computeroutput">_N</code> suffixed versions are for
+	applications using explicit transactions. Once a transaction is ended
+	the transaction entry is removed along with the registered regions.
+	At the same time all active thread entries have the corresponding
+	transaction removed from their index. Once a thread has no more active
+	transactions, it is also removed from the list of active threads. If
+	you nest a transaction with the same id (which is always the case with
+	implicit transactions), you bump up the nesting counter. A transaction
+	will not be removed until the nesting counter hits 0. The
+	counter is decremented on each transaction end.
+      </p>
+<p>
+	Once a transaction is started, pmemcheck tracks all stores made by any
+	given thread and checks whether they are made to a persistent memory
+	region that is part of a transaction. If it is not, the store is
+	registered and will be reported on program exit. Changes made outside
+	of transactions are a possible data consistency concern, should the
+	transaction be interrupted in any way. Each such event should be
+	carefully analyzed. Additionally when the tool is run with
+	<a class="xref" href="pmc-manual.html#opt.tx_only">--tx_only</a>, all changes to persistent memory must be
+	made within a transaction (excluding the regions added by the
+	<a class="xref" href="pmc-manual.html#crm.add_global_tx_ignore">VALGRIND_PMC_ADD_TO_GLOBAL_TX_IGNORE</a> macro).
+      </p>
 </div>
 </div>
 <div class="sect1">
@@ -235,8 +372,8 @@ Number of unnecessary flushes: 3
 <a name="pmc.opts.list"></a><dl class="variablelist">
 <dt>
 <a name="opt.indiff"></a><span class="term">
-		  <code class="option">--indiff=&lt;uint&gt; [default: 0 SBlocks] </code>
-		</span>
+	     <code class="option">--indiff=&lt;uint&gt; [default: 0 SBlocks] </code>
+	    </span>
 </dt>
 <dd><p>
             This option is only used in conjunction with
@@ -246,7 +383,7 @@ Number of unnecessary flushes: 3
           </p></dd>
 <dt>
 <a name="opt.mult-stores"></a><span class="term">
-		  <code class="option">--mult-stores=&lt;no|yes&gt; [default: no] </code>
+		  <code class="option">--mult-stores=&lt;yes|no&gt; [default: no] </code>
 		</span>
 </dt>
 <dd><p>
@@ -260,11 +397,11 @@ Number of unnecessary flushes: 3
           </p></dd>
 <dt>
 <a name="opt.log-stores"></a><span class="term">
-		  <code class="option">--log-stores=&lt;no|yes&gt; [default: no] </code>
+		  <code class="option">--log-stores=&lt;yes|no&gt; [default: no] </code>
 		</span>
 </dt>
 <dd><p>
-            Turns on logging all peristent memory related events (most
+            Turns on logging all persistent memory related events (most
             <a class="xref" href="pmc-manual.html#pmc-manual.client_requests" title="14.3. Pmemcheck Client Requests">Pmemcheck Client Requests</a> and stores to
             persistent memory) in a human-readable, parsable format. This is
             useful if some postprocessing or in depth analysis is to be made.
@@ -273,7 +410,7 @@ Number of unnecessary flushes: 3
           </p></dd>
 <dt>
 <a name="opt.print-summary"></a><span class="term">
-		  <code class="option">--print-summary=&lt;no|yes&gt; [default: yes] </code>
+		  <code class="option">--print-summary=&lt;yes|no&gt; [default: yes] </code>
 		</span>
 </dt>
 <dd><p>
@@ -283,7 +420,7 @@ Number of unnecessary flushes: 3
           </p></dd>
 <dt>
 <a name="opt.flush-check"></a><span class="term">
-          <code class="option">--flush-check=&lt;no|yes&gt; [default: no] </code>
+          <code class="option">--flush-check=&lt;yes|no&gt; [default: no] </code>
         </span>
 </dt>
 <dd><p>
@@ -295,7 +432,7 @@ Number of unnecessary flushes: 3
           </p></dd>
 <dt>
 <a name="opt.flush-align"></a><span class="term">
-          <code class="option">--flush-align=&lt;no|yes&gt; [default: no] </code>
+          <code class="option">--flush-align=&lt;yes|no&gt; [default: no] </code>
         </span>
 </dt>
 <dd><p>
@@ -304,6 +441,21 @@ Number of unnecessary flushes: 3
             application with full cache line flushing. Setting this in
             conjunction with <a class="xref" href="pmc-manual.html#opt.flush-check">--flush-check</a> might result in
             false-positives.
+          </p></dd>
+<dt>
+<a name="opt.tx_only"></a><span class="term">
+          <code class="option">--tx_only=&lt;yes|no&gt; [default: no] </code>
+        </span>
+</dt>
+<dd><p>
+            This flag turns on strict transaction checks in pmemcheck.
+	    When turned on, pmemcheck will track all changes made to memory,
+	    which were not registered as being part of a transaction. This is
+	    a potential data consistency issue, as these changes will not be
+	    rolled-back/redone on transaction recovery, after an interruption.
+	    All changes, also those made without a running transaction, will
+	    be reported by the tool. For more information on transaction support
+	    built into pmemcheck see <a class="xref" href="pmc-manual.html#pmc-manual.transactions" title="14.1.4. Pmemcheck transaction support">Transactions</a>.
           </p></dd>
 </dl>
 </div>
@@ -337,7 +489,9 @@ Number of unnecessary flushes: 3
             Register a persistent memory file. This macro does not register
             a persistent memory region, it is used to link the regions to
             a specific file. This is especially useful for any kind of post
-            processing.
+            processing. Returns <code class="computeroutput">1</code>
+	    when the given file could not be found
+	    <code class="computeroutput">0</code> otherwise.
           </p></dd>
 <dt>
 <a name="crm.rem_pmem"></a><span class="term">
@@ -492,6 +646,139 @@ Number of unnecessary flushes: 3
 <dd><p>
             Issues a stop reorder and check marker log. Useful in some types of
             postprocessing.
+          </p></dd>
+<dt>
+<a name="crm.start_tx"></a><span class="term">
+          <code class="option">VALGRIND_PMC_START_TX</code>
+        </span>
+</dt>
+<dd><p>
+            Starts a transaction with an implicit transaction id. The id will be
+            the id of the thread which issues the client request. Nesting
+            transactions is allowed - the nesting counter of the transaction
+            is incremented by <code class="computeroutput">1</code>.
+          </p></dd>
+<dt>
+<a name="crm.start_tx_n"></a><span class="term">
+          <code class="option">VALGRIND_PMC_START_TX_N(txn)</code>
+        </span>
+</dt>
+<dd><p>
+            Starts a transaction with the given transaction id.  Nesting
+            transactions is allowed - the nesting counter of the transaction
+            is incremented by <code class="computeroutput">1</code>.
+          </p></dd>
+<dt>
+<a name="crm.end_tx"></a><span class="term">
+          <code class="option">VALGRIND_PMC_END_TX</code>
+        </span>
+</dt>
+<dd><p>
+            Ends a transaction with an implicit transaction id. The id will be
+            the id of the thread which issues the client request. The nesting
+            counter of the transaction is decremented by
+            <code class="computeroutput">1</code>. If it hits
+            <code class="computeroutput">0</code>, the transaction is no longer
+            tracked by pmemcheck. Returns <code class="computeroutput">1</code>
+            when no matching and <code class="computeroutput">0</code> otherwise.
+          </p></dd>
+<dt>
+<a name="crm.end_tx_n"></a><span class="term">
+          <code class="option">VALGRIND_PMC_END_TX_N(txn)</code>
+        </span>
+</dt>
+<dd><p>
+            Ends a transaction with the given transaction id. The nesting
+            counter of the transaction is decremented by
+            <code class="computeroutput">1</code>. If it hits
+            <code class="computeroutput">0</code>, the transaction is no longer
+            tracked by pmemcheck. Returns <code class="computeroutput">1</code>
+            when no matching and <code class="computeroutput">0</code> otherwise.
+          </p></dd>
+<dt>
+<a name="crm.add_to_tx"></a><span class="term">
+          <code class="option">VALGRIND_PMC_ADD_TO_TX(addr, size)</code>
+        </span>
+</dt>
+<dd><p>
+            Adds a persistent memory region to the implicit transaction. Stores
+            made during the transaction to persistent memory outside of the
+            registered regions will be reported as a potential data consistency
+            issue. Returns <code class="computeroutput">1</code> when no matching
+            transaction was found, <code class="computeroutput">2</code> when
+            the current thread does not participate in this transaction and
+            <code class="computeroutput">0</code> otherwise.
+          </p></dd>
+<dt>
+<a name="crm.add_to_tx_n"></a><span class="term">
+          <code class="option">VALGRIND_PMC_ADD_TO_TX_N(txn, addr, size)</code>
+        </span>
+</dt>
+<dd><p>
+            Adds a persistent memory region to the given transaction. Stores
+            made during the transaction to persistent memory outside of the
+            registered regions will be reported as a potential data consistency
+            issue. Returns <code class="computeroutput">1</code> when no matching
+            transaction was found, <code class="computeroutput">2</code> when
+            the current thread does not participate in this transaction and
+            <code class="computeroutput">0</code> otherwise.
+          </p></dd>
+<dt>
+<a name="crm.remove_from_tx"></a><span class="term">
+          <code class="option">VALGRIND_PMC_REMOVE_FROM_TX(addr, size)</code>
+        </span>
+</dt>
+<dd><p>
+            Removes a persistent memory region from the implicit transaction.
+            Returns <code class="computeroutput">1</code> when no matching
+            transaction was found, <code class="computeroutput">2</code> when
+            the current thread does not participate in this transaction and
+            <code class="computeroutput">0</code> otherwise.
+          </p></dd>
+<dt>
+<a name="crm.remove_from_tx_n"></a><span class="term">
+          <code class="option">VALGRIND_PMC_REMOVE_FROM_TX_N(txn, addr, size)</code>
+        </span>
+</dt>
+<dd><p>
+            Removes a persistent memory region from the given transaction.
+            Returns <code class="computeroutput">1</code> when no matching
+            transaction was found, <code class="computeroutput">2</code> when
+            the current thread does not participate in this transaction and
+            <code class="computeroutput">0</code> otherwise.
+          </p></dd>
+<dt>
+<a name="crm.add_thread_to_tx_n"></a><span class="term">
+          <code class="option">VALGRIND_PMC_ADD_THREAD_TO_TX_N(txn)</code>
+        </span>
+</dt>
+<dd><p>
+            Adds the current thread to the given transaction. Returns
+            <code class="computeroutput">1</code> when no matching
+            transaction was found, <code class="computeroutput">0</code> otherwise.
+          </p></dd>
+<dt>
+<a name="crm.remove_thread_from_tx_n"></a><span class="term">
+          <code class="option">VALGRIND_PMC_REMOVE_THREAD_FROM_TX_N(txn,)</code>
+        </span>
+</dt>
+<dd><p>
+            Removes the current thread from the given transaction.
+            Returns <code class="computeroutput">1</code> when no matching
+            transaction was found, <code class="computeroutput">2</code> when
+            the current thread does not participate in this transaction and
+            <code class="computeroutput">0</code> otherwise.
+          </p></dd>
+<dt>
+<a name="crm.add_global_tx_ignore"></a><span class="term">
+          <code class="option">VALGRIND_PMC_ADD_TO_GLOBAL_TX_IGNORE(addr, size)</code>
+        </span>
+</dt>
+<dd><p>
+            Adds a persistent memory region to the global ignore list. Once
+            added the memory region cannot be removed until the end of the
+            execution of the application. Out of transaction writes to these
+            regions will not be reported.
           </p></dd>
 </dl>
 </div>

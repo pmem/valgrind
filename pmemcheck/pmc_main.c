@@ -18,10 +18,8 @@
  */
 
 #include <sys/param.h>
-#include <stdio.h>
 #include "pub_tool_libcfile.h"
 #include <fcntl.h>
-#include "libvex_ir.h"
 #include "pub_tool_oset.h"
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_options.h"
@@ -34,6 +32,7 @@
 #include "pub_tool_machine.h"
 
 #include "pmemcheck.h"
+#include "pmc_include.h"
 
 /* track at max this many multiple overwrites */
 #define MAX_MULT_OVERWRITES 10000UL
@@ -58,22 +57,6 @@
 
 /** Max allowable path length */
 #define MAX_PATH_SIZE 4096
-
-/** Single store to memory. */
-struct pmem_st {
-    Addr addr;
-    ULong size;
-    ULong block_num;
-    UWord value;
-    ExeContext *context;
-    enum store_state {
-        STST_CLEAN,
-        STST_DIRTY,
-        STST_FLUSHED,
-        STST_FENCED,
-        STST_COMMITTED
-    } state;
-};
 
 /** Holds parameters and runtime data */
 static struct pmem_ops {
@@ -128,6 +111,9 @@ static struct pmem_ops {
 
     /** Force flush alignment to native cache line size */
     Bool force_flush_align;
+
+    /** Toggles transaction tracking. */
+    Bool transactions_only;
 } pmem;
 
 /*
@@ -159,135 +145,7 @@ typedef struct {
 static ULong sblocks = 0;
 
 /**
-* \brief Check if the given region is in the set.
-* \param[in] region Region to find.
-* \param[in] region_set Region set to check.
-* \return 0 if not in set, 1 if fully in the set, 2 if it overlaps over
-* the head of an existing mapping, 3 if it overlaps over the tail of an existing
-* mapping.
-*/
-static UWord
-is_in_mapping_set(struct pmem_st *region, OSet *region_set)
-{
-    if (!VG_(OSetGen_Contains)(region_set, region)) {
-        /* not in set */
-        return 0;
-    }
-
-    struct pmem_st *found_region = VG_(OSetGen_Lookup)(region_set, region);
-
-    if (region->addr < found_region->addr)
-        /* front overlaps */
-        return 2;
-    else if ((region->addr + region->size) > (found_region->addr +
-            found_region->size))
-        /* tail overlaps */
-        return 3;
-
-    /* region fully within the mapping */
-    return 1;
-}
-
-/**
-* \brief Adds a region to a set.
-*
-* Overlapping regions will be merged.
-* \param[in] region The region to register.
-* \param[in, out] region_set The region set to which region will be registered.
-*/
-static void
-add_region(struct pmem_st *region, OSet *region_set)
-{
-    struct pmem_st *entry = VG_(OSetGen_AllocNode(region_set,
-            (SizeT)sizeof (struct pmem_st)));
-    entry->addr = region->addr;
-    entry->size = region->size;
-    entry->state = STST_CLEAN;
-
-    struct pmem_st *old_entry;
-    while((old_entry = VG_(OSetGen_Remove)(region_set, entry)) != NULL) {
-        /* registering overlapping memory regions, glue them together */
-        ULong max_addr = MAX(entry->addr + entry->size, old_entry->addr +
-                old_entry->size);
-        entry->addr = MIN(entry->addr, old_entry->addr);
-        entry->size = max_addr - entry->addr;
-        VG_(OSetGen_FreeNode)(region_set, old_entry);
-    }
-    VG_(OSetGen_Insert)(region_set, entry);
-}
-
-/**
-* \brief Removes a region from a set.
-*
-* Partial overlaps will remove only the overlapping parts. For example if you
-* have two regions registered (0x100-0x140) and (0x150-0x200) and you remove
-* (0x130-0x160) you will end up with two regions (0x100-0x130)
-* and (0x160-0x200).
-* \param[in] region The region to remove.
-* \param[in, out] region_set The region set to which region will be removed.
-*/
-static void
-remove_region(struct pmem_st *region, OSet *region_set)
-{
-    struct pmem_st *modified_entry = NULL;
-    SizeT region_max_addr = region->addr + region->size;
-    while ((modified_entry = VG_(OSetGen_Remove)(region_set, region)) !=
-            NULL) {
-        SizeT mod_entry_max_addr = modified_entry->addr + modified_entry->size;
-        if ((modified_entry->addr > region->addr) && (mod_entry_max_addr <
-                region_max_addr)) {
-            /* modified entry fully within removed region */
-            VG_(OSetGen_FreeNode)(region_set, modified_entry);
-        } else if ((modified_entry->addr < region->addr) &&
-                (mod_entry_max_addr > region_max_addr)) {
-            /* modified entry is larger than the removed region - slice */
-            modified_entry->size = region->addr - modified_entry->addr;
-            VG_(OSetGen_Insert)(region_set, modified_entry);
-            struct pmem_st *new_region = VG_(OSetGen_AllocNode)(region_set,
-                    sizeof (struct pmem_st));
-            *new_region = *modified_entry;
-            new_region->addr = region_max_addr;
-            new_region->size = mod_entry_max_addr - new_region->addr;
-            VG_(OSetGen_Insert)(region_set, new_region);
-        } else if ((modified_entry->addr >= region->addr) &&
-                (mod_entry_max_addr > region_max_addr)) {
-            /* head overlaps */
-            modified_entry->size -= region_max_addr - modified_entry->addr;
-            modified_entry->addr = region_max_addr;
-            VG_(OSetGen_Insert)(region_set, modified_entry);
-        } else if ((mod_entry_max_addr <= region_max_addr) &&
-                (region->addr > modified_entry->addr)) {
-            /* tail overlaps */
-            modified_entry->size = region->addr - modified_entry->addr;
-            VG_(OSetGen_Insert)(region_set, modified_entry);
-        } else {
-            /* exact match */
-            VG_(OSetGen_FreeNode)(region_set, modified_entry);
-        }
-    }
-}
-
-/**
-* \brief A compare function for regions stored in the OSetGen.
-* \param[in] key The key to compare.
-* \param[in] elem The element to compare with.
-* \return -1 if key is smaller, 1 if key is greater and 0 if key is equal
-* to elem.
-*/
-static Word cmp_pmem_st(const void *key, const void *elem) {
-    struct pmem_st *lhs = (struct pmem_st *) (key);
-    struct pmem_st *rhs = (struct pmem_st *) (elem);
-
-    if (lhs->addr + lhs->size <= rhs->addr)
-        return -1;
-    else if (lhs->addr >= rhs->addr + rhs->size)
-        return 1;
-    else
-        return 0;
-}
-
-/**
-* \brief Checks if a given store overlaps with registered persistent memory
+* \brief Check if a given store overlaps with registered persistent memory
 *        regions.
 * \param[in] addr The base address of the store.
 * \param[in] size The size of the store.
@@ -296,7 +154,7 @@ static Word cmp_pmem_st(const void *key, const void *elem) {
 static Bool
 is_pmem_access(Addr addr, SizeT size)
 {
-    struct pmem_st tmp;
+    struct pmem_st tmp = {0};
     tmp.size = size;
     tmp.addr = addr;
     return VG_(OSetGen_Contains)(pmem.pmem_mappings, &tmp);
@@ -334,19 +192,17 @@ store_state_to_string(enum store_state state)
 static void
 print_redundant_flushes(void)
 {
-    if (pmem.redundant_flushes_reg) {
-        VG_(umsg)("\nNumber of redundantly flushed stores: %lu\n",
-                pmem.redundant_flushes_reg);
-        VG_(umsg)("Stores flushed multiple times:\n");
-        struct pmem_st *tmp;
-        Int i;
-        for (i = 0; i < pmem.redundant_flushes_reg; ++i) {
-            tmp = pmem.redundant_flushes[i];
-            VG_(umsg)("[%d] ", i);
-            VG_(pp_ExeContext)(tmp->context);
-            VG_(printf)("\tAddress: 0x%lx\tsize: %llu\tstate: %s\n",
-                    tmp->addr, tmp->size, store_state_to_string(tmp->state));
-        }
+    VG_(umsg)("\nNumber of redundantly flushed stores: %lu\n",
+            pmem.redundant_flushes_reg);
+    VG_(umsg)("Stores flushed multiple times:\n");
+    struct pmem_st *tmp;
+    Int i;
+    for (i = 0; i < pmem.redundant_flushes_reg; ++i) {
+        tmp = pmem.redundant_flushes[i];
+        VG_(umsg)("[%d] ", i);
+        VG_(pp_ExeContext)(tmp->context);
+        VG_(umsg)("\tAddress: 0x%lx\tsize: %llu\tstate: %s\n",
+                tmp->addr, tmp->size, store_state_to_string(tmp->state));
     }
 }
 
@@ -360,17 +216,15 @@ print_redundant_flushes(void)
 static void
 print_superfluous_flushes(void)
 {
-    if (pmem.superfluous_flushes_reg) {
-        VG_(umsg)("\nNumber of unnecessary flushes: %lu\n",
-                pmem.superfluous_flushes_reg);
-        struct pmem_st *tmp;
-        Int i;
-        for (i = 0; i < pmem.superfluous_flushes_reg; ++i) {
-            tmp = pmem.superfluous_flushes[i];
-            VG_(umsg)("[%d] ", i);
-            VG_(pp_ExeContext)(tmp->context);
-            VG_(printf)("\tAddress: 0x%lx\tsize: %llu\n", tmp->addr, tmp->size);
-        }
+    VG_(umsg)("\nNumber of unnecessary flushes: %lu\n",
+            pmem.superfluous_flushes_reg);
+    struct pmem_st *tmp;
+    Int i;
+    for (i = 0; i < pmem.superfluous_flushes_reg; ++i) {
+        tmp = pmem.superfluous_flushes[i];
+        VG_(umsg)("[%d] ", i);
+        VG_(pp_ExeContext)(tmp->context);
+        VG_(umsg)("\tAddress: 0x%lx\tsize: %llu\n", tmp->addr, tmp->size);
     }
 }
 
@@ -384,19 +238,18 @@ print_superfluous_flushes(void)
 static void
 print_multiple_stores(void)
 {
-    if (pmem.track_multiple_stores && (pmem.multiple_stores_reg > 0)) {
-        VG_(umsg)("\nNumber of overwritten stores: %lu\n",
-                pmem.multiple_stores_reg);
-        VG_(umsg)("Overwritten stores before they were made persistent:\n");
-        struct pmem_st *tmp;
-        Int i;
-        for (i = 0; i < pmem.multiple_stores_reg; ++i) {
-            tmp = pmem.multiple_stores[i];
-            VG_(umsg)("[%d] ", i);
-            VG_(pp_ExeContext)(tmp->context);
-            VG_(printf)("\tAddress: 0x%lx\tsize: %llu\tstate: %s\n",
-                    tmp->addr, tmp->size, store_state_to_string(tmp->state));
-        }
+
+    VG_(umsg)("\nNumber of overwritten stores: %lu\n",
+            pmem.multiple_stores_reg);
+    VG_(umsg)("Overwritten stores before they were made persistent:\n");
+    struct pmem_st *tmp;
+    Int i;
+    for (i = 0; i < pmem.multiple_stores_reg; ++i) {
+        tmp = pmem.multiple_stores[i];
+        VG_(umsg)("[%d] ", i);
+        VG_(pp_ExeContext)(tmp->context);
+        VG_(umsg)("\tAddress: 0x%lx\tsize: %llu\tstate: %s\n",
+                tmp->addr, tmp->size, store_state_to_string(tmp->state));
     }
 }
 
@@ -488,27 +341,7 @@ print_redundant_flush_error(UWord limit)
 }
 
 /**
- * \brief Check and update the given warning event register.
- * \param[in,out] event_register The register to be updated.
- * \param[in,out] nevents The event counter to be updated.
- * \param[in] event The event to be registered.
- * \param[in] limit The limit against which the registered is to be checked.
- * \param[in] err_msg Pointer to the error message function.
- */
-static void
-add_warning_event(struct pmem_st **event_register, UWord *nevents,
-                  struct pmem_st *event, UWord limit, void (*err_msg)(UWord))
-{
-    if (UNLIKELY(*nevents == limit)) {
-        err_msg(limit);
-        VG_(exit)(-1);
-    }
-    /* register the event */
-    event_register[(*nevents)++] = event;
-}
-
-/**
-* \brief Traces the given store if it was to any of the registered persistent
+* \brief Trace the given store if it was to any of the registered persistent
 *        memory regions
 * \param[in] addr The base address of the store.
 * \param[in] size The size of the store.
@@ -559,6 +392,9 @@ trace_pmem_store(Addr addr, SizeT size, UWord value)
     }
     /* it is now safe to insert the new store */
     VG_(OSetGen_Insert)(pmem.pmem_stores, store);
+
+    /* do transaction check */
+    handle_tx_store(store);
 }
 
 /**
@@ -574,7 +410,7 @@ add_one_SB_entered(void)
 }
 
 /**
-* \brief Makes a new atomic expression from e.
+* \brief Make a new atomic expression from e.
 *
 * A very handy function to have for creating binops, triops and widens.
 * \param[in,out] sb The IR superblock to which the new expression will be added.
@@ -597,7 +433,7 @@ make_expr(IRSB *sb, IRType ty, IRExpr *e)
 }
 
 /**
-* \brief Checks if the expression needs to be widened.
+* \brief Check if the expression needs to be widened.
 * \param[in] sb The IR superblock to which the expression belongs.
 * \param[in] e The checked expression.
 * \return True if needs to be widened, false otherwise.
@@ -618,7 +454,7 @@ tmp_needs_widen(IRSB *sb, IRAtom *e)
 }
 
 /**
-* \brief Checks if the const expression needs to be widened.
+* \brief Check if the const expression needs to be widened.
 * \param[in] e The checked expression.
 * \return True if needs to be widened, false otherwise.
 */
@@ -642,7 +478,7 @@ const_needs_widen(IRAtom *e)
 }
 
 /**
-* \brief Widens a given const expression to a word sized expression.
+* \brief Widen a given const expression to a word sized expression.
 * \param[in] e The expression being widened.
 * \return The widened const expression.
 */
@@ -701,7 +537,7 @@ widen_operation(IRSB *sb, IRAtom *e)
 }
 
 /**
-* \brief Handles wide sse operations.
+* \brief Handle wide sse operations.
 * \param[in,out] sb The IR superblock to which add expressions.
 * \param[in] end The endianess.
 * \param[in] addr The expression with the address of the operation.
@@ -925,7 +761,7 @@ do_commit(void)
 static void
 do_flush(UWord base, UWord size)
 {
-    struct pmem_st flush_info;
+    struct pmem_st flush_info = {0};
 
     if (LIKELY(pmem.force_flush_align == False)) {
         flush_info.addr = base;
@@ -1026,7 +862,7 @@ do_flush(UWord base, UWord size)
 }
 
 /**
-* \brief Reads the cache line size - linux specific.
+* \brief Read the cache line size - linux specific.
 * \return The size of the cache line.
 */
 static Int
@@ -1061,10 +897,11 @@ read_cache_line_size(void)
 }
 
 /**
-* \brief Tries to register a file mapping.
+* \brief Try to register a file mapping.
 * \param[in] fd The file descriptor to be registered.
 * \param[in] addr The address at which this file will be mapped.
 * \param[in] size The size of the registered file mapping.
+* \param[in] offset Offset within the mapped file.
 * \return Returns 1 on success, 0 otherwise.
 */
 static UInt
@@ -1072,12 +909,12 @@ register_new_file(Int fd, UWord base, UWord size, UWord offset)
 {
     char fd_path[64];
     VG_(sprintf(fd_path, "/proc/self/fd/%d", fd));
-    UInt retval = 1;
+    UInt retval = 0;
 
     char *file_name = VG_(malloc)("pmc.main.nfcc", MAX_PATH_SIZE);
     int read_length = VG_(readlink)(fd_path, file_name, MAX_PATH_SIZE - 1);
     if (read_length <= 0) {
-        retval = 0;
+        retval = 1;
         goto out;
     }
 
@@ -1096,19 +933,27 @@ out:
 * \brief Print tool statistics.
 */
 static void
-print_pmem_stats(void)
+print_pmem_stats(Bool append_blank_line)
 {
     print_store_stats();
 
-    print_redundant_flushes();
+    print_tx_summary();
 
-    print_superfluous_flushes();
+    if (pmem.redundant_flushes_reg)
+        print_redundant_flushes();
 
-    print_multiple_stores();
+    if (pmem.superfluous_flushes_reg)
+        print_superfluous_flushes();
+
+    if (pmem.track_multiple_stores && (pmem.multiple_stores_reg > 0))
+        print_multiple_stores();
+
+    if (append_blank_line)
+        VG_(umsg)("\n");
 }
 
 /**
-* \brief Prints the registered persistent memory mappings
+* \brief Print the registered persistent memory mappings
 */
 static void
 print_persistent_mappings(void)
@@ -1123,7 +968,7 @@ print_persistent_mappings(void)
 }
 
 /**
-* \brief Prints gdb monitor commands.
+* \brief Print gdb monitor commands.
 */
 static void
 print_monitor_help(void)
@@ -1169,12 +1014,12 @@ static Bool handle_gdb_monitor_command(ThreadId tid, HChar *req)
             return True;
 
         case  1:  /* print_stats */
-            print_pmem_stats();
+            print_pmem_stats(True);
             return True;
 
         case  2: {/* print_pmem_regions */
             VG_(gdb_printf)("Registered persistent memory regions:\n");
-            struct pmem_st *tmp = NULL;
+            struct pmem_st *tmp;
             while ((tmp = VG_(OSetGen_Next)(pmem.pmem_stores)) != NULL) {
                 VG_(gdb_printf)("\tAddress: 0x%lx \tsize: %llu\n",
                         tmp->addr, tmp->size);
@@ -1184,7 +1029,7 @@ static Bool handle_gdb_monitor_command(ThreadId tid, HChar *req)
 
         case  3: { /* print_log_regions */
             VG_(gdb_printf)("Registered loggable persistent memory regions:\n");
-            struct pmem_st *tmp = NULL;
+            struct pmem_st *tmp;
             while ((tmp = VG_(OSetGen_Next)(pmem.loggable_regions)) != NULL) {
                 VG_(gdb_printf)("\tAddress: 0x%lx \tsize: %llu\n",
                         tmp->addr, tmp->size);
@@ -1204,7 +1049,7 @@ static Bool handle_gdb_monitor_command(ThreadId tid, HChar *req)
 * The translated client code is passed into this function, where appropriate
 * instrumentation is made. All uninteresting operations are copied straight
 * to the returned IRSB. The only interesting operations are stores, which are
-* instrumented for further analisys.
+* instrumented for further analysis.
 * \param[in] closure Valgrind closure - unused.
 * \param[in] bb The IR superblock provided by the core.
 * \param[in] layout Vex quest layout - unused.
@@ -1420,40 +1265,49 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             && VG_USERREQ__PMC_PARTIAL_REORDER != arg[0]
             && VG_USERREQ__PMC_ONLY_FAULT != arg[0]
             && VG_USERREQ__PMC_STOP_REORDER_FAULT != arg[0]
+            && VG_USERREQ__PMC_START_TX != arg[0]
+            && VG_USERREQ__PMC_START_TX_N != arg[0]
+            && VG_USERREQ__PMC_END_TX != arg[0]
+            && VG_USERREQ__PMC_END_TX_N != arg[0]
+            && VG_USERREQ__PMC_ADD_TO_TX != arg[0]
+            && VG_USERREQ__PMC_ADD_TO_TX_N != arg[0]
+            && VG_USERREQ__PMC_REMOVE_FROM_TX != arg[0]
+            && VG_USERREQ__PMC_REMOVE_FROM_TX_N != arg[0]
+            && VG_USERREQ__PMC_ADD_THREAD_TO_TX_N != arg[0]
+            && VG_USERREQ__PMC_REMOVE_THREAD_FROM_TX_N != arg[0]
+            && VG_USERREQ__PMC_ADD_TO_GLOBAL_TX_IGNORE != arg[0]
             )
         return False;
 
     switch (arg[0]) {
         case VG_USERREQ__PMC_REGISTER_PMEM_MAPPING: {
-            struct pmem_st temp_info;
+            struct pmem_st temp_info = {0};
             temp_info.addr = arg[1];
             temp_info.size = arg[2];
 
             add_region(&temp_info, pmem.pmem_mappings);
-            *ret = 1;
             break;
         }
 
         case VG_USERREQ__PMC_REMOVE_PMEM_MAPPING: {
-            struct pmem_st temp_info;
+            struct pmem_st temp_info = {0};
             temp_info.addr = arg[1];
             temp_info.size = arg[2];
 
             remove_region(&temp_info, pmem.pmem_mappings);
-            *ret = 1;
             break;
         }
 
         case VG_USERREQ__PMC_REGISTER_PMEM_FILE: {
-            *ret = 0;
+            *ret = 1;
             Int fd = (Int)arg[1];
             if (fd >= 0)
                 *ret = register_new_file(fd, arg[2], arg[3], arg[4]);
-         break;
+            break;
         }
 
         case VG_USERREQ__PMC_CHECK_IS_PMEM_MAPPING: {
-            struct pmem_st temp_info;
+            struct pmem_st temp_info = {0};
             temp_info.addr = arg[1];
             temp_info.size = arg[2];
 
@@ -1468,66 +1322,58 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
 
         case VG_USERREQ__PMC_DO_FLUSH: {
             do_flush(arg[1], arg[2]);
-            *ret = 1;
             break;
         }
 
         case VG_USERREQ__PMC_DO_FENCE: {
             do_fence();
-            *ret = 1;
             break;
         }
 
         case VG_USERREQ__PMC_DO_COMMIT: {
             do_commit();
-            *ret = 1;
             break;
         }
 
         case VG_USERREQ__PMC_WRITE_STATS: {
-            print_pmem_stats();
-            *ret = 1;
+            print_pmem_stats(True);
             break;
         }
 
         case VG_USERREQ__GDB_MONITOR_COMMAND: {
             Bool handled = handle_gdb_monitor_command (tid, (HChar*)arg[1]);
             if (handled)
-                *ret = 1;
-            else
                 *ret = 0;
+            else
+                *ret = 1;
             return handled;
         }
 
         case VG_USERREQ__PMC_LOG_STORES: {
             pmem.loggin_on = True;
-            *ret = 1;
             break;
         }
 
         case VG_USERREQ__PMC_NO_LOG_STORES: {
             pmem.loggin_on = False;
-            *ret = 1;
             break;
         }
 
         case VG_USERREQ__PMC_ADD_LOG_REGION: {
-            struct pmem_st temp_info;
+            struct pmem_st temp_info = {0};
             temp_info.addr = arg[1];
             temp_info.size = arg[2];
 
             add_region(&temp_info, pmem.loggable_regions);
-            *ret = 1;
             break;
         }
 
         case VG_USERREQ__PMC_REMOVE_LOG_REGION: {
-            struct pmem_st temp_info;
+            struct pmem_st temp_info = {0};
             temp_info.addr = arg[1];
             temp_info.size = arg[2];
 
             remove_region(&temp_info, pmem.loggable_regions);
-            *ret = 1;
             break;
         }
 
@@ -1535,7 +1381,6 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
                     (pmem.loggable_regions) != 0)))
                 VG_(emit)("|FREORDER");
-            *ret = 1;
             break;
         }
 
@@ -1543,7 +1388,6 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
                     (pmem.loggable_regions) != 0)))
                 VG_(emit)("|PREORDER");
-            *ret = 1;
             break;
         }
 
@@ -1551,7 +1395,6 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
                     (pmem.loggable_regions) != 0)))
                 VG_(emit)("|FAULT_ONLY");
-            *ret = 1;
             break;
         }
 
@@ -1559,17 +1402,75 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
                     (pmem.loggable_regions) != 0)))
                 VG_(emit)("|NO_REORDER_FAULT");
-            *ret = 1;
             break;
         }
 
         case VG_USERREQ__PMC_SET_CLEAN: {
-            struct pmem_st temp_info;
+            struct pmem_st temp_info = {0};
             temp_info.addr = arg[1];
             temp_info.size = arg[2];
 
             remove_region(&temp_info, pmem.pmem_stores);
-            *ret = 1;
+            break;
+        }
+
+        /* transaction support */
+        case VG_USERREQ__PMC_START_TX: {
+            register_new_tx(VG_(get_running_tid)());
+            break;
+        }
+
+        case VG_USERREQ__PMC_START_TX_N: {
+            register_new_tx(arg[1]);
+            break;
+        }
+
+        case VG_USERREQ__PMC_END_TX: {
+            *ret = remove_tx(VG_(get_running_tid)());
+            break;
+        }
+
+        case VG_USERREQ__PMC_END_TX_N: {
+            *ret = remove_tx(arg[1]);
+            break;
+        }
+
+        case VG_USERREQ__PMC_ADD_TO_TX: {
+            *ret = add_obj_to_tx(VG_(get_running_tid)(), arg[1], arg[2]);
+            break;
+        }
+
+        case VG_USERREQ__PMC_ADD_TO_TX_N: {
+            *ret = add_obj_to_tx(arg[1], arg[2], arg[3]);
+            break;
+        }
+
+        case VG_USERREQ__PMC_REMOVE_FROM_TX: {
+            *ret = remove_obj_from_tx(VG_(get_running_tid)(), arg[1], arg[2]);
+            break;
+        }
+
+        case VG_USERREQ__PMC_REMOVE_FROM_TX_N: {
+            *ret = remove_obj_from_tx(arg[1], arg[2], arg[3]);
+            break;
+        }
+
+        case VG_USERREQ__PMC_ADD_THREAD_TO_TX_N: {
+            *ret = remove_obj_from_tx(arg[1], arg[2], arg[3]);
+            break;
+        }
+
+        case VG_USERREQ__PMC_REMOVE_THREAD_FROM_TX_N: {
+            *ret = remove_obj_from_tx(arg[1], arg[2], arg[3]);
+            break;
+        }
+
+        case VG_USERREQ__PMC_ADD_TO_GLOBAL_TX_IGNORE: {
+            struct pmem_st temp_info = {0};
+            temp_info.addr = arg[1];
+            temp_info.size = arg[2];
+
+            add_to_global_excludes(&temp_info);
             break;
         }
 
@@ -1598,6 +1499,7 @@ pmc_process_cmd_line_option(const HChar *arg)
     else if VG_BOOL_CLO(arg, "--print-summary", pmem.print_summary) {}
     else if VG_BOOL_CLO(arg, "--flush-check", pmem.check_flush) {}
     else if VG_BOOL_CLO(arg, "--flush-align", pmem.force_flush_align) {}
+    else if VG_BOOL_CLO(arg, "--tx_only", pmem.transactions_only) {}
     else
         return False;
 
@@ -1631,6 +1533,8 @@ pmc_post_clo_init(void)
 
     pmem.flush_align_size = read_cache_line_size();
 
+    init_transactions(pmem.transactions_only);
+
     if (pmem.log_stores)
         VG_(umsg)("START");
 }
@@ -1654,6 +1558,8 @@ pmc_print_usage(void)
             "                               default [no]\n"
             "    --flush-align=<yes|no>     force flush alignment to native cache\n"
             "                               line size default [no]\n"
+            "    --tx_only=<yes|no>         turn on transaction only memory\n"
+            "                               modifications default [no]\n"
     );
 }
 
@@ -1678,7 +1584,7 @@ pmc_fini(Int exitcode)
         VG_(umsg)("|STOP\n");
 
     if (pmem.print_summary)
-        print_pmem_stats();
+        print_pmem_stats(False);
 }
 
 /**

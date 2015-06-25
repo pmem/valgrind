@@ -1,0 +1,2 @@
+prog: trans_mt_cross
+vgopts: -q

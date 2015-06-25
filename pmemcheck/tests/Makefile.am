@@ -22,21 +22,27 @@ dist_noinst_SCRIPTS = \
 noinst_HEADERS = common.h
 
 EXTRA_DIST = \
-	const_store.stderr.exp const_store.stdout.exp const_store.vgtest \
-	tmp_store.stderr.exp tmp_store.stdout.exp tmp_store.vgtest \
-	state_machine.stderr.exp state_machine.stdout.exp state_machine.vgtest \
-	state_machine2.stderr.exp state_machine2.stdout.exp \
-		state_machine2.vgtest \
-	multiple_stores.stderr.exp multiple_stores.stdout.exp \
-		multiple_stores.vgtest \
-	sse_stores.stderr.exp sse_stores.stdout.exp sse_stores.vgtest \
-	cas.stderr.exp cas.stdout.exp cas.vgtest \
-	flush_check.stderr.exp flush_check.stdout.exp flush_check.vgtest \
-	state_no_flush_align.stderr.exp state_no_flush_align.stdout.exp \
-		state_no_flush_align.vgtest \
-	nt_stores.stderr.exp nt_stores.stdout.exp nt_stores.vgtest \
-	set_clean.stderr.exp set_clean.stdout.exp set_clean.vgtest \
-	missed_flush.stderr.exp missed_flush.stdout.exp missed_flush.vgtest
+	const_store.stderr.exp const_store.vgtest \
+	tmp_store.stderr.exp tmp_store.vgtest \
+	state_machine.stderr.exp state_machine.vgtest \
+	state_machine2.stderr.exp state_machine2.vgtest \
+	multiple_stores.stderr.exp multiple_stores.vgtest \
+	sse_stores.stderr.exp sse_stores.vgtest \
+	cas.stderr.exp cas.vgtest \
+	flush_check.stderr.exp flush_check.vgtest \
+	state_no_flush_align.stderr.exp state_no_flush_align.vgtest \
+	nt_stores.stderr.exp nt_stores.vgtest \
+	set_clean.stderr.exp set_clean.vgtest \
+	missed_flush.stderr.exp missed_flush.vgtest\
+	trans_impl.stderr.exp trans_impl.vgtest \
+	trans_expl.stderr.exp trans_expl.vgtest \
+	trans_nest.stderr.exp trans_nest.vgtest \
+	trans_impl_nest.stderr.exp trans_impl_nest.vgtest \
+	trans_no_pmem.stderr.exp trans_no_pmem.vgtest \
+	trans_mt.stderr.exp trans_mt.vgtest \
+	trans_excl.stderr.exp trans_excl.vgtest \
+	trans_mt_cross.stderr.exp trans_mt_cross.vgtest \
+	trans_only.stderr.exp trans_only.vgtest
 
 check_PROGRAMS = \
 	const_store \
@@ -50,4 +56,16 @@ check_PROGRAMS = \
 	state_no_flush_align \
 	nt_stores \
 	set_clean \
-	missed_flush
+	missed_flush \
+	trans_impl \
+	trans_expl \
+	trans_nest \
+	trans_impl_nest \
+	trans_no_pmem \
+	trans_mt \
+	trans_excl \
+	trans_mt_cross \
+	trans_only
+	
+trans_mt_LDADD 	= -lpthread
+trans_mt_cross_LDADD 	= -lpthread
