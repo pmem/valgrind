@@ -547,8 +547,7 @@ Overlapping regions:
             Checks if a given regions is registered as a persistent memory
             mapping in pmemcheck. Returns <computeroutput>0</computeroutput>
             if not, <computeroutput>1</computeroutput> if fully within mapping,
-            <computeroutput>2</computeroutput> if front overlaps and
-            <computeroutput>3</computeroutput> if tail overlaps.
+            <computeroutput>2</computeroutput> otherwise.
           </para>
 		</listitem>
 	  </varlistentry>
@@ -794,7 +793,9 @@ Overlapping regions:
             issue. Returns <computeroutput>1</computeroutput> when no matching
             transaction was found, <computeroutput>2</computeroutput> when
             the current thread does not participate in this transaction and
-            <computeroutput>0</computeroutput> otherwise.
+            <computeroutput>0</computeroutput> otherwise. Multiple additions
+	    of the same region do not result in multiple region entries. They
+	    are registered as contiguous space and not separate enteties.
           </para>
         </listitem>
       </varlistentry>
@@ -811,7 +812,9 @@ Overlapping regions:
             issue. Returns <computeroutput>1</computeroutput> when no matching
             transaction was found, <computeroutput>2</computeroutput> when
             the current thread does not participate in this transaction and
-            <computeroutput>0</computeroutput> otherwise.
+            <computeroutput>0</computeroutput> otherwise. Multiple additions
+	    of the same region do not result in multiple region entries. They
+	    are registered as contiguous space and not separate enteties.
           </para>
         </listitem>
       </varlistentry>
@@ -826,7 +829,9 @@ Overlapping regions:
             Returns <computeroutput>1</computeroutput> when no matching
             transaction was found, <computeroutput>2</computeroutput> when
             the current thread does not participate in this transaction and
-            <computeroutput>0</computeroutput> otherwise.
+            <computeroutput>0</computeroutput> otherwise. Removing a region once
+	    removes it from the transaction, regardless how many times it was
+	    added.
           </para>
         </listitem>
       </varlistentry>
@@ -841,7 +846,9 @@ Overlapping regions:
             Returns <computeroutput>1</computeroutput> when no matching
             transaction was found, <computeroutput>2</computeroutput> when
             the current thread does not participate in this transaction and
-            <computeroutput>0</computeroutput> otherwise.
+            <computeroutput>0</computeroutput> otherwise. Removing a region once
+	    removes it from the transaction, regardless how many times it was
+	    added.
           </para>
         </listitem>
       </varlistentry>
