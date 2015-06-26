@@ -92,11 +92,17 @@ static struct pmem_ops {
     /** Holds the number of registered multiple overwrites. */
     UWord multiple_stores_reg;
 
-    /** Holds possible flush error events. */
-    struct pmem_st **flush_errors;
+    /** Holds possible redundant flush events. */
+    struct pmem_st **redundant_flushes;
 
-    /** Holds the number of registered erroneous flush events. */
-    UWord flush_errors_reg;
+    /** Holds the number of registered redundant flush events. */
+    UWord redundant_flushes_reg;
+
+    /** Holds superfluous flush error events. */
+    struct pmem_st **superfluous_flushes;
+
+    /** Holds the number of superfluous flush events. */
+    UWord superfluous_flushes_reg;
 
     /** Within this many SBlocks a consecutive write is not considered
     * a poss_leak. */
@@ -114,7 +120,7 @@ static struct pmem_ops {
     /** Toggles summary printing. */
     Bool print_summary;
 
-    /** Toggles checking multiple flushes of stores */
+    /** Toggles checking multiple and superfluous flushes */
     Bool check_flush;
 
     /** The size of the cache line */
@@ -297,18 +303,208 @@ is_pmem_access(Addr addr, SizeT size)
 }
 
 /**
+* \brief State to string change for information purposes.
+*/
+static const char *
+store_state_to_string(enum store_state state)
+{
+    switch (state) {
+        case STST_CLEAN:
+            return "CLEAN";
+        case STST_DIRTY:
+            return "DIRTY";
+        case STST_FLUSHED:
+            return "FLUSHED";
+        case STST_FENCED:
+            return "FENCED";
+        case STST_COMMITTED:
+            return "COMMITTED";
+        default:
+            return NULL;
+    }
+}
+
+/**
+ * \brief Prints registered redundant flushes.
+ *
+ * \details Flushing regions of memory which have already been flushed, but not
+ * committed to memory, is a possible performance issue. This is not a data
+ * consistency related problem.
+ */
+static void
+print_redundant_flushes(void)
+{
+    if (pmem.redundant_flushes_reg) {
+        VG_(umsg)("\nNumber of redundantly flushed stores: %lu\n",
+                pmem.redundant_flushes_reg);
+        VG_(umsg)("Stores flushed multiple times:\n");
+        struct pmem_st *tmp;
+        Int i;
+        for (i = 0; i < pmem.redundant_flushes_reg; ++i) {
+            tmp = pmem.redundant_flushes[i];
+            VG_(umsg)("[%d] ", i);
+            VG_(pp_ExeContext)(tmp->context);
+            VG_(printf)("\tAddress: 0x%lx\tsize: %llu\tstate: %s\n",
+                    tmp->addr, tmp->size, store_state_to_string(tmp->state));
+        }
+    }
+}
+
+/**
+ * \brief Prints registered superfluous flushes.
+ *
+ * \details Flushing clean (with no pending stores to flush) regions of memory
+ * is most certainly an error in the algorithm. This is not a data consistency
+ * related problem, but a performance issue.
+ */
+static void
+print_superfluous_flushes(void)
+{
+    if (pmem.superfluous_flushes_reg) {
+        VG_(umsg)("\nNumber of unnecessary flushes: %lu\n",
+                pmem.superfluous_flushes_reg);
+        struct pmem_st *tmp;
+        Int i;
+        for (i = 0; i < pmem.superfluous_flushes_reg; ++i) {
+            tmp = pmem.superfluous_flushes[i];
+            VG_(umsg)("[%d] ", i);
+            VG_(pp_ExeContext)(tmp->context);
+            VG_(printf)("\tAddress: 0x%lx\tsize: %llu\n", tmp->addr, tmp->size);
+        }
+    }
+}
+
+/**
+ * \brief Prints registered multiple stores.
+ *
+ * \details Overwriting stores before they are made persistent suggests
+ * an error in the algorithm. This could be both a data consistency and
+ * performance issue.
+ */
+static void
+print_multiple_stores(void)
+{
+    if (pmem.track_multiple_stores && (pmem.multiple_stores_reg > 0)) {
+        VG_(umsg)("\nNumber of overwritten stores: %lu\n",
+                pmem.multiple_stores_reg);
+        VG_(umsg)("Overwritten stores before they were made persistent:\n");
+        struct pmem_st *tmp;
+        Int i;
+        for (i = 0; i < pmem.multiple_stores_reg; ++i) {
+            tmp = pmem.multiple_stores[i];
+            VG_(umsg)("[%d] ", i);
+            VG_(pp_ExeContext)(tmp->context);
+            VG_(printf)("\tAddress: 0x%lx\tsize: %llu\tstate: %s\n",
+                    tmp->addr, tmp->size, store_state_to_string(tmp->state));
+        }
+    }
+}
+
+/**
+ * \brief Prints registered store statistics.
+ *
+ * \details Print outstanding stores which were not made persistent during the
+ * whole run of the application.
+ */
+static void
+print_store_stats(void)
+{
+    VG_(umsg)("Number of stores not made persistent: %lu\n", VG_(OSetGen_Size)
+            (pmem.pmem_stores));
+
+    if (VG_(OSetGen_Size)(pmem.pmem_stores) != 0) {
+        VG_(OSetGen_ResetIter)(pmem.pmem_stores);
+        struct pmem_st *tmp;
+        UWord total = 0;
+        Int i = 0;
+        VG_(umsg)("Stores not made persistent properly:\n");
+        while ((tmp = VG_(OSetGen_Next)(pmem.pmem_stores)) != NULL) {
+            VG_(umsg)("[%d] ", i);
+            VG_(pp_ExeContext)(tmp->context);
+            VG_(umsg)("\tAddress: 0x%lx\tsize: %llu\tstate: %s\n",
+                    tmp->addr, tmp->size, store_state_to_string(tmp->state));
+            total += tmp->size;
+            ++i;
+        }
+        VG_(umsg)("Total memory not made persistent: %lu\n", total);
+    }
+}
+
+/**
 * \brief Prints the error message for exceeding the maximum allowable
 *        overwrites.
+* \param[in] limit The limit to print.
 */
 static void
-print_max_poss_overwrites_error(void)
+print_max_poss_overwrites_error(UWord limit)
 {
     VG_(umsg)("The number of overwritten stores exceeded %lu\n\n",
-            MAX_MULT_OVERWRITES);
+            limit);
 
     VG_(umsg)("This either means there is something fundamentally wrong with"
-            " your program,\nor you are using your persistent memory as "
-            "volatile memory.");
+            " your program, or you are using your persistent memory as "
+            "volatile memory.\n");
+    VG_(message_flush)();
+
+    print_multiple_stores();
+}
+
+/**
+* \brief Prints the error message for exceeding the maximum allowable
+*        number of superfluous flushes.
+* \param[in] limit The limit to print.
+*/
+static void
+print_superfluous_flush_error(UWord limit)
+{
+    VG_(umsg)("The number of superfluous flushes exceeded %lu\n\n",
+            limit);
+
+    VG_(umsg)("This means your program is constantly flushing regions of"
+            " memory, where no stores were made. This is a performance"
+            " issue.\n");
+    VG_(message_flush)();
+
+    print_superfluous_flushes();
+}
+
+/**
+* \brief Prints the error message for exceeding the maximum allowable
+*        number of redundant flushes.
+* \param[in] limit The limit to print.
+*/
+static void
+print_redundant_flush_error(UWord limit)
+{
+    VG_(umsg)("The number of redundant flushes exceeded %lu\n\n",
+            limit);
+
+    VG_(umsg)("This means your program is constantly flushing regions of"
+            " memory, which have already been flushed. This is a performance"
+            " issue.\n");
+    VG_(message_flush)();
+
+    print_redundant_flushes();
+}
+
+/**
+ * \brief Check and update the given warning event register.
+ * \param[in,out] event_register The register to be updated.
+ * \param[in,out] nevents The event counter to be updated.
+ * \param[in] event The event to be registered.
+ * \param[in] limit The limit against which the registered is to be checked.
+ * \param[in] err_msg Pointer to the error message function.
+ */
+static void
+add_warning_event(struct pmem_st **event_register, UWord *nevents,
+                  struct pmem_st *event, UWord limit, void (*err_msg)(UWord))
+{
+    if (UNLIKELY(*nevents == limit)) {
+        err_msg(limit);
+        VG_(exit)(-1);
+    }
+    /* register the event */
+    event_register[(*nevents)++] = event;
 }
 
 /**
@@ -321,7 +517,7 @@ print_max_poss_overwrites_error(void)
 static VG_REGPARM(3) void
 trace_pmem_store(Addr addr, SizeT size, UWord value)
 {
-    if(LIKELY(!is_pmem_access(addr, size)))
+    if (LIKELY(!is_pmem_access(addr, size)))
         return;
 
     struct pmem_st *store = VG_(OSetGen_AllocNode)(pmem.pmem_stores,
@@ -349,19 +545,16 @@ trace_pmem_store(Addr addr, SizeT size, UWord value)
         }
 
         /* check store indifference */
-        if((store->block_num - existing->block_num) < pmem.store_sb_indiff
+        if ((store->block_num - existing->block_num) < pmem.store_sb_indiff
                 && existing->addr == store->addr
                 && existing->size == store->size
                 && existing->value == store->value) {
             VG_(OSetGen_FreeNode)(pmem.pmem_stores, existing);
             continue;
         } else {
-            if (UNLIKELY(pmem.multiple_stores_reg == MAX_MULT_OVERWRITES)) {
-                print_max_poss_overwrites_error();
-                VG_(exit)(-1);
-            }
-            /* register the old store as a possible leak */
-            pmem.multiple_stores[pmem.multiple_stores_reg++] = existing;
+            add_warning_event(pmem.multiple_stores, &pmem.multiple_stores_reg,
+                              existing, MAX_MULT_OVERWRITES,
+                              print_max_poss_overwrites_error);
         }
     }
     /* it is now safe to insert the new store */
@@ -749,6 +942,7 @@ do_flush(UWord base, UWord size)
 
     /* unfortunately lookup doesn't work here, the oset is an avl tree */
 
+    Bool valid_flush = False;
     /* reset the iterator */
     VG_(OSetGen_ResetIter)(pmem.pmem_stores);
     Addr flush_max = flush_info.addr + flush_info.size;
@@ -760,14 +954,18 @@ do_flush(UWord base, UWord size)
            continue;
        }
 
+       valid_flush = True;
        /* check for multiple flushes of stores */
        if (being_flushed->state != STST_DIRTY) {
            if (pmem.check_flush) {
                /* multiple flush of the same store - probably an issue */
-               pmem.flush_errors[pmem.flush_errors_reg] =
-                       VG_(malloc)("pmc.main.cpci.2", sizeof(struct pmem_st));
-               *(pmem.flush_errors[pmem.flush_errors_reg]) = *being_flushed;
-               ++pmem.flush_errors_reg;
+               struct pmem_st *wrong_flush = VG_(malloc)("pmc.main.cpci.3",
+                       sizeof(struct pmem_st));
+               *wrong_flush = *being_flushed;
+               add_warning_event(pmem.redundant_flushes,
+                                 &pmem.redundant_flushes_reg,
+                                 wrong_flush, MAX_FLUSH_ERROR_EVENTS,
+                                 print_redundant_flush_error);
            }
            continue;
        }
@@ -812,27 +1010,18 @@ do_flush(UWord base, UWord size)
             VG_(OSetGen_ResetIterAt)(pmem.pmem_stores, split);
        }
     }
-}
 
-/**
-* \brief State to string change for information purposes.
-*/
-static const char *
-store_state_to_string(enum store_state state)
-{
-    switch (state) {
-        case STST_CLEAN:
-            return "CLEAN";
-        case STST_DIRTY:
-            return "DIRTY";
-        case STST_FLUSHED:
-            return "FLUSHED";
-        case STST_FENCED:
-            return "FENCED";
-        case STST_COMMITTED:
-            return "COMMITTED";
-        default:
-            return NULL;
+    if (!valid_flush && pmem.check_flush) {
+        /* unnecessary flush event - probably an issue */
+        struct pmem_st *wrong_flush = VG_(malloc)("pmc.main.cpci.6",
+                       sizeof(struct pmem_st));
+        *wrong_flush = flush_info;
+        wrong_flush->context = VG_(record_ExeContext)(VG_(get_running_tid)(),
+                                                            0);
+        add_warning_event(pmem.superfluous_flushes,
+                          &pmem.superfluous_flushes_reg,
+                          wrong_flush, MAX_FLUSH_ERROR_EVENTS,
+                          print_superfluous_flush_error);
     }
 }
 
@@ -909,55 +1098,13 @@ out:
 static void
 print_pmem_stats(void)
 {
-    VG_(umsg)("Number of stores not made persistent: %lu\n", VG_(OSetGen_Size)
-            (pmem.pmem_stores));
+    print_store_stats();
 
-    if (VG_(OSetGen_Size)(pmem.pmem_stores) != 0) {
-        VG_(OSetGen_ResetIter)(pmem.pmem_stores);
-        struct pmem_st *tmp = NULL;
-        UWord total = 0;
-        Int i = 0;
-        VG_(umsg)("Stores not made persistent properly:\n");
-        while ((tmp = VG_(OSetGen_Next)(pmem.pmem_stores)) != NULL) {
-            VG_(umsg)("[%d] ", i);
-            VG_(pp_ExeContext)(tmp->context);
-            VG_(umsg)("\tAddress: 0x%lx\tsize: %llu\tstate: %s\n",
-                    tmp->addr, tmp->size, store_state_to_string(tmp->state));
-            total += tmp->size;
-            ++i;
-        }
-        VG_(umsg)("Total memory not made persistent: %lu\n", total);
-    }
+    print_redundant_flushes();
 
-    if(pmem.flush_errors_reg) {
-        VG_(umsg)("\nNumber of multiply flushed stores: %lu\n",
-                pmem.flush_errors_reg);
-        VG_(umsg)("Stores flushed multiple times:\n");
-        struct pmem_st *tmp = NULL;
-        Int i;
-        for (i = 0; i < pmem.flush_errors_reg; ++i) {
-            tmp = pmem.flush_errors[i];
-            VG_(umsg)("[%d] ", i);
-            VG_(pp_ExeContext)(tmp->context);
-            VG_(printf)("\tAddress: 0x%lx\tsize: %llu\tstate: %s\n",
-                    tmp->addr, tmp->size, store_state_to_string(tmp->state));
-        }
-    }
+    print_superfluous_flushes();
 
-    if (pmem.track_multiple_stores && (pmem.multiple_stores_reg > 0)) {
-        VG_(umsg)("\nNumber of overwritten stores: %lu\n",
-                pmem.multiple_stores_reg);
-        VG_(umsg)("Overwritten stores before they were made persistent:\n");
-        struct pmem_st *tmp = NULL;
-        Int i;
-        for (i = 0; i < pmem.multiple_stores_reg; ++i) {
-            tmp = pmem.multiple_stores[i];
-            VG_(umsg)("[%d] ", i);
-            VG_(pp_ExeContext)(tmp->context);
-            VG_(printf)("\tAddress: 0x%lx\tsize: %llu\tstate: %s\n",
-                    tmp->addr, tmp->size, store_state_to_string(tmp->state));
-        }
-    }
+    print_multiple_stores();
 }
 
 /**
@@ -1470,8 +1617,8 @@ pmc_post_clo_init(void)
         pmem.multiple_stores = VG_(malloc)("pmc.main.cpci.2",
                 MAX_MULT_OVERWRITES * sizeof (struct pmem_st *));
 
-    pmem.flush_errors = VG_(malloc)("pmc.main.cpci.3", MAX_FLUSH_ERROR_EVENTS
-            * sizeof (struct pmem_st *));
+    pmem.redundant_flushes = VG_(malloc)("pmc.main.cpci.3",
+            MAX_FLUSH_ERROR_EVENTS * sizeof (struct pmem_st *));
 
     pmem.pmem_mappings = VG_(OSetGen_Create)(/*keyOff*/0, cmp_pmem_st,
             VG_(malloc), "pmc.main.cpci.4", VG_(free));
@@ -1479,9 +1626,12 @@ pmc_post_clo_init(void)
     pmem.loggable_regions = VG_(OSetGen_Create)(/*keyOff*/0, cmp_pmem_st,
             VG_(malloc), "pmc.main.cpci.5", VG_(free));
 
+    pmem.superfluous_flushes = VG_(malloc)("pmc.main.cpci.6",
+            MAX_FLUSH_ERROR_EVENTS * sizeof (struct pmem_st *));
+
     pmem.flush_align_size = read_cache_line_size();
 
-    if(pmem.log_stores)
+    if (pmem.log_stores)
         VG_(umsg)("START");
 }
 
@@ -1524,7 +1674,7 @@ pmc_print_debug_usage(void)
 static void
 pmc_fini(Int exitcode)
 {
-    if(pmem.log_stores)
+    if (pmem.log_stores)
         VG_(umsg)("|STOP\n");
 
     if (pmem.print_summary)
