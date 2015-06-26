@@ -4,7 +4,7 @@ Stores not made persistent properly:
 	Address: 0x........	size: 8	state: COMMITTED
 Total memory not made persistent: 8
 
-Number of multiply flushed stores: 3
+Number of redundantly flushed stores: 3
 Stores flushed multiple times:
 [0]    at 0x........: main (flush_check.c:27)
 	Address: 0x........	size: 8	state: FLUSHED
