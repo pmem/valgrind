@@ -1,0 +1,9 @@
+Number of stores not made persistent: 0
+
+Number of unnecessary flushes: 3
+[0]    at 0x........: main (missed_flush.c:27)
+	Address: 0x........	size: 64
+[1]    at 0x........: main (missed_flush.c:29)
+	Address: 0x........	size: 128
+[2]    at 0x........: main (missed_flush.c:31)
+	Address: 0x........	size: 64
