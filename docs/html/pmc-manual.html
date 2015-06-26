@@ -141,12 +141,12 @@
 <pre class="programlisting">
 Number of stores not made persistent: 3
 Stores not made persistent properly:
-[0]    at 0x1234: main (state_machine2.c:28)
-	Address: 0x12345	size: 1	state: FENCED
-[1]    at 0x1235: main (state_machine2.c:31)
-	Address: 0x12346	size: 2	state: FLUSHED
-[2]    at 0x1236: main (state_machine2.c:33)
-	Address: 0x12347	size: 4	state: DIRTY
+[0]    at 0x400A73: main (state_machine2.c:29)
+	Address: 0x4fec000	size: 1	state: FENCED
+[1]    at 0x400B56: main (state_machine2.c:32)
+	Address: 0x4fec008	size: 2	state: FLUSHED
+[2]    at 0x400BB8: main (state_machine2.c:34)
+	Address: 0x4fec010	size: 4	state: DIRTY
 Total memory not made persistent: 7</pre>
 <p>
         This indicates that three stores made to persistent memory are not
@@ -173,18 +173,18 @@ Total memory not made persistent: 7</pre>
 <pre class="programlisting">
 Number of stores not made persistent: 1
 Stores not made persistent properly:
-[0]    at 0x1234: main (multiple_stores.c:33)
-	Address: 0x12345	size: 8	state: DIRTY
+[0]    at 0x400A89: main (multiple_stores.c:33)
+	Address: 0x4fec000	size: 8	state: DIRTY
 Total memory not made persistent: 8
 
 Number of overwritten stores: 3
 Overwritten stores before they were made persistent:
-[0]    at 0x1235: main (multiple_stores.c:30)
-	Address: 0x12345	size: 1	state: DIRTY
-[1]    at 0x1236: main (multiple_stores.c:31)
-	Address: 0x12345	size: 2	state: DIRTY
-[2]    at 0x1237: main (multiple_stores.c:32)
-	Address: 0x12345	size: 4	state: DIRTY</pre>
+[0]    at 0x400A6F: main (multiple_stores.c:30)
+	Address: 0x4fec000	size: 1	state: DIRTY
+[1]    at 0x400A76: main (multiple_stores.c:31)
+	Address: 0x4fec000	size: 2	state: DIRTY
+[2]    at 0x400A7F: main (multiple_stores.c:32)
+	Address: 0x4fec000	size: 4	state: DIRTY</pre>
 <p>
         If the values or sizes are different, or the stores overlap somehow,
         the event will be recorded regardless of the
@@ -199,23 +199,31 @@ Overwritten stores before they were made persistent:
         output from the flush checking analysis can look like this:
         </p>
 <pre class="programlisting">
-Number of stores not made persistent: 1
-Stores not made persistent properly:
-[0]    at 0x........: main (flush_check.c:27)
-	Address: 0x........	size: 8	state: COMMITTED
-Total memory not made persistent: 8
-
-Number of multiply flushed stores: 3
+Number of redundantly flushed stores: 3
 Stores flushed multiple times:
-[0]    at 0x........: main (flush_check.c:27)
-	Address: 0x........	size: 8	state: FLUSHED
-[1]    at 0x........: main (flush_check.c:27)
-	Address: 0x........	size: 8	state: FENCED
-[2]    at 0x........: main (flush_check.c:27)
-	Address: 0x........	size: 8	state: COMMITTED</pre>
+[0]    at 0x400A5B: main (flush_check.c:27)
+	Address: 0x4fec000	size: 8	state: FLUSHED
+[1]    at 0x400A5B: main (flush_check.c:27)
+	Address: 0x4fec000	size: 8	state: FENCED
+[2]    at 0x400A5B: main (flush_check.c:27)
+	Address: 0x4fec000	size: 8	state: COMMITTED</pre>
 <p>
         It indicates that the same store has been flushed multiple times,
         which is a potential performance issue.
+      </p>
+<p>
+	In case when no stores were made to the flushed region, the program will
+	yield the following output:
+	</p>
+<pre class="programlisting">
+Number of unnecessary flushes: 3
+[0]    at 0x400AB2: main (missed_flush.c:27)
+	Address: 0x4fec000	size: 64
+[1]    at 0x400B18: main (missed_flush.c:29)
+	Address: 0x4fec040	size: 128
+[2]    at 0x400B71: main (missed_flush.c:31)
+	Address: 0x0	size: 64</pre>
+<p>
       </p>
 </div>
 </div>
