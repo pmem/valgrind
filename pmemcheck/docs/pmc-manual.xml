@@ -436,15 +436,27 @@ Stores flushed multiple times:
 		</listitem>
 	  </varlistentry>
 
+      <varlistentry id="crm.clean" xreflabel="VALGRIND_PMC_SET_CLEAN">
+	<term>
+	  <option><![CDATA[VALGRIND_PMC_SET_CLEAN]]></option>
+	</term>
+	<listitem>
+	  <para>
+	    Sets the desired region of persistent memory as clean. This may
+	    be useful for discarding changes made to persistent memory.
+          </para>
+	</listitem>
+      </varlistentry>
+
       <varlistentry id="crm.wr_stats" xreflabel="VALGRIND_PMC_WRITE_STATS">
-	    <term>
-		  <option><![CDATA[VALGRIND_PMC_WRITE_STATS]]></option>
-		</term>
-		<listitem>
-		  <para>
+        <term>
+	  <option><![CDATA[VALGRIND_PMC_WRITE_STATS]]></option>
+	</term>
+	<listitem>
+	  <para>
             Writes persistent memory analysis statistics.
           </para>
-		</listitem>
+	</listitem>
       </varlistentry>
 
       <varlistentry id="crm.log_on" xreflabel="VALGRIND_PMC_LOG_STORES">
