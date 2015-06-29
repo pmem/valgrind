@@ -67,6 +67,7 @@ typedef
        VG_USERREQ__PMC_PARTIAL_REORDER,
        VG_USERREQ__PMC_ONLY_FAULT,
        VG_USERREQ__PMC_STOP_REORDER_FAULT,
+       VG_USERREQ__PMC_SET_CLEAN
    } Vg_PMemCheckClientRequest;
 
 
@@ -164,6 +165,12 @@ typedef
 #define VALGRIND_PMC_STOP_REORDER_FAULT                                     \
     VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_STOP_REORDER_FAULT,     \
                                     0, 0, 0, 0, 0)
+
+/** Remove a persistent memory mapping region */
+#define VALGRIND_PMC_SET_CLEAN(_qzz_addr,_qzz_len)                      \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,             \
+                            VG_USERREQ__PMC_SET_CLEAN,                  \
+                            (_qzz_addr), (_qzz_len), 0, 0, 0)
 
 #endif
 
