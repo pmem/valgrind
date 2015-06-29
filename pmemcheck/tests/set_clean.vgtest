@@ -1,0 +1,2 @@
+prog: set_clean
+vgopts: -q --print-summary=no
