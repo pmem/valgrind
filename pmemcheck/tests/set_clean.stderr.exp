@@ -1,0 +1,22 @@
+Number of stores not made persistent: 3
+Stores not made persistent properly:
+[0]    at 0x........: main (set_clean.c:29)
+	Address: 0x........	size: 8	state: FENCED
+[1]    at 0x........: main (set_clean.c:30)
+	Address: 0x........	size: 4	state: FLUSHED
+[2]    at 0x........: main (set_clean.c:31)
+	Address: 0x........	size: 4	state: DIRTY
+Total memory not made persistent: 16
+Number of stores not made persistent: 2
+Stores not made persistent properly:
+[0]    at 0x........: main (set_clean.c:29)
+	Address: 0x........	size: 6	state: FENCED
+[1]    at 0x........: main (set_clean.c:31)
+	Address: 0x........	size: 2	state: DIRTY
+Total memory not made persistent: 8
+Number of stores not made persistent: 1
+Stores not made persistent properly:
+[0]    at 0x........: main (set_clean.c:29)
+	Address: 0x........	size: 6	state: FENCED
+Total memory not made persistent: 6
+Number of stores not made persistent: 0
