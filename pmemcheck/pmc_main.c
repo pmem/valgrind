@@ -239,6 +239,7 @@ remove_region(struct pmem_st *region, OSet *region_set)
             VG_(OSetGen_Insert)(region_set, modified_entry);
             struct pmem_st *new_region = VG_(OSetGen_AllocNode)(region_set,
                     sizeof (struct pmem_st));
+            *new_region = *modified_entry;
             new_region->addr = region_max_addr;
             new_region->size = mod_entry_max_addr - new_region->addr;
             VG_(OSetGen_Insert)(region_set, new_region);
@@ -1411,6 +1412,16 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
                     (pmem.loggable_regions) != 0)))
                 VG_(emit)("|NO_REORDER_FAULT");
+            *ret = 1;
+            break;
+        }
+
+        case VG_USERREQ__PMC_SET_CLEAN: {
+            struct pmem_st temp_info;
+            temp_info.addr = arg[1];
+            temp_info.size = arg[2];
+
+            remove_region(&temp_info, pmem.pmem_stores);
             *ret = 1;
             break;
         }
