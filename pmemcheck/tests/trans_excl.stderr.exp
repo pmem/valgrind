@@ -1,0 +1,11 @@
+Number of stores not made persistent: 4
+Stores not made persistent properly:
+[0]    at 0x........: main (trans_excl.c:40)
+	Address: 0x........	size: 1	state: DIRTY
+[1]    at 0x........: main (trans_excl.c:41)
+	Address: 0x........	size: 2	state: DIRTY
+[2]    at 0x........: main (trans_excl.c:42)
+	Address: 0x........	size: 4	state: DIRTY
+[3]    at 0x........: main (trans_excl.c:46)
+	Address: 0x........	size: 8	state: DIRTY
+Total memory not made persistent: 15
