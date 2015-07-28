@@ -12,20 +12,11 @@
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
  */
-#include "common.h"
+#include "../common.h"
 #include <stdint.h>
 #include <pthread.h>
 
 #define FILE_SIZE (16 * 1024 * 1024)
-
-/* Thread worker arguments. */
-struct thread_ops {
-    /* The txid to contribute to and close. */
-    int txid;
-
-    /* What to modify. */
-    int32_t *i32p;
-};
 
 /*
  * Perform tx in a thread.
@@ -33,16 +24,20 @@ struct thread_ops {
 static void *
 make_tx(void *arg)
 {
-    struct thread_ops *args = arg;
+    int8_t *i8p = arg;
+    int16_t *i16p = (int16_t *)((uintptr_t)arg + 8);
+    int32_t *i32p = (int32_t *)((uintptr_t)arg + 16);
+    int64_t *i64p = (int64_t *)((uintptr_t)arg + 24);
 
     /* transaction not ended on purpose */
-    VALGRIND_PMC_ADD_THREAD_TX_N(args->txid);
+    VALGRIND_PMC_START_TX;
 
-    VALGRIND_PMC_ADD_TO_TX_N(args->txid, args->i32p, sizeof (*(args->i32p)));
+    VALGRIND_PMC_ADD_TO_TX(i32p, sizeof (*i32p));
     /* dirty stores */
-    *(args->i32p) = 3;
-
-    VALGRIND_PMC_END_TX_N(args->txid);
+    *i8p = 1;
+    *i16p = 2;
+    *i32p = 3;
+    *i64p = 4;
     return NULL;
 }
 
@@ -51,16 +46,12 @@ int main ( void )
     /* make, map and register a temporary file */
     void *base = make_map_tmpfile(FILE_SIZE);
 
-    struct thread_ops arg;
-
-    arg.txid = 1234;
-    arg.i32p = (int32_t *)(base);
-
-    VALGRIND_PMC_START_TX_N(arg.txid);
-
     pthread_t t1;
-    pthread_create(&t1, NULL, make_tx, &arg);
+    pthread_t t2;
+    pthread_create(&t1, NULL, make_tx, base);
+    pthread_create(&t2, NULL, make_tx, base);
     pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
 
     return 0;
 }
