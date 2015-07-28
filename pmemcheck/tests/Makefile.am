@@ -13,7 +13,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-SUBDIRS = . address_specific logging_related
+SUBDIRS = . address_specific logging_related small_stacktrace
 
 dist_noinst_SCRIPTS = \
 	filter_stderr
@@ -39,9 +39,7 @@ EXTRA_DIST = \
 	trans_nest.stderr.exp trans_nest.vgtest \
 	trans_impl_nest.stderr.exp trans_impl_nest.vgtest \
 	trans_no_pmem.stderr.exp trans_no_pmem.vgtest \
-	trans_mt.stderr.exp trans_mt.vgtest \
 	trans_excl.stderr.exp trans_excl.vgtest \
-	trans_mt_cross.stderr.exp trans_mt_cross.vgtest \
 	trans_only.stderr.exp trans_only.vgtest
 
 check_PROGRAMS = \
@@ -62,10 +60,5 @@ check_PROGRAMS = \
 	trans_nest \
 	trans_impl_nest \
 	trans_no_pmem \
-	trans_mt \
 	trans_excl \
-	trans_mt_cross \
 	trans_only
-	
-trans_mt_LDADD 	= -lpthread
-trans_mt_cross_LDADD 	= -lpthread
