@@ -183,6 +183,18 @@ void test(void)
    // claim res is used, so gcc can't nuke this all
    __asm__ __volatile__("" : : "r"(res));
 
+   {
+      char tmp[100];
+      VALGRIND_CREATE_MEMPOOL(tmp, 0, 0);
+      VALGRIND_MEMPOOL_ALLOC(tmp, tmp + 8, 16);
+      VALGRIND_MEMPOOL_FREE(tmp, tmp + 8);
+      VALGRIND_MEMPOOL_ALLOC(tmp, tmp + 8, 16);
+      VALGRIND_MAKE_MEM_NOACCESS(tmp, 8);
+      fprintf(stderr,
+              "\n------ write to noaccess space close to reallocated object ------\n\n");
+      tmp[7] = 0x66;
+   }
+
    fprintf(stderr,
            "\n------ done ------\n\n");
    pop(p1, 0);
