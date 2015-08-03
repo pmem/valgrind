@@ -241,6 +241,20 @@ static Bool in_block_list (VgHashTable block_list, MC_Chunk* mc)
       if (found_mc->szB != mc->szB
           || found_mc->allockind != mc->allockind)
          return False;
+
+      /* If a user freed and allocated again in the same spot (through
+       * VALGRIND_MEMPOOL_FREE/ALLOC), we might arrive here with
+       * a dead chunk which has the same address as an alive one. */
+      if (mc->allockind == MC_AllocCustom && found_mc != mc) {
+         const int l = (mc->szB >= MC_(clo_freelist_big_blocks) ? 0 : 1);
+         MC_Chunk *c = freed_list_start[l];
+         do {
+            if (c == mc)
+               return False;
+            c = c->next;
+         } while (c);
+      }
+
       tl_assert (found_mc == mc);
       return True;
    } else
