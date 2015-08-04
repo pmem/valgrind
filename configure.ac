@@ -3046,6 +3046,7 @@ AC_CONFIG_FILES([
    pmemcheck/tests/Makefile
    pmemcheck/tests/address_specific/Makefile
    pmemcheck/tests/logging_related/Makefile
+   pmemcheck/tests/small_stacktrace/Makefile
 ])
 AC_CONFIG_FILES([coregrind/link_tool_exe_linux],
                 [chmod +x coregrind/link_tool_exe_linux])

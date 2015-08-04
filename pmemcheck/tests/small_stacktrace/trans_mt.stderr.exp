@@ -1,68 +1,40 @@
 Number of stores not made persistent: 4
 Stores not made persistent properly:
 [0]    at 0x........: make_tx (trans_mt.c:37)
-   by 0x........: start_thread (pthread_create.c:312)
-   by 0x........: clone (clone.S:111)
 	Address: 0x........	size: 1	state: DIRTY
 [1]    at 0x........: make_tx (trans_mt.c:38)
-   by 0x........: start_thread (pthread_create.c:312)
-   by 0x........: clone (clone.S:111)
 	Address: 0x........	size: 2	state: DIRTY
 [2]    at 0x........: make_tx (trans_mt.c:39)
-   by 0x........: start_thread (pthread_create.c:312)
-   by 0x........: clone (clone.S:111)
 	Address: 0x........	size: 4	state: DIRTY
 [3]    at 0x........: make_tx (trans_mt.c:40)
-   by 0x........: start_thread (pthread_create.c:312)
-   by 0x........: clone (clone.S:111)
 	Address: 0x........	size: 8	state: DIRTY
 Total memory not made persistent: 15
 
 Number of stores made outside of transactions: 6
 Stores made outside of transactions:
 [0]    at 0x........: make_tx (trans_mt.c:37)
-   by 0x........: start_thread (pthread_create.c:312)
-   by 0x........: clone (clone.S:111)
 	Address: 0x........	size: 1
 [1]    at 0x........: make_tx (trans_mt.c:38)
-   by 0x........: start_thread (pthread_create.c:312)
-   by 0x........: clone (clone.S:111)
 	Address: 0x........	size: 2
 [2]    at 0x........: make_tx (trans_mt.c:40)
-   by 0x........: start_thread (pthread_create.c:312)
-   by 0x........: clone (clone.S:111)
 	Address: 0x........	size: 8
 [3]    at 0x........: make_tx (trans_mt.c:37)
-   by 0x........: start_thread (pthread_create.c:312)
-   by 0x........: clone (clone.S:111)
 	Address: 0x........	size: 1
 [4]    at 0x........: make_tx (trans_mt.c:38)
-   by 0x........: start_thread (pthread_create.c:312)
-   by 0x........: clone (clone.S:111)
 	Address: 0x........	size: 2
 [5]    at 0x........: make_tx (trans_mt.c:40)
-   by 0x........: start_thread (pthread_create.c:312)
-   by 0x........: clone (clone.S:111)
 	Address: 0x........	size: 8
 
 Number of overlapping regions registered in different transactions: 1
 Overlapping regions:
 [0]    at 0x........: make_tx (trans_mt.c:35)
-   by 0x........: start_thread (pthread_create.c:312)
-   by 0x........: clone (clone.S:111)
 	Address: 0x........	size: 4	tx_id: ...
    First registered here:
 [0]'   at 0x........: make_tx (trans_mt.c:35)
-   by 0x........: start_thread (pthread_create.c:312)
-   by 0x........: clone (clone.S:111)
 	Address: 0x........	size: 4	tx_id: ...
 
 Number of active transactions: 2
 [0]    at 0x........: make_tx (trans_mt.c:33)
-   by 0x........: start_thread (pthread_create.c:312)
-   by 0x........: clone (clone.S:111)
 	tx_id: ...	 nesting: 1
 [1]    at 0x........: make_tx (trans_mt.c:33)
-   by 0x........: start_thread (pthread_create.c:312)
-   by 0x........: clone (clone.S:111)
 	tx_id: ...	 nesting: 1
