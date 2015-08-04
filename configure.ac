@@ -303,9 +303,9 @@ case "${host_os}" in
         kernel=`uname -r`
 
         case "${kernel}" in
-             2.6.*|3.*) 
+             2.6.*|3.*|4.*) 
         	    AC_MSG_RESULT([2.6.x/3.x family (${kernel})])
-        	    AC_DEFINE([KERNEL_2_6], 1, [Define to 1 if you're using Linux 2.6.x or Linux 3.x])
+        	    AC_DEFINE([KERNEL_2_6], 1, [Define to 1 if you're using Linux 2.6.x, 3.x or 4.x])
         	    ;;
 
              2.4.*) 
@@ -315,7 +315,7 @@ case "${host_os}" in
 
              *) 
         	    AC_MSG_RESULT([unsupported (${kernel})])
-        	    AC_MSG_ERROR([Valgrind works on kernels 2.4, 2.6])
+        	    AC_MSG_ERROR([Valgrind works on kernels 2.4, 2.6, 3.x, 4.x])
         	    ;;
         esac
 
