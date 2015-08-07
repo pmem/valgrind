@@ -2257,6 +2257,16 @@ arguments.</para>
   </listitem>
 
   <listitem>
+    <para><varname>VALGRIND_CHECK_MEM_IS_UNADDRESSABLE</varname> and
+    <varname>VALGRIND_CHECK_MEM_IS_UNDEFINED</varname>: check immediately
+    whether or not the given address range has the relevant property.
+    Returns zero if the relevant property holds; otherwise,
+    the returned value is the address of the first byte for which the
+    property is not true.  Always returns 0 when not run on
+    Valgrind.</para>
+  </listitem>
+
+  <listitem>
     <para><varname>VALGRIND_CHECK_VALUE_IS_DEFINED</varname>: a quick and easy
     way to find out whether Valgrind thinks a particular value
     (lvalue, to be precise) is addressable and defined.  Prints an error
