@@ -3792,6 +3792,25 @@ static Bool is_mem_addressable ( Addr a, SizeT len,
    return True;
 }
 
+static Bool is_mem_undefined ( Addr a, SizeT len,
+                                 /*OUT*/Addr* bad_addr )
+{
+   SizeT i;
+   UWord vabits2;
+
+   PROF_EVENT(MCPE_IS_MEM_UNDEFINED);
+   for (i = 0; i < len; i++) {
+      PROF_EVENT(MCPE_IS_MEM_UNDEFINED_LOOP);
+      vabits2 = get_vabits2(a);
+      if (VA_BITS2_UNDEFINED != vabits2) {
+         if (bad_addr != NULL) *bad_addr = a;
+         return False;
+      }
+      a++;
+   }
+   return True;
+}
+
 static MC_ReadResult is_mem_defined ( Addr a, SizeT len,
                                       /*OUT*/Addr* bad_addr,
                                       /*OUT*/UInt* otag )
@@ -6557,6 +6576,18 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          Bool ok = is_mem_addressable ( arg[1], arg[2], &bad_addr );
          if (!ok)
             MC_(record_user_error) ( tid, bad_addr, /*isAddrErr*/True, 0 );
+         *ret = ok ? (UWord)NULL : bad_addr;
+         break;
+      }
+
+      case VG_USERREQ__CHECK_MEM_IS_UNADDRESSABLE: {
+         Bool ok = MC_(check_mem_is_noaccess) ( arg[1], arg[2], &bad_addr );
+         *ret = ok ? (UWord)NULL : bad_addr;
+         break;
+      }
+
+      case VG_USERREQ__CHECK_MEM_IS_UNDEFINED: {
+         Bool ok = is_mem_undefined( arg[1], arg[2], &bad_addr );
          *ret = ok ? (UWord)NULL : bad_addr;
          break;
       }
