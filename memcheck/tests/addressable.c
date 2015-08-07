@@ -91,6 +91,37 @@ static void test5()
 	(void) VALGRIND_CHECK_MEM_IS_DEFINED(m+20, 10); /* BAD */
 }
 
+/* Case 6 - test CHECK_MEM_IS_UNDEFINED */
+static void test6()
+{
+	char *m = mm(0, pgsz * 5, PROT_READ|PROT_WRITE);
+
+	(void) VALGRIND_MAKE_MEM_UNDEFINED(m, pgsz*5);
+	if (VALGRIND_CHECK_MEM_IS_UNDEFINED(m, pgsz*5) != NULL)
+		exit(61);
+
+	memset(m, 'x', 10);
+	if (VALGRIND_CHECK_MEM_IS_UNDEFINED(m, 10) != m)
+		exit(62);
+	if (VALGRIND_CHECK_MEM_IS_UNDEFINED(m+10, 10) != NULL)
+		exit(63);
+}
+
+/* Case 7 - test CHECK_MEM_IS_UNADDRESSABLE */
+static void test7()
+{
+	char *m = mm(0, pgsz * 5, PROT_READ|PROT_WRITE);
+
+	VALGRIND_CHECK_MEM_IS_ADDRESSABLE(m, pgsz * 5);
+	if (VALGRIND_CHECK_MEM_IS_UNADDRESSABLE(m, pgsz * 5) != m)
+		exit(71);
+
+	munmap(m, pgsz * 5);
+
+	if (VALGRIND_CHECK_MEM_IS_UNADDRESSABLE(m, pgsz * 5) != NULL)
+		exit(72);
+}
+
 static struct test {
 	void (*test)(void);
 	int faults;
@@ -100,6 +131,8 @@ static struct test {
 	{ test3, 0 },
 	{ test4, 1 },
 	{ test5, 0 },
+	{ test6, 0 },
+	{ test7, 0 },
 };
 static const int n_tests = sizeof(tests)/sizeof(*tests);
 	
