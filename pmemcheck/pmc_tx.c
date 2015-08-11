@@ -131,7 +131,6 @@ print_thread_transactions(void)
         return;
 
     VG_(dmsg)("Printing thread transactions\n");
-    /* remove the transaction from each thread */
     struct thread_info *elem;
     VG_(OSetGen_ResetIter)(trans.threads);
     while ((elem = VG_(OSetGen_Next)(trans.threads)) != NULL) {
