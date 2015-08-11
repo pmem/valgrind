@@ -1,0 +1,2 @@
+prog: region_coalescing
+vgopts: -q --print-summary=no
