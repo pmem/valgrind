@@ -53,7 +53,7 @@ is_in_mapping_set(const struct pmem_st *region, OSet *region_set)
 /**
 * \brief Adds a region to a set.
 *
-* Overlapping regions will be merged.
+* Overlapping and neighboring regions will be merged.
 * \param[in] region The region to register.
 * \param[in, out] region_set The region set to which region will be registered.
 */
@@ -66,7 +66,10 @@ add_region(const struct pmem_st *region, OSet *region_set)
     entry->state = STST_CLEAN;
 
     struct pmem_st *old_entry;
-    while ((old_entry = VG_(OSetGen_Remove)(region_set, entry)) != NULL) {
+    struct pmem_st search_entry = *entry;
+    search_entry.addr -= 1;
+    search_entry.size += 2;
+    while ((old_entry = VG_(OSetGen_Remove)(region_set, &search_entry)) != NULL) {
         /* registering overlapping memory regions, glue them together */
         ULong max_addr = MAX(entry->addr + entry->size, old_entry->addr +
                 old_entry->size);
