@@ -1,9 +1,9 @@
 Number of stores not made persistent: 3
 Stores not made persistent properly:
-[0]    at 0x........: main (emmintrin.h:...)
+[0]    at 0x........: main (...:...)
 	Address: 0x........	size: 8	state: DIRTY
-[1]    at 0x........: main (emmintrin.h:...)
+[1]    at 0x........: main (...:...)
 	Address: 0x........	size: 8	state: DIRTY
-[2]    at 0x........: main (emmintrin.h:...)
+[2]    at 0x........: main (...:...)
 	Address: 0x........	size: 4	state: DIRTY
 Total memory not made persistent: 20
