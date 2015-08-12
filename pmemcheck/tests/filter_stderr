@@ -20,7 +20,9 @@ $dir/../../tests/filter_stderr_basic |
 $dir/../../tests/filter_addresses |
 
 # SSE check filtering.
-sed "s/(emmintrin.h:[0-9]*)/(emmintrin.h:...)/" |
+sed "s/(emmintrin.h:[0-9]*)/(...:...)/" |
+sed "s/(nt_stores.c:[0-9]*)/(...:...)/" |
+sed "s/(sse_stores.c:[0-9]*)/(...:...)/" |
 
 # transaction id check filtering.
 sed "s/tx_id: [1-9]*/tx_id: .../" |
