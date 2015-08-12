@@ -1,7 +1,7 @@
 language: c
-before_install:
-  - sudo apt-get update -qq
+sudo: false
 compiler:
   - gcc
   - clang
-script: ./autogen.sh && ./configure && make && make check
+script: ./autogen.sh && ./configure && make && make check &&
+        perl tests/vg_regtest pmemcheck
