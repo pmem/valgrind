@@ -517,8 +517,7 @@ Overlapping regions:
             Checks if a given regions is registered as a persistent memory
             mapping in pmemcheck. Returns <code class="computeroutput">0</code>
             if not, <code class="computeroutput">1</code> if fully within mapping,
-            <code class="computeroutput">2</code> if front overlaps and
-            <code class="computeroutput">3</code> if tail overlaps.
+            <code class="computeroutput">2</code> otherwise.
           </p></dd>
 <dt>
 <a name="crm.print_map"></a><span class="term">
@@ -707,7 +706,9 @@ Overlapping regions:
             issue. Returns <code class="computeroutput">1</code> when no matching
             transaction was found, <code class="computeroutput">2</code> when
             the current thread does not participate in this transaction and
-            <code class="computeroutput">0</code> otherwise.
+            <code class="computeroutput">0</code> otherwise. Multiple additions
+	    of the same region do not result in multiple region entries. They
+	    are registered as contiguous space and not separate enteties.
           </p></dd>
 <dt>
 <a name="crm.add_to_tx_n"></a><span class="term">
@@ -721,7 +722,9 @@ Overlapping regions:
             issue. Returns <code class="computeroutput">1</code> when no matching
             transaction was found, <code class="computeroutput">2</code> when
             the current thread does not participate in this transaction and
-            <code class="computeroutput">0</code> otherwise.
+            <code class="computeroutput">0</code> otherwise. Multiple additions
+	    of the same region do not result in multiple region entries. They
+	    are registered as contiguous space and not separate enteties.
           </p></dd>
 <dt>
 <a name="crm.remove_from_tx"></a><span class="term">
@@ -733,7 +736,9 @@ Overlapping regions:
             Returns <code class="computeroutput">1</code> when no matching
             transaction was found, <code class="computeroutput">2</code> when
             the current thread does not participate in this transaction and
-            <code class="computeroutput">0</code> otherwise.
+            <code class="computeroutput">0</code> otherwise. Removing a region once
+	    removes it from the transaction, regardless how many times it was
+	    added.
           </p></dd>
 <dt>
 <a name="crm.remove_from_tx_n"></a><span class="term">
@@ -745,7 +750,9 @@ Overlapping regions:
             Returns <code class="computeroutput">1</code> when no matching
             transaction was found, <code class="computeroutput">2</code> when
             the current thread does not participate in this transaction and
-            <code class="computeroutput">0</code> otherwise.
+            <code class="computeroutput">0</code> otherwise. Removing a region once
+	    removes it from the transaction, regardless how many times it was
+	    added.
           </p></dd>
 <dt>
 <a name="crm.add_thread_to_tx_n"></a><span class="term">
