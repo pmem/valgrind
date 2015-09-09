@@ -29,6 +29,10 @@ int main ( void )
 
     /* first three should be merged, fourth cached */
     VALGRIND_PMC_ADD_TO_TX_N(1234, i16p, sizeof (*i16p));
+
+    /* check for flush of empty cache */
+    *i16p = 9;
+
     ++i16p;
     VALGRIND_PMC_ADD_TO_TX_N(1234, i16p, sizeof (*i16p));
     ++i16p;
