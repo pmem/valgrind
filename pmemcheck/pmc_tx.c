@@ -406,6 +406,10 @@ is_tx_in_thread(UWord tx_id)
 static void
 flush_cache(struct tx_info *tx)
 {
+    /* cache is empty, do not try to flush it */
+    if ((tx->cached_region.addr == 0) && (tx->cached_region.size == 0))
+        return;
+
     add_region(&(tx->cached_region), tx->regions);
     tx->cached_region.addr = 0;
     tx->cached_region.size = 0;
@@ -546,8 +550,8 @@ is_store_in_tx(const struct pmem_st *store, UWord tx_id)
         return False;
     }
 
-    /* check for exact match in cache cache */
-    if (is_in_cache(store, tx))
+    /* check if store is fully within cache */
+    if (check_overlap(store, &tx->cached_region) == 1)
         return True;
 
     /* flush cache because of possible coalescing */
@@ -677,12 +681,12 @@ handle_tx_store(const struct pmem_st *store)
             return;
     }
 
-//    if (trans.verbose) {
-    VG_(OSetWord_ResetIter)(tinfo->tx_ids);
-    while (VG_(OSetWord_Next)(tinfo->tx_ids, &tx_id)) {
-        print_regions(tx_id);
+    if (trans.verbose) {
+        VG_(OSetWord_ResetIter)(tinfo->tx_ids);
+        while (VG_(OSetWord_Next)(tinfo->tx_ids, &tx_id)) {
+            print_regions(tx_id);
+        }
     }
-//    }
 
     /* report if not */
     record_store(store, tinfo);
