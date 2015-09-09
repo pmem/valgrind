@@ -58,7 +58,7 @@ check_overlap(const struct pmem_st *lhs, const struct pmem_st *rhs)
         /* partial overlap */
         return 2;
     else
-        /* region fully within the mapping */
+        /* lhs fully within rhs */
         return 1;
 }
 
