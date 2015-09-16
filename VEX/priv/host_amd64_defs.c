@@ -793,6 +793,11 @@ AMD64Instr* AMD64Instr_MFence ( void ) {
    i->tag        = Ain_MFence;
    return i;
 }
+AMD64Instr* AMD64Instr_Pcommit ( void ) {
+   AMD64Instr* i = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag        = Ain_Pcommit;
+   return i;
+}
 AMD64Instr* AMD64Instr_ACAS ( AMD64AMode* addr, UChar sz ) {
    AMD64Instr* i    = LibVEX_Alloc(sizeof(AMD64Instr));
    i->tag           = Ain_ACAS;
@@ -1164,6 +1169,9 @@ void ppAMD64Instr ( AMD64Instr* i, Bool mode64 )
       case Ain_MFence:
          vex_printf("mfence" );
          return;
+      case Ain_Pcommit:
+         vex_printf("pcommit" );
+         return;
       case Ain_ACAS:
          vex_printf("lock cmpxchg%c ",
                      i->Ain.ACAS.sz==1 ? 'b' : i->Ain.ACAS.sz==2 ? 'w' 
@@ -1484,6 +1492,8 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i, Bool mode64 )
          return;
       case Ain_MFence:
          return;
+      case Ain_Pcommit:
+         return;
       case Ain_ACAS:
          addRegUsage_AMD64AMode(u, i->Ain.ACAS.addr);
          addHRegUse(u, HRmRead, hregAMD64_RBX());
@@ -1715,6 +1725,8 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
          mapReg(m, &i->Ain.Bsfr64.dst);
          return;
       case Ain_MFence:
+         return;
+      case Ain_Pcommit:
          return;
       case Ain_ACAS:
          mapRegs_AMD64AMode(m, i->Ain.ACAS.addr);
@@ -3003,6 +3015,11 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
    case Ain_MFence:
       /* mfence */
       *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF0;
+      goto done;
+
+   case Ain_Pcommit:
+      /* pcommit */
+      *p++ = 0x66; *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF8;
       goto done;
 
    case Ain_ACAS:
