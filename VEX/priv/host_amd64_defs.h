@@ -374,6 +374,7 @@ typedef
       Ain_Set64,       /* convert condition code to 64-bit value */
       Ain_Bsfr64,      /* 64-bit bsf/bsr */
       Ain_MFence,      /* mem fence */
+      Ain_Pcommit,     /* persistent memory commit */
       Ain_ACAS,        /* 8/16/32/64-bit lock;cmpxchg */
       Ain_DACAS,       /* lock;cmpxchg8b/16b (doubleword ACAS, 2 x
                           32-bit or 2 x 64-bit only) */
@@ -717,6 +718,7 @@ extern AMD64Instr* AMD64Instr_Store      ( UChar sz, HReg src, AMD64AMode* dst )
 extern AMD64Instr* AMD64Instr_Set64      ( AMD64CondCode cond, HReg dst );
 extern AMD64Instr* AMD64Instr_Bsfr64     ( Bool isFwds, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_MFence     ( void );
+extern AMD64Instr* AMD64Instr_Pcommit    ( void );
 extern AMD64Instr* AMD64Instr_ACAS       ( AMD64AMode* addr, UChar sz );
 extern AMD64Instr* AMD64Instr_DACAS      ( AMD64AMode* addr, UChar sz );
 
