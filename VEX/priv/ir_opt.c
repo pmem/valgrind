@@ -494,7 +494,10 @@ static void flatten_Stmt ( IRSB* bb, IRStmt* st )
          addStmtToIRSB(bb, IRStmt_Dirty(d2));
          break;
       case Ist_NoOp:
+         break;
       case Ist_MBE:
+         addStmtToIRSB(bb, st);
+         break;
       case Ist_IMark:
          addStmtToIRSB(bb, st);
          break;
@@ -508,6 +511,10 @@ static void flatten_Stmt ( IRSB* bb, IRStmt* st )
          addStmtToIRSB(bb, IRStmt_Exit(e1, st->Ist.Exit.jk,
                                        st->Ist.Exit.dst,
                                        st->Ist.Exit.offsIP));
+         break;
+      case Ist_Flush:
+         e1 = flatten_Expr(bb, st->Ist.Flush.addr);
+         addStmtToIRSB(bb, IRStmt_Flush(e1));
          break;
       default:
          vex_printf("\n");
@@ -815,6 +822,10 @@ static void handle_gets_Stmt (
 
       case Ist_NoOp:
       case Ist_IMark:
+         break;
+
+      case Ist_Flush:
+         vassert(isIRAtom(st->Ist.Flush.addr));
          break;
 
       default:
@@ -2747,6 +2758,12 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
                                    st->Ist.Exit.dst, st->Ist.Exit.offsIP);
       }
 
+      case Ist_Flush:
+         vassert(isIRAtom(st->Ist.Flush.addr));
+         return IRStmt_Flush(
+                   fold_Expr(env, subst_Expr(env, st->Ist.Flush.addr))
+                );
+
    default:
       vex_printf("\n"); ppIRStmt(st);
       vpanic("subst_and_fold_Stmt");
@@ -3054,6 +3071,9 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
          return;
       case Ist_Exit:
          addUses_Expr(set, st->Ist.Exit.guard);
+         return;
+      case Ist_Flush:
+         addUses_Expr(set, st->Ist.Flush.addr);
          return;
       default:
          vex_printf("\n");
@@ -3917,7 +3937,7 @@ static Bool do_cse_BB ( IRSB* bb, Bool allowLoadsToBeCSEd )
       switch (st->tag) {
          case Ist_Dirty: case Ist_Store: case Ist_MBE:
          case Ist_CAS: case Ist_LLSC:
-         case Ist_StoreG:
+         case Ist_StoreG: case Ist_Flush:
             paranoia = 2; break;
          case Ist_Put: case Ist_PutI: 
             paranoia = 1; break;
@@ -4422,6 +4442,10 @@ Bool guestAccessWhichMightOverlapPutI (
          vassert(isIRAtom(s2->Ist.Store.data));
          return False;
 
+      case Ist_Flush:
+         vassert(isIRAtom(s2->Ist.Flush.addr));
+         return False;
+
       default:
          vex_printf("\n"); ppIRStmt(s2); vex_printf("\n");
          vpanic("guestAccessWhichMightOverlapPutI");
@@ -4676,6 +4700,9 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
             d->tmp += delta;
          if (d->mAddr)
             deltaIRExpr(d->mAddr, delta);
+         break;
+      case Ist_Flush:
+         deltaIRExpr(st->Ist.Flush.addr, delta);
          break;
       default: 
          vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
@@ -5217,6 +5244,9 @@ static void aoccCount_Stmt ( UShort* uses, IRStmt* st )
       case Ist_Exit:
          aoccCount_Expr(uses, st->Ist.Exit.guard);
          return;
+      case Ist_Flush:
+         aoccCount_Expr(uses, st->Ist.Flush.addr);
+         return;
       default: 
          vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
          vpanic("aoccCount_Stmt");
@@ -5601,6 +5631,12 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
                d2->args[i] = atbSubst_Expr(env, arg);
          }
          return IRStmt_Dirty(d2);
+
+      case Ist_Flush:
+         return IRStmt_Flush(
+                   atbSubst_Expr(env, st->Ist.Flush.addr)
+                );
+
       default: 
          vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
          vpanic("atbSubst_Stmt");
@@ -5906,7 +5942,8 @@ static Interval stmt_modifies_guest_state (
                  invalidates absolutely everything, so that all
                  computation prior to it is forced to complete before
                  proceeding with the event (fence,lock,unlock). */
-              || st->tag == Ist_MBE
+              || st->tag == Ist_MBE /* XXX - does it apply to Drain? */
+              || st->tag == Ist_Flush /* XXX */
               /* also be (probably overly) paranoid re AbiHints */
               || st->tag == Ist_AbiHint
               );
@@ -6548,6 +6585,9 @@ static void considerExpensives ( /*OUT*/Bool* hasGetIorPutI,
             break;
          case Ist_Exit:
             vassert(isIRAtom(st->Ist.Exit.guard));
+            break;
+         case Ist_Flush:
+            vassert(isIRAtom(st->Ist.Flush.addr));
             break;
          default: 
          bad:
