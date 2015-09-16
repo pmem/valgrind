@@ -2487,7 +2487,9 @@ typedef
       /* Needed only on ARM.  It cancels a reservation made by a
          preceding Linked-Load, and needs to be handed through to the
          back end, just as LL and SC themselves are. */
-      Imbe_CancelReservation
+      Imbe_CancelReservation,
+      /* Needed only on amd64.  It drains the iMC cache. */
+      Imbe_Drain
    }
    IRMBusEvent;
 
@@ -2708,7 +2710,8 @@ typedef
       Ist_LLSC,
       Ist_Dirty,
       Ist_MBE,
-      Ist_Exit
+      Ist_Exit,
+      Ist_Flush
    } 
    IRStmtTag;
 
@@ -2949,7 +2952,14 @@ typedef
             IRJumpKind jk;       /* Jump kind */
             Int        offsIP;   /* Guest state offset for IP */
          } Exit;
-      } Ist;
+
+         /* Flush a cache line.
+            ppIRStmt output: FLUSH(<addr>), eg. FLUSH(t1)
+         */
+         struct {
+            IRExpr*   addr;     /* flush address */
+         } Flush;
+       } Ist;
    }
    IRStmt;
 
@@ -2970,6 +2980,7 @@ extern IRStmt* IRStmt_LLSC    ( IREndness end, IRTemp result,
                                 IRExpr* addr, IRExpr* storedata );
 extern IRStmt* IRStmt_Dirty   ( IRDirty* details );
 extern IRStmt* IRStmt_MBE     ( IRMBusEvent event );
+extern IRStmt* IRStmt_Flush   ( IRExpr* addr );
 extern IRStmt* IRStmt_Exit    ( IRExpr* guard, IRJumpKind jk, IRConst* dst,
                                 Int offsIP );
 
