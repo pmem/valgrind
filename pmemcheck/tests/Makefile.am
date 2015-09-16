@@ -30,6 +30,7 @@ EXTRA_DIST = \
 	sse_stores.stderr.exp sse_stores.vgtest \
 	cas.stderr.exp cas.vgtest \
 	flush_check.stderr.exp flush_check.vgtest \
+	isa_check.stderr.exp isa_check.vgtest \
 	state_no_flush_align.stderr.exp state_no_flush_align.vgtest \
 	nt_stores.stderr.exp nt_stores.vgtest \
 	set_clean.stderr.exp set_clean.vgtest \
@@ -53,6 +54,7 @@ check_PROGRAMS = \
 	sse_stores \
 	cas \
 	flush_check \
+	isa_check\
 	state_no_flush_align \
 	nt_stores \
 	set_clean \
