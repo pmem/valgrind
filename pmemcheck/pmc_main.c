@@ -861,6 +861,37 @@ do_flush(UWord base, UWord size)
     }
 }
 
+static VG_REGPARM(1) void
+trace_pmem_flush(Addr addr)
+{
+	do_flush(addr, pmem.flush_align_size);
+}
+
+/**
+* \brief Add an ordinary write event.
+* \param[in,out] sb The IR superblock to which the expression belongs.
+* \param[in] daddr The expression with the address of the operation.
+* \param[in] dsize The size of the operation.
+* \param[in] value The expression with the value of the operation.
+*/
+static void
+add_flush_dw(IRSB *sb, IRAtom *daddr)
+{
+    tl_assert(isIRAtom(daddr));
+
+    const HChar *helperName = "trace_pmem_flush";
+    void *helperAddr = trace_pmem_flush;
+    IRExpr **argv;
+    IRDirty *di;
+
+    argv = mkIRExprVec_2(daddr,
+            IRExpr_Const(IRConst_U64(pmem.flush_align_size)));
+    di = unsafeIRDirty_0_N(/*regparms*/2, helperName,
+            VG_(fnptr_to_fnentry)(helperAddr), argv);
+
+    addStmtToIRSB(sb, IRStmt_Dirty(di));
+}
+
 /**
 * \brief Read the cache line size - linux specific.
 * \return The size of the cache line.
@@ -1101,13 +1132,36 @@ pmc_instrument(VgCallbackClosure *closure,
             case Ist_AbiHint:
             case Ist_Put:
             case Ist_PutI:
-            case Ist_MBE:
             case Ist_LoadG:
             case Ist_WrTmp:
             case Ist_Exit:
                 /* for now we are not interested in any of the above */
                 addStmtToIRSB(sbOut, st);
                 break;
+
+            case Ist_Flush: {
+                IRExpr *addr = st->Ist.Flush.addr;
+                IRType type = typeOfIRExpr(tyenv, addr);
+                tl_assert(type != Ity_INVALID);
+                add_flush_dw(sbOut, st->Ist.Flush.addr);
+                addStmtToIRSB(sbOut, st);
+                break;
+            }
+
+            case Ist_MBE: {
+                switch (st->Ist.MBE.event) {
+                    case Imbe_Fence:
+                        do_fence();
+                        break;
+                    case Imbe_Drain:
+                        do_commit();
+                        break;
+                    default:
+                        break;
+                }
+                addStmtToIRSB(sbOut, st);
+                break;
+            }
 
             case Ist_Store: {
                 IRExpr *data = st->Ist.Store.data;
@@ -1594,7 +1648,7 @@ static void
 pmc_pre_clo_init(void)
 {
     VG_(details_name)("pmemcheck");
-    VG_(details_version)("0.1");
+    VG_(details_version)("0.1a");
     VG_(details_description)("a simple persistent store checker");
     VG_(details_copyright_author)("Copyright (c) 2014-2015, Intel Corporation");
     VG_(details_bug_reports_to)("tomasz.kapela@intel.com");
