@@ -1,2 +1,2 @@
 prog: trans_mt_cross
-vgopts: -q
+vgopts: --isa-rec=no -q
