@@ -2213,6 +2213,7 @@ void sg_instrument_IRStmt ( /*MOD*/struct _SGEnv * env,
       case Ist_Put:
       case Ist_PutI:
       case Ist_MBE:
+      case Ist_Flush:
          /* None of these can contain any memory references. */
          break;
 

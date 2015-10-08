@@ -4543,6 +4543,7 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
          case Ist_Put:
          case Ist_PutI:
          case Ist_Exit:
+         case Ist_Flush:
             /* None of these can contain any memory references. */
             break;
 
@@ -4568,6 +4569,9 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
          case Ist_MBE:
             switch (st->Ist.MBE.event) {
                case Imbe_Fence:
+               case Imbe_LFence:
+               case Imbe_SFence:
+               case Imbe_Drain:
                case Imbe_CancelReservation:
                   break; /* not interesting */
                default:
