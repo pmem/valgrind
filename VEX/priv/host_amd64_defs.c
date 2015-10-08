@@ -3017,11 +3017,6 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
       *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF0;
       goto done;
 
-   case Ain_Pcommit:
-      /* pcommit */
-      *p++ = 0x66; *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF8;
-      goto done;
-
    case Ain_ACAS:
       /* lock */
       *p++ = 0xF0;
