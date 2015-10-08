@@ -2489,7 +2489,13 @@ typedef
          back end, just as LL and SC themselves are. */
       Imbe_CancelReservation,
       /* Needed only on amd64.  It drains the iMC cache. */
-      Imbe_Drain
+      Imbe_Drain,
+      /* Might be interesting for some kinds of tools */
+      /* XXX it would probably be a good idea to add a new fence kind to the
+       MBE statement, this however needs a lot of changes - to be considered
+       in the long run.*/
+      Imbe_SFence,
+      Imbe_LFence
    }
    IRMBusEvent;
 
@@ -2601,6 +2607,20 @@ extern IRPutI* mkIRPutI ( IRRegArray* descr, IRExpr* ix,
 
 extern IRPutI* deepCopyIRPutI ( const IRPutI* );
 
+/* --------------- Flush operations --------------- */
+
+/* For some analysis tools, the type of flush operation is important. This is
+   what this enum is for.
+ */
+typedef
+   enum {
+      Ifk_flush = 0,        /* normal CLFLUSH */
+      Ifk_flushopt,         /* CLFLUSHOPT */
+      Ifk_clwb,             /* CLWB */
+
+   } IRFlushKind;
+
+void ppIRFlushEvent ( IRFlushKind flush_kind, IRExpr* e );
 
 /* --------------- Guarded loads and stores --------------- */
 
@@ -2957,7 +2977,8 @@ typedef
             ppIRStmt output: FLUSH(<addr>), eg. FLUSH(t1)
          */
          struct {
-            IRExpr*   addr;     /* flush address */
+            IRExpr*     addr;       /* flush address */
+            IRFlushKind  fk;        /* flush kind */
          } Flush;
        } Ist;
    }
@@ -2980,7 +3001,7 @@ extern IRStmt* IRStmt_LLSC    ( IREndness end, IRTemp result,
                                 IRExpr* addr, IRExpr* storedata );
 extern IRStmt* IRStmt_Dirty   ( IRDirty* details );
 extern IRStmt* IRStmt_MBE     ( IRMBusEvent event );
-extern IRStmt* IRStmt_Flush   ( IRExpr* addr );
+extern IRStmt* IRStmt_Flush   ( IRExpr* addr, IRFlushKind fk );
 extern IRStmt* IRStmt_Exit    ( IRExpr* guard, IRJumpKind jk, IRConst* dst,
                                 Int offsIP );
 

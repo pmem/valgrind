@@ -1559,9 +1559,29 @@ void ppIRMBusEvent ( IRMBusEvent event )
          vex_printf("CancelReservation"); break;
       case Imbe_Drain:
          vex_printf("Drain"); break;
+      case Imbe_SFence:
+         vex_printf("SFence"); break;
+      case Imbe_LFence:
+         vex_printf("LFence"); break;
       default:
          vpanic("ppIRMBusEvent");
    }
+}
+
+void ppIRFlushEvent ( IRFlushKind flush_kind, IRExpr* e )
+{
+   switch (flush_kind) {
+      case Ifk_flush:
+         vex_printf("FLUSH("); break;
+      case Ifk_flushopt:
+         vex_printf("FLUSHOPT("); break;
+      case Ifk_clwb:
+         vex_printf("CLWB("); break;
+      default:
+         vpanic("ppIRFlushEvent");
+   }
+   ppIRExpr(e);
+   vex_printf(")");
 }
 
 void ppIRStmt ( const IRStmt* s )
@@ -1647,9 +1667,7 @@ void ppIRStmt ( const IRStmt* s )
          vex_printf(" } ");
          break;
       case Ist_Flush:
-         vex_printf( "FLUSH(");
-         ppIRExpr(s->Ist.Flush.addr);
-         vex_printf( ")");
+         ppIRFlushEvent(s->Ist.Flush.fk, s->Ist.Flush.addr);
          break;
       default: 
          vpanic("ppIRStmt");
@@ -2240,10 +2258,11 @@ IRStmt* IRStmt_Exit ( IRExpr* guard, IRJumpKind jk, IRConst* dst,
    s->Ist.Exit.offsIP = offsIP;
    return s;
 }
-IRStmt* IRStmt_Flush ( IRExpr* addr ) {
+IRStmt* IRStmt_Flush ( IRExpr* addr, IRFlushKind fk ) {
    IRStmt* s           = LibVEX_Alloc(sizeof(IRStmt));
    s->tag              = Ist_Flush;
    s->Ist.Flush.addr   = addr;
+   s->Ist.Flush.fk     = fk;
    return s;
 }
 
@@ -2502,7 +2521,8 @@ IRStmt* deepCopyIRStmt ( const IRStmt* s )
                             deepCopyIRConst(s->Ist.Exit.dst),
                             s->Ist.Exit.offsIP);
       case Ist_Flush:
-         return IRStmt_Flush(deepCopyIRExpr(s->Ist.Flush.addr));
+         return IRStmt_Flush(deepCopyIRExpr(s->Ist.Flush.addr),
+                             s->Ist.Flush.fk);
       default:
          vpanic("deepCopyIRStmt");
    }
@@ -4545,6 +4565,7 @@ void tcStmt ( const IRSB* bb, const IRStmt* stmt, IRType gWordTy )
       case Ist_MBE:
          switch (stmt->Ist.MBE.event) {
             case Imbe_Fence: case Imbe_CancelReservation: case Imbe_Drain:
+            case Imbe_SFence: case Imbe_LFence:
                break;
             default: sanityCheckFail(bb,stmt,"IRStmt.MBE.event: unknown");
                break;
