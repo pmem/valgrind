@@ -1,2 +1,2 @@
 prog: state_machine2
-vgopts: -q --flush-align=yes
+vgopts: --isa-rec=no -q --flush-align=yes

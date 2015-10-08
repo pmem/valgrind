@@ -6176,6 +6176,8 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
       case Ist_IMark:
       case Ist_MBE:
          return False;
+      case Ist_Flush:
+         return isBogusAtom(st->Ist.Flush.addr);
       case Ist_CAS:
          cas = st->Ist.CAS.details;
          return isBogusAtom(cas->addr)
@@ -6421,6 +6423,7 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
 
          case Ist_NoOp:
          case Ist_MBE:
+         case Ist_Flush:
             break;
 
          case Ist_Dirty:
@@ -7393,6 +7396,7 @@ static void schemeS ( MCEnv* mce, IRStmt* st )
       case Ist_NoOp:
       case Ist_Exit:
       case Ist_IMark:
+      case Ist_Flush:
          break;
 
       default:
