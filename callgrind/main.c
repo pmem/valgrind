@@ -1023,6 +1023,7 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
 	 case Ist_Put:
 	 case Ist_PutI:
 	 case Ist_MBE:
+	 case Ist_Flush:
 	    break;
 
 	 case Ist_IMark: {

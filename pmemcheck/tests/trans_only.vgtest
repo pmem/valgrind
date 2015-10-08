@@ -1,2 +1,2 @@
 prog: trans_only
-vgopts: -q --tx_only=yes
+vgopts: --isa-rec=no -q --tx-only=yes

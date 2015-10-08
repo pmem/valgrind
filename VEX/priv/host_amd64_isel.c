@@ -4592,10 +4592,11 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    case Ist_MBE:
       switch (stmt->Ist.MBE.event) {
          case Imbe_Fence:
+         case Imbe_SFence:
+         case Imbe_LFence:
             addInstr(env, AMD64Instr_MFence());
             return;
          case Imbe_Drain:
-            addInstr(env, AMD64Instr_Pcommit());
             return;
          default:
             break;
