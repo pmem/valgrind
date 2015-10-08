@@ -1,2 +1,2 @@
 prog: sse_stores
-vgopts: -q
+vgopts: --isa-rec=no -q

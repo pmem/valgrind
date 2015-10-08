@@ -1,2 +1,2 @@
 prog: tmp_store
-vgopts: -q
+vgopts: --isa-rec=no -q

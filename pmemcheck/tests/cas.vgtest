@@ -1,2 +1,2 @@
 prog: cas
-vgopts: -q
+vgopts: --isa-rec=no -q

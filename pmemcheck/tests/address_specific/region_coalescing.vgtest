@@ -1,2 +1,2 @@
 prog: region_coalescing
-vgopts: -q --print-summary=no
+vgopts: --isa-rec=no -q --print-summary=no

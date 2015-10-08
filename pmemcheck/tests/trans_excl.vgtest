@@ -1,2 +1,2 @@
 prog: trans_excl
-vgopts: -q
+vgopts: --isa-rec=no -q

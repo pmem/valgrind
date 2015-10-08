@@ -1,14 +1,20 @@
-Number of stores not made persistent: 1
+Number of stores not made persistent: 2
 Stores not made persistent properly:
-[0]    at 0x........: main (flush_check.c:27)
+[0]    at 0x........: main (isa_check.c:50)
 	Address: 0x........	size: 8	state: COMMITTED
-Total memory not made persistent: 8
-
-Number of redundantly flushed stores: 3
-Stores flushed multiple times:
-[0]    at 0x........: main (flush_check.c:27)
+[1]    at 0x........: main (isa_check.c:57)
 	Address: 0x........	size: 8	state: FLUSHED
-[1]    at 0x........: main (flush_check.c:27)
+Total memory not made persistent: 16
+
+Number of redundantly flushed stores: 5
+Stores flushed multiple times:
+[0]    at 0x........: main (isa_check.c:37)
 	Address: 0x........	size: 8	state: FENCED
-[2]    at 0x........: main (flush_check.c:27)
+[1]    at 0x........: main (isa_check.c:37)
+	Address: 0x........	size: 8	state: FENCED
+[2]    at 0x........: main (isa_check.c:37)
 	Address: 0x........	size: 8	state: COMMITTED
+[3]    at 0x........: main (isa_check.c:50)
+	Address: 0x........	size: 8	state: FLUSHED
+[4]    at 0x........: main (isa_check.c:57)
+	Address: 0x........	size: 8	state: FLUSHED
