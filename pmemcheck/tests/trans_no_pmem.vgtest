@@ -1,2 +1,2 @@
 prog: trans_no_pmem
-vgopts: -q
+vgopts: --isa-rec=no -q
