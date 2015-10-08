@@ -1,2 +1,2 @@
 prog: trans_impl_nest
-vgopts: -q
+vgopts: --isa-rec=no -q

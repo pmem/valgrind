@@ -15,8 +15,10 @@
 #include "common.h"
 #include <xmmintrin.h>
 
-//#define	_mm_clflush(addr)\
-//	asm volatile("clflush %0" : "+m" (*(volatile char *)addr));
+#define	_mm_clflushopt(addr)\
+	asm volatile(".byte 0x66; clflush %0" : "+m" (*(volatile char *)addr));
+#define	_mm_clwb(addr)\
+	asm volatile(".byte 0x66, 0x0f, 0xae, 0x30" : "+m" (*(volatile char *)addr));
 #define	_mm_sfence()\
 	asm volatile(".byte 0x0f, 0xae, 0xf8");
 #define	_mm_pcommit()\
@@ -44,7 +46,19 @@ int main ( void )
     _mm_clflush(base);
     _mm_sfence();
 
+    i64p += 8;
+    *i64p = 4;
+    _mm_clflushopt(i64p);
+    /* flush should be registered as "invalid" */
+    _mm_clflush(i64p);
     _mm_pcommit();
-    _mm_sfence();
+
+    i64p += 8;
+    *i64p = 4;
+    _mm_clwb(i64p);
+    /* flush should be registered as "invalid" */
+    _mm_clflushopt(i64p);
+    _mm_pcommit();
+
     return 0;
 }
