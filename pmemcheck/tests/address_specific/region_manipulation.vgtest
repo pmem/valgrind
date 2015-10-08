@@ -1,2 +1,2 @@
 prog: region_manipulation
-vgopts: -q --print-summary=no
+vgopts: --isa-rec=no -q --print-summary=no
