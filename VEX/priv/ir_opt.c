@@ -512,7 +512,7 @@ static void flatten_Stmt ( IRSB* bb, IRStmt* st )
          break;
       case Ist_Flush:
          e1 = flatten_Expr(bb, st->Ist.Flush.addr);
-         addStmtToIRSB(bb, IRStmt_Flush(e1));
+         addStmtToIRSB(bb, IRStmt_Flush(e1, st->Ist.Flush.fk));
          break;
       default:
          vex_printf("\n");
@@ -2861,7 +2861,8 @@ static IRStmt* subst_and_maybe_fold_Stmt ( Bool doFolding,
       case Ist_Flush:
          vassert(isIRAtom(st->Ist.Flush.addr));
          return IRStmt_Flush(
-                   fold_Expr(env, subst_Expr(env, st->Ist.Flush.addr))
+                   fold_Expr(env, subst_Expr(env, st->Ist.Flush.addr)),
+                   st->Ist.Flush.fk
                 );
 
    default:
@@ -5752,7 +5753,8 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
 
       case Ist_Flush:
          return IRStmt_Flush(
-                   atbSubst_Expr(env, st->Ist.Flush.addr)
+                   atbSubst_Expr(env, st->Ist.Flush.addr),
+                   st->Ist.Flush.fk
                 );
 
       default: 
