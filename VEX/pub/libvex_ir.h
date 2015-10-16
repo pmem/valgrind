@@ -2408,7 +2408,15 @@ typedef
       /* Needed only on ARM.  It cancels a reservation made by a
          preceding Linked-Load, and needs to be handed through to the
          back end, just as LL and SC themselves are. */
-      Imbe_CancelReservation
+      Imbe_CancelReservation,
+      /* Needed only on amd64.  It drains the iMC cache. */
+      Imbe_Drain,
+      /* Might be interesting for some kinds of tools */
+      /* XXX it would probably be a good idea to add a new fence kind to the
+       MBE statement, this however needs a lot of changes - to be considered
+       in the long run.*/
+      Imbe_SFence,
+      Imbe_LFence
    }
    IRMBusEvent;
 
@@ -2520,6 +2528,20 @@ extern IRPutI* mkIRPutI ( IRRegArray* descr, IRExpr* ix,
 
 extern IRPutI* deepCopyIRPutI ( IRPutI* );
 
+/* --------------- Flush operations --------------- */
+
+/* For some analysis tools, the type of flush operation is important. This is
+   what this enum is for.
+ */
+typedef
+   enum {
+      Ifk_flush = 0,        /* normal CLFLUSH */
+      Ifk_flushopt,         /* CLFLUSHOPT */
+      Ifk_clwb,             /* CLWB */
+
+   } IRFlushKind;
+
+void ppIRFlushEvent ( IRFlushKind flush_kind, IRExpr* e );
 
 /* --------------- Guarded loads and stores --------------- */
 
@@ -2627,7 +2649,8 @@ typedef
       Ist_LLSC,
       Ist_Dirty,
       Ist_MBE,
-      Ist_Exit
+      Ist_Exit,
+      Ist_Flush
    } 
    IRStmtTag;
 
@@ -2868,7 +2891,15 @@ typedef
             IRJumpKind jk;       /* Jump kind */
             Int        offsIP;   /* Guest state offset for IP */
          } Exit;
-      } Ist;
+
+         /* Flush a cache line.
+            ppIRStmt output: FLUSH(<addr>), eg. FLUSH(t1)
+         */
+         struct {
+            IRExpr*     addr;       /* flush address */
+            IRFlushKind  fk;        /* flush kind */
+         } Flush;
+       } Ist;
    }
    IRStmt;
 
@@ -2889,6 +2920,7 @@ extern IRStmt* IRStmt_LLSC    ( IREndness end, IRTemp result,
                                 IRExpr* addr, IRExpr* storedata );
 extern IRStmt* IRStmt_Dirty   ( IRDirty* details );
 extern IRStmt* IRStmt_MBE     ( IRMBusEvent event );
+extern IRStmt* IRStmt_Flush   ( IRExpr* addr, IRFlushKind fk );
 extern IRStmt* IRStmt_Exit    ( IRExpr* guard, IRJumpKind jk, IRConst* dst,
                                 Int offsIP );
 

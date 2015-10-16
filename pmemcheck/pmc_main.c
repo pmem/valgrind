@@ -114,6 +114,9 @@ static struct pmem_ops {
 
     /** Toggles transaction tracking. */
     Bool transactions_only;
+
+    /** Toggles automatic ISA recognition. */
+    Bool automatic_isa_rec;
 } pmem;
 
 /*
@@ -862,6 +865,54 @@ do_flush(UWord base, UWord size)
 }
 
 /**
+ * \brief Register runtime flush.
+ * \param addr[in] addr The expression with the address of the operation.
+ */
+static VG_REGPARM(1) void
+trace_pmem_flush(Addr addr)
+{
+    /* use native cache size for flush */
+    do_flush(addr, pmem.flush_align_size);
+}
+
+/**
+* \brief Add an ordinary flush event.
+* \param[in,out] sb The IR superblock to which the expression belongs.
+* \param[in] daddr The expression with the address of the operation.
+*/
+static void
+add_flush_event(IRSB *sb, IRAtom *daddr)
+{
+    tl_assert(isIRAtom(daddr));
+
+    const HChar *helperName = "trace_pmem_flush";
+    void *helperAddr = trace_pmem_flush;
+    IRExpr **argv;
+    IRDirty *di;
+
+    argv = mkIRExprVec_1(daddr);
+    di = unsafeIRDirty_0_N(/*regparms*/1, helperName,
+            VG_(fnptr_to_fnentry)(helperAddr), argv);
+
+    addStmtToIRSB(sb, IRStmt_Dirty(di));
+}
+
+/**
+* \brief Add an event without any parameters.
+* \param[in,out] sb The IR superblock to which the expression belongs.
+*/
+static void
+add_simple_event(IRSB *sb, void *helperAddr, const HChar *helperName)
+{
+    IRDirty *di;
+
+    di = unsafeIRDirty_0_N(/*regparms*/0, helperName,
+            VG_(fnptr_to_fnentry)(helperAddr), mkIRExprVec_0());
+
+    addStmtToIRSB(sb, IRStmt_Dirty(di));
+}
+
+/**
 * \brief Read the cache line size - linux specific.
 * \return The size of the cache line.
 */
@@ -1101,13 +1152,44 @@ pmc_instrument(VgCallbackClosure *closure,
             case Ist_AbiHint:
             case Ist_Put:
             case Ist_PutI:
-            case Ist_MBE:
             case Ist_LoadG:
             case Ist_WrTmp:
             case Ist_Exit:
                 /* for now we are not interested in any of the above */
                 addStmtToIRSB(sbOut, st);
                 break;
+
+            case Ist_Flush: {
+                if (LIKELY(pmem.automatic_isa_rec)) {
+                    IRExpr *addr = st->Ist.Flush.addr;
+                    IRType type = typeOfIRExpr(tyenv, addr);
+                    tl_assert(type != Ity_INVALID);
+                    add_flush_event(sbOut, st->Ist.Flush.addr);
+                    /* treat clflush as strong memory ordered */
+                    if (st->Ist.Flush.fk == Ifk_flush)
+                        add_simple_event(sbOut, do_fence, "do_fence");
+                }
+                addStmtToIRSB(sbOut, st);
+                break;
+            }
+
+            case Ist_MBE: {
+                if (LIKELY(pmem.automatic_isa_rec)) {
+                    switch (st->Ist.MBE.event) {
+                        case Imbe_Fence:
+                        case Imbe_SFence:
+                            add_simple_event(sbOut, do_fence, "do_fence");
+                            break;
+                        case Imbe_Drain:
+                            add_simple_event(sbOut, do_commit, "do_commit");
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                addStmtToIRSB(sbOut, st);
+                break;
+            }
 
             case Ist_Store: {
                 IRExpr *data = st->Ist.Store.data;
@@ -1499,7 +1581,8 @@ pmc_process_cmd_line_option(const HChar *arg)
     else if VG_BOOL_CLO(arg, "--print-summary", pmem.print_summary) {}
     else if VG_BOOL_CLO(arg, "--flush-check", pmem.check_flush) {}
     else if VG_BOOL_CLO(arg, "--flush-align", pmem.force_flush_align) {}
-    else if VG_BOOL_CLO(arg, "--tx_only", pmem.transactions_only) {}
+    else if VG_BOOL_CLO(arg, "--tx-only", pmem.transactions_only) {}
+    else if VG_BOOL_CLO(arg, "--isa-rec", pmem.automatic_isa_rec) {}
     else
         return False;
 
@@ -1558,8 +1641,11 @@ pmc_print_usage(void)
             "                               default [no]\n"
             "    --flush-align=<yes|no>     force flush alignment to native cache\n"
             "                               line size default [no]\n"
-            "    --tx_only=<yes|no>         turn on transaction only memory\n"
+            "    --tx-only=<yes|no>         turn on transaction only memory\n"
             "                               modifications default [no]\n"
+            "    --isa-rec=<yes|no>         turn on automatic flush/commit/fence\n"
+            "                               recognition default [yes]\n"
+
     );
 }
 
@@ -1594,7 +1680,7 @@ static void
 pmc_pre_clo_init(void)
 {
     VG_(details_name)("pmemcheck");
-    VG_(details_version)("0.1");
+    VG_(details_version)("0.1a");
     VG_(details_description)("a simple persistent store checker");
     VG_(details_copyright_author)("Copyright (c) 2014-2015, Intel Corporation");
     VG_(details_bug_reports_to)("tomasz.kapela@intel.com");
@@ -1616,6 +1702,7 @@ pmc_pre_clo_init(void)
     tl_assert(sizeof(Word) == 8);
 
     pmem.print_summary = True;
+    pmem.automatic_isa_rec = True;
 }
 
 VG_DETERMINE_INTERFACE_VERSION(pmc_pre_clo_init)

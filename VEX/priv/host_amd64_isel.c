@@ -4592,7 +4592,11 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    case Ist_MBE:
       switch (stmt->Ist.MBE.event) {
          case Imbe_Fence:
+         case Imbe_SFence:
+         case Imbe_LFence:
             addInstr(env, AMD64Instr_MFence());
+            return;
+         case Imbe_Drain:
             return;
          default:
             break;
@@ -4742,6 +4746,21 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
       /* Do we ever expect to see any other kind? */
       goto stmt_fail;
+   }
+
+   /* --------- FLUSH --------- */
+   case Ist_Flush: {
+      IRType    tya   = typeOfIRExpr(env->type_env, stmt->Ist.Flush.addr);
+
+      if (tya != Ity_I64)
+         goto stmt_fail;
+
+      /* XXX - addInstr() */
+
+      //   AMD64AMode* am = iselIntExpr_AMode(env, stmt->Ist.Flush.addr);
+      //   addInstr(env, AMD64Instr_Flush(Aalu_CLFLUSH,am));
+      return;
+      break;
    }
 
    default: break;

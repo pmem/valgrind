@@ -13490,40 +13490,49 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          delta += 1;
          /* Insert a memory fence.  It's sometimes important that these
             are carried through to the generated code. */
-         stmt( IRStmt_MBE(Imbe_Fence) );
+         stmt( IRStmt_MBE(Imbe_SFence) );
          DIP("sfence\n");
          goto decode_success;
       }
+
       /* mindless duplication follows .. */
       /* 0F AE /5 = LFENCE -- flush pending operations to memory */
+      if (haveNo66noF2noF3(pfx)
+          && epartIsReg(getUChar(delta)) && gregLO3ofRM(getUChar(delta)) == 5
+          && sz == 4) {
+         delta += 1;
+         /* Insert a memory fence.  It's sometimes important that these
+            are carried through to the generated code. */
+         stmt( IRStmt_MBE(Imbe_LFence) );
+         DIP("lfence\n");
+         goto decode_success;
+      }
+
       /* 0F AE /6 = MFENCE -- flush pending operations to memory */
       if (haveNo66noF2noF3(pfx)
-          && epartIsReg(getUChar(delta))
-          && (gregLO3ofRM(getUChar(delta)) == 5
-              || gregLO3ofRM(getUChar(delta)) == 6)
+          && epartIsReg(getUChar(delta)) && gregLO3ofRM(getUChar(delta)) == 6
           && sz == 4) {
          delta += 1;
          /* Insert a memory fence.  It's sometimes important that these
             are carried through to the generated code. */
          stmt( IRStmt_MBE(Imbe_Fence) );
-         DIP("%sfence\n", gregLO3ofRM(getUChar(delta-1))==5 ? "l" : "m");
+         DIP("fence\n");
          goto decode_success;
       }
-
-	  /* New PCOMMIT, CLFLUSHOPT and CLWB insatructions support */
 
       /* 66 0F AE F8 = PCOMMIT -- persistent commit */
       if (have66noF2noF3(pfx)
           && getUChar(delta) == 0xF8
           && sz == 2) {
          delta += 1;
-         /* Insert a memory fence.  It's sometimes important that these
+         /* Drain iMC cache.  It's sometimes important that these
             are carried through to the generated code. */
-         stmt( IRStmt_MBE(Imbe_Fence) );
+         stmt( IRStmt_MBE(Imbe_Drain) );
          DIP("pcommit\n");
          goto decode_success;
       }
 
+      /* 0F AE /7 = CLFLUSH -- flush cache line */
       /* 66 0F AE /7 = CLFLUSHOPT -- flush cache line optimized */
       if (((haveNo66noF2noF3(pfx) && sz == 4)
            || (have66noF2noF3(pfx) && sz == 2))
@@ -13538,6 +13547,13 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
 
          addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
          delta += alen;
+
+
+
+         if (!have66(pfx))
+             stmt( IRStmt_Flush(mkexpr(addr), Ifk_flush) );
+         else
+             stmt( IRStmt_Flush(mkexpr(addr), Ifk_flushopt) );
 
          /* Round addr down to the start of the containing block. */
          stmt( IRStmt_Put(
@@ -13569,6 +13585,8 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
          delta += alen;
 
+         stmt( IRStmt_Flush(mkexpr(addr), Ifk_clwb) );
+
          /* Round addr down to the start of the containing block. */
          stmt( IRStmt_Put(
                   OFFB_CMSTART,
@@ -13578,6 +13596,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
 
          stmt( IRStmt_Put(OFFB_CMLEN, mkU64(lineszB) ) );
 
+         /* not necessarily invalidates cache */
          jmp_lit(dres, Ijk_InvalICache, (Addr64)(guest_RIP_bbstart+delta));
 
          DIP("clwb %s\n", dis_buf);
