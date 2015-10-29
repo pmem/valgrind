@@ -1155,6 +1155,7 @@ pmc_instrument(VgCallbackClosure *closure,
             case Ist_LoadG:
             case Ist_WrTmp:
             case Ist_Exit:
+            case Ist_Dirty:
                 /* for now we are not interested in any of the above */
                 addStmtToIRSB(sbOut, st);
                 break;
@@ -1208,25 +1209,6 @@ pmc_instrument(VgCallbackClosure *closure,
                 tl_assert(type != Ity_INVALID);
                 add_event_dw_guarded(sbOut, sg->addr, sizeofIRType(type),
                         sg->guard, data);
-                addStmtToIRSB(sbOut, st);
-                break;
-            }
-
-            case Ist_Dirty: {
-                Int dsize;
-                IRDirty *d = st->Ist.Dirty.details;
-                if (d->mFx != Ifx_None) {
-                    /* This dirty helper accesses memory. Collect details. */
-                    tl_assert(d->mAddr != NULL);
-                    tl_assert(d->mSize != 0);
-                    dsize = d->mSize;
-                    if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)
-                        add_event_dw_guarded(sbOut, d->mAddr, dsize, d->guard,
-                                mkexpr(d->tmp));
-                } else {
-                    tl_assert(d->mAddr == NULL);
-                    tl_assert(d->mSize == 0);
-                }
                 addStmtToIRSB(sbOut, st);
                 break;
             }
