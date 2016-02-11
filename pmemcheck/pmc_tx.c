@@ -203,7 +203,7 @@ print_cross_evs(void)
             VG_(pp_ExeContext)(tmp->duplicate.context);
             VG_(umsg)("\tAddress: 0x%lx\tsize: %llu\ttx_id: %lu\n",
                     tmp->duplicate.addr, tmp->duplicate.size, tmp->dup_tx_id);
-            VG_(umsg)("   First registered here:\n[0]'");
+            VG_(umsg)("   First registered here:\n[%d]'", i);
             VG_(pp_ExeContext)(tmp->original.context);
             VG_(umsg)("\tAddress: 0x%lx\tsize: %llu\ttx_id: %lu\n",
                     tmp->original.addr, tmp->original.size, tmp->orig_tx_id);
