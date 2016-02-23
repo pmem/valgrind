@@ -981,6 +981,20 @@ out:
 }
 
 /**
+ * \brief Print the summary of whole analysis.
+ */
+static void
+print_general_summary(void)
+{
+	UWord all_errors = pmem.redundant_flushes_reg +
+		pmem.superfluous_flushes_reg +
+		pmem.multiple_stores_reg +
+		VG_(OSetGen_Size)(pmem.pmem_stores) +
+		get_tx_all_err();
+	VG_(umsg)("ERROR SUMMARY: %lu errors\n", all_errors);
+}
+
+/**
 * \brief Print tool statistics.
 */
 static void
@@ -998,6 +1012,8 @@ print_pmem_stats(Bool append_blank_line)
 
     if (pmem.track_multiple_stores && (pmem.multiple_stores_reg > 0))
         print_multiple_stores();
+
+    print_general_summary();
 
     if (append_blank_line)
         VG_(umsg)("\n");

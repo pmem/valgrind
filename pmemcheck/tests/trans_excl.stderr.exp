@@ -9,3 +9,4 @@ Stores not made persistent properly:
 [3]    at 0x........: main (trans_excl.c:46)
 	Address: 0x........	size: 8	state: DIRTY
 Total memory not made persistent: 15
+ERROR SUMMARY: 4 errors

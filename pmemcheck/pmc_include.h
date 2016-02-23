@@ -89,5 +89,8 @@ void handle_tx_store(const struct pmem_st *store);
 /* Print the summary of transaction analysis */
 void print_tx_summary(void);
 
+/* Return all errors referenced to transactions */
+UWord get_tx_all_err(void);
+
 #endif	/* PMC_INCLUDE_H */
 
