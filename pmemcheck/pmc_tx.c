@@ -572,9 +572,9 @@ print_tx_summary(void)
 {
     if (trans.oot_stores_reg) {
         VG_(umsg)("\n");
-        VG_(umsg)("Number of stores made outside of transactions: %lu\n",
-                trans.oot_stores_reg);
-        VG_(umsg)("Stores made outside of transactions:\n");
+        VG_(umsg)("Number of stores made without adding to transaction: "
+        "%lu\n", trans.oot_stores_reg);
+        VG_(umsg)("Stores made without adding to transactions:\n");
         struct pmem_st *tmp = NULL;
         Int i;
         for (i = 0; i < trans.oot_stores_reg; ++i) {
