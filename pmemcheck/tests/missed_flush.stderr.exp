@@ -7,3 +7,4 @@ Number of unnecessary flushes: 3
 	Address: 0x........	size: 128
 [2]    at 0x........: main (missed_flush.c:31)
 	Address: 0x........	size: 64
+ERROR SUMMARY: 3 errors
