@@ -20,6 +20,7 @@ Stores made without adding to transactions:
 Number of active transactions: 1
 [0]    at 0x........: main (trans_nest.c:32)
 	tx_id: ...	 nesting: 1
+ERROR SUMMARY: 7 errors
 
 Number of stores not made persistent: 4
 Stores not made persistent properly:
@@ -41,3 +42,4 @@ Stores made without adding to transactions:
 	Address: 0x........	size: 8
 [2]    at 0x........: main (trans_nest.c:49)
 	Address: 0x........	size: 2
+ERROR SUMMARY: 7 errors

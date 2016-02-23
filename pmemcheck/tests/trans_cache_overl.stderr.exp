@@ -16,3 +16,4 @@ Overlapping regions:
    First registered here:
 [0]'   at 0x........: main (trans_cache_overl.c:31)
 	Address: 0x........	size: 4	tx_id: ...
+ERROR SUMMARY: 3 errors

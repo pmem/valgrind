@@ -5,3 +5,4 @@ Stores not made persistent properly:
 [1]    at 0x........: main (state_machine.c:40)
 	Address: 0x........	size: 4	state: FLUSHED
 Total memory not made persistent: 6
+ERROR SUMMARY: 2 errors

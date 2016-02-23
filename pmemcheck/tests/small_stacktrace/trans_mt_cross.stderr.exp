@@ -3,3 +3,4 @@ Stores not made persistent properly:
 [0]    at 0x........: make_tx (trans_mt_cross.c:43)
 	Address: 0x........	size: 4	state: DIRTY
 Total memory not made persistent: 4
+ERROR SUMMARY: 1 errors
