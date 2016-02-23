@@ -7,3 +7,4 @@ Stores not made persistent properly:
 [2]    at 0x........: main (...:...)
 	Address: 0x........	size: 4	state: DIRTY
 Total memory not made persistent: 20
+ERROR SUMMARY: 3 errors

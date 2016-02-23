@@ -605,6 +605,13 @@ print_tx_summary(void)
     }
 }
 
+UWord
+get_tx_all_err(void)
+{
+	UWord active_txs = VG_(OSetGen_Size)(trans.transactions);
+	return trans.oot_stores_reg + trans.cross_tx_reg + active_txs;
+}
+
 /**
  * \brief Print out the error message on OOT stores overflow.
  * \param[in] limit The exceeded limit of OOT stores.

@@ -21,3 +21,4 @@ Stores not made persistent properly:
 [9]    at 0x........: main (...:...)
 	Address: 0x........	size: 8	state: DIRTY
 Total memory not made persistent: 80
+ERROR SUMMARY: 10 errors

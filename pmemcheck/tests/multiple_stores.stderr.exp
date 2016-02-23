@@ -12,3 +12,4 @@ Overwritten stores before they were made persistent:
 	Address: 0x........	size: 2	state: DIRTY
 [2]    at 0x........: main (multiple_stores.c:32)
 	Address: 0x........	size: 4	state: DIRTY
+ERROR SUMMARY: 4 errors

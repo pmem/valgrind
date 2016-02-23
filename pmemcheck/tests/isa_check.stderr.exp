@@ -18,3 +18,4 @@ Stores flushed multiple times:
 	Address: 0x........	size: 8	state: FLUSHED
 [4]    at 0x........: main (isa_check.c:57)
 	Address: 0x........	size: 8	state: FLUSHED
+ERROR SUMMARY: 7 errors
