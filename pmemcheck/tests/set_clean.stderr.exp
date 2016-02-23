@@ -7,6 +7,7 @@ Stores not made persistent properly:
 [2]    at 0x........: main (set_clean.c:31)
 	Address: 0x........	size: 4	state: DIRTY
 Total memory not made persistent: 16
+ERROR SUMMARY: 3 errors
 
 Number of stores not made persistent: 2
 Stores not made persistent properly:
@@ -15,12 +16,15 @@ Stores not made persistent properly:
 [1]    at 0x........: main (set_clean.c:31)
 	Address: 0x........	size: 2	state: DIRTY
 Total memory not made persistent: 8
+ERROR SUMMARY: 2 errors
 
 Number of stores not made persistent: 1
 Stores not made persistent properly:
 [0]    at 0x........: main (set_clean.c:29)
 	Address: 0x........	size: 6	state: FENCED
 Total memory not made persistent: 6
+ERROR SUMMARY: 1 errors
 
 Number of stores not made persistent: 0
+ERROR SUMMARY: 0 errors
 

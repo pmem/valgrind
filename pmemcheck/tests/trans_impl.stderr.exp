@@ -18,3 +18,4 @@ Stores made without adding to transactions:
 	Address: 0x........	size: 2
 [2]    at 0x........: main (trans_impl.c:39)
 	Address: 0x........	size: 8
+ERROR SUMMARY: 7 errors

@@ -7,3 +7,4 @@ Stores not made persistent properly:
 [2]    at 0x........: main (state_no_flush_align.c:41)
 	Address: 0x........	size: 4	state: COMMITTED
 Total memory not made persistent: 12
+ERROR SUMMARY: 3 errors
