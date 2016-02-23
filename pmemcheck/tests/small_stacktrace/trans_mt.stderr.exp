@@ -38,3 +38,4 @@ Number of active transactions: 2
 	tx_id: ...	 nesting: 1
 [1]    at 0x........: make_tx (trans_mt.c:33)
 	tx_id: ...	 nesting: 1
+ERROR SUMMARY: 13 errors
