@@ -4,7 +4,8 @@ Stores not made persistent properly:
 	Address: 0x........	size: 4	state: DIRTY
 Total memory not made persistent: 4
 
-Number of stores made outside of transactions: 1
-Stores made outside of transactions:
+Number of stores made without adding to transaction: 1
+Stores made without adding to transactions:
 [0]    at 0x........: main (trans_only.c:34)
 	Address: 0x........	size: 1
+ERROR SUMMARY: 2 errors

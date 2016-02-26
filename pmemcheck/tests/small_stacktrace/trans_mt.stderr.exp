@@ -10,8 +10,8 @@ Stores not made persistent properly:
 	Address: 0x........	size: 8	state: DIRTY
 Total memory not made persistent: 15
 
-Number of stores made outside of transactions: 6
-Stores made outside of transactions:
+Number of stores made without adding to transaction: 6
+Stores made without adding to transactions:
 [0]    at 0x........: make_tx (trans_mt.c:37)
 	Address: 0x........	size: 1
 [1]    at 0x........: make_tx (trans_mt.c:38)
@@ -38,3 +38,4 @@ Number of active transactions: 2
 	tx_id: ...	 nesting: 1
 [1]    at 0x........: make_tx (trans_mt.c:33)
 	tx_id: ...	 nesting: 1
+ERROR SUMMARY: 13 errors

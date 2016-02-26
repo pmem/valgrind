@@ -4,8 +4,8 @@ Stores not made persistent properly:
 	Address: 0x........	size: 1	state: DIRTY
 Total memory not made persistent: 1
 
-Number of stores made outside of transactions: 1
-Stores made outside of transactions:
+Number of stores made without adding to transaction: 1
+Stores made without adding to transactions:
 [0]    at 0x........: main (trans_cache_overl.c:47)
 	Address: 0x........	size: 1
 
@@ -16,3 +16,4 @@ Overlapping regions:
    First registered here:
 [0]'   at 0x........: main (trans_cache_overl.c:31)
 	Address: 0x........	size: 4	tx_id: ...
+ERROR SUMMARY: 3 errors
