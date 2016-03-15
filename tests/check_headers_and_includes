@@ -53,7 +53,8 @@ my %tool_dirs = (
     "shared" => 1,
     "exp-bbv" => 1,
     "exp-dhat" => 1,
-    "exp-sgcheck" => 1
+    "exp-sgcheck" => 1,
+    "pmemcheck" => 1
     );
 
 my %dirs_to_ignore = (
@@ -78,7 +79,8 @@ my %tool_export_header = (
     "drd/drd.h" => 1,
     "helgrind/helgrind.h" => 1,
     "memcheck/memcheck.h" => 1,
-    "callgrind/callgrind.h" => 1
+    "callgrind/callgrind.h" => 1,
+    "pmemcheck/pmemcheck.h" => 1
     );
 
 my $usage=<<EOF;
