@@ -16,7 +16,6 @@
 /*
  * This program is based on lackey, cachegrind and memcheck.
  */
-
 #include <sys/param.h>
 #include "pub_tool_libcfile.h"
 #include <fcntl.h>
@@ -117,6 +116,9 @@ static struct pmem_ops {
 
     /** Toggles automatic ISA recognition. */
     Bool automatic_isa_rec;
+
+    /** Disabling error summary */
+    Bool no_error_summary;
 } pmem;
 
 /*
@@ -1013,7 +1015,9 @@ print_pmem_stats(Bool append_blank_line)
     if (pmem.track_multiple_stores && (pmem.multiple_stores_reg > 0))
         print_multiple_stores();
 
-    print_general_summary();
+    if (!pmem.no_error_summary) {
+		print_general_summary();
+    }
 
     if (append_blank_line)
         VG_(umsg)("\n");
@@ -1581,6 +1585,7 @@ pmc_process_cmd_line_option(const HChar *arg)
     else if VG_BOOL_CLO(arg, "--flush-align", pmem.force_flush_align) {}
     else if VG_BOOL_CLO(arg, "--tx-only", pmem.transactions_only) {}
     else if VG_BOOL_CLO(arg, "--isa-rec", pmem.automatic_isa_rec) {}
+    else if VG_BOOL_CLO(arg, "--no-error-summary", pmem.no_error_summary) {}
     else
         return False;
 
