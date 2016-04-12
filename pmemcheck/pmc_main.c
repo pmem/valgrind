@@ -1,6 +1,6 @@
 /*
  * Persistent memory checker.
- * Copyright (c) 2014-2015, Intel Corporation.
+ * Copyright (c) 2014-2016, Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -16,7 +16,6 @@
 /*
  * This program is based on lackey, cachegrind and memcheck.
  */
-
 #include <sys/param.h>
 #include "pub_tool_libcfile.h"
 #include <fcntl.h>
@@ -117,6 +116,9 @@ static struct pmem_ops {
 
     /** Toggles automatic ISA recognition. */
     Bool automatic_isa_rec;
+
+    /** Toggles error summary message */
+    Bool error_summary;
 } pmem;
 
 /*
@@ -1013,7 +1015,9 @@ print_pmem_stats(Bool append_blank_line)
     if (pmem.track_multiple_stores && (pmem.multiple_stores_reg > 0))
         print_multiple_stores();
 
-    print_general_summary();
+    if (pmem.error_summary) {
+        print_general_summary();
+    }
 
     if (append_blank_line)
         VG_(umsg)("\n");
@@ -1581,6 +1585,7 @@ pmc_process_cmd_line_option(const HChar *arg)
     else if VG_BOOL_CLO(arg, "--flush-align", pmem.force_flush_align) {}
     else if VG_BOOL_CLO(arg, "--tx-only", pmem.transactions_only) {}
     else if VG_BOOL_CLO(arg, "--isa-rec", pmem.automatic_isa_rec) {}
+    else if VG_BOOL_CLO(arg, "--error-summary", pmem.error_summary) {}
     else
         return False;
 
@@ -1643,6 +1648,8 @@ pmc_print_usage(void)
             "                               modifications default [no]\n"
             "    --isa-rec=<yes|no>         turn on automatic flush/commit/fence\n"
             "                               recognition default [yes]\n"
+            "    --error-summary=<yes|no>   turn on error summary message\n"
+            "                               default [yes]\n"
 
     );
 }
@@ -1678,9 +1685,9 @@ static void
 pmc_pre_clo_init(void)
 {
     VG_(details_name)("pmemcheck");
-    VG_(details_version)("0.1a");
+    VG_(details_version)("0.2");
     VG_(details_description)("a simple persistent store checker");
-    VG_(details_copyright_author)("Copyright (c) 2014-2015, Intel Corporation");
+    VG_(details_copyright_author)("Copyright (c) 2014-2016, Intel Corporation");
     VG_(details_bug_reports_to)("tomasz.kapela@intel.com");
 
     VG_(details_avg_translation_sizeB)(275);
@@ -1701,6 +1708,7 @@ pmc_pre_clo_init(void)
 
     pmem.print_summary = True;
     pmem.automatic_isa_rec = True;
+    pmem.error_summary = True;
 }
 
 VG_DETERMINE_INTERFACE_VERSION(pmc_pre_clo_init)
