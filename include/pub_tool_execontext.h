@@ -112,6 +112,10 @@ static inline Bool VG_(is_plausible_ECU)( UInt ecu ) {
 // Make an ExeContext containing exactly the specified stack frames.
 ExeContext* VG_(make_ExeContext_from_StackTrace)( Addr* ips, UInt n_ips );
 
+// Extract the StackTrace from the ExeContext.
+extern const Addr* VG_(make_StackTrace_from_ExeContext)(const ExeContext *e1,
+        /*out*/ UInt *n_ips);
+
 // Returns the "null" exe context. The null execontext is an artificial
 // exe context, with a stack trace made of one Addr (the NULL address).
 extern 

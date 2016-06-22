@@ -498,6 +498,15 @@ ExeContext* VG_(make_ExeContext_from_StackTrace)( Addr* ips, UInt n_ips )
    return record_ExeContext_wrk2(ips, n_ips);
 }
 
+const Addr* VG_(make_StackTrace_from_ExeContext)(const ExeContext *e,
+        /*out*/ UInt *n_ips)
+{
+    vg_assert(e != NULL);
+
+    *n_ips = e->n_ips;
+    return e->ips;
+}
+
 ExeContext* VG_(null_ExeContext) (void)
 {
    init_ExeContext_storage();
