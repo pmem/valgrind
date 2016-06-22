@@ -29,6 +29,8 @@
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
 #include "pub_tool_machine.h"
+#include "pub_tool_debuginfo.h"
+//#include "pub_tool_debuginfo.h"
 
 #include "pmemcheck.h"
 #include "pmc_include.h"
@@ -346,8 +348,172 @@ print_redundant_flush_error(UWord limit)
 }
 
 /**
+ * \brief Check if a memcpy/memset is at the given instruction address.
+ *
+ * \param[in] ip The instruction address to check.
+ * \return True if the function name has memcpy/memset in its name,
+ *         False otherwise.
+ */
+static Bool
+is_ip_memset_memcpy(Addr ip)
+{
+    #define BUF_LEN   4096
+
+    static HChar buf[BUF_LEN];
+
+    InlIPCursor *iipc = VG_(new_IIPC)(ip);
+    buf[BUF_LEN - 1] = '\0';
+    VG_(describe_IP)(ip, buf, BUF_LEN, iipc);
+    Bool present = (VG_(strstr)(buf, "memcpy") != NULL);
+    present |= (VG_(strstr)(buf, "memset") != NULL);
+    VG_(delete_IIPC)(iipc);
+    return present;
+}
+
+/**
+ * \brief Compare two ExeContexts.
+ * Checks if two ExeContext are equal not counting the possible first
+ * memset/memcpy function in the callstack.
+ *
+ * \param[in] lhs The first ExeContext to compare.
+ * \param[in] rhs The second ExeContext to compare.
+ *
+ * Return True if the ExeContexts are equal, not counting the first
+ * memcpy/memset function, False otherwise.
+ */
+static Bool cmp_exe_context(const ExeContext* lhs,const ExeContext* rhs) {
+    if (lhs == NULL || rhs == NULL)
+        return False;
+
+    if (lhs == rhs)
+        return True;
+
+    // retrieve stacktraces
+    UInt n_ips1;
+    UInt n_ips2;
+    const Addr *ips1 = VG_(make_StackTrace_from_ExeContext)(lhs, &n_ips1);
+    const Addr *ips2 = VG_(make_StackTrace_from_ExeContext)(rhs, &n_ips2);
+
+    // Must be at least one address in each trace.
+    tl_assert(n_ips1 >= 1 && n_ips2 >= 1);
+
+    // different stacktrace depth
+    if (n_ips1 != n_ips2)
+        return False;
+
+    // omit memcpy/memset at the top of the callstack
+    Int i = 0;
+    if ((ips1[0] == ips2[0])
+            || (is_ip_memset_memcpy(ips1[0])
+                    && is_ip_memset_memcpy(ips2[0])))
+        ++i;
+    // compare instruction pointers
+    for (; i < n_ips1; i++)
+        if (ips1[i] != ips2[i])
+            return False;
+
+    return True;
+}
+
+/**
+ * \brief Checks if two stores are merge'able.
+ * Does not check the adjacency of the stores. Checks only the context and state
+ * of the store.
+ *
+ * \param[in] lhs The first store to check.
+ * \param[in] rhs The second store to check.
+ *
+ * \return True if stores are merge'able, False otherwise.
+ */
+static Bool is_store_mergeable(const struct pmem_st *lhs,
+        const struct pmem_st *rhs) {
+    Bool context_eq = cmp_exe_context(lhs->context, rhs->context);
+    return context_eq && lhs->state == rhs->state;
+}
+
+/**
+ * \brief Merge two stores together.
+ * Does not check whether the two stores can in fact be merged. The two stores
+ * should be adjacent or overlapping for the merging to make sense.
+ *
+ * \param[in,out] to_merge the store with which the merge will happen.
+ * \param[in] to_be_merged the store that will be merged.
+ */
+static inline void merge_stores(struct pmem_st *to_merge,
+        const struct pmem_st *to_be_merged) {
+    ULong max_addr = MAX(to_merge->addr + to_merge->size,
+            to_be_merged->addr + to_be_merged->size);
+    to_merge->addr = MIN(to_merge->addr, to_be_merged->addr);
+    to_merge->size = max_addr - to_merge->addr;
+}
+
+/**
+ * \brief Add and merges adjacent stores if possible.
+ * Should not be used if track_multiple_stores is enabled.
+ *
+ * param[in,out] region the store to be added and merged with adjacent stores.
+ */
+static void add_and_merge_store(struct pmem_st *region)
+{
+    struct pmem_st *old_entry;
+    // remove old overlapping entries
+    while((old_entry = VG_(OSetGen_Remove)(pmem.pmem_stores, region)) != NULL)
+        VG_(OSetGen_FreeNode)(pmem.pmem_stores, old_entry);
+
+    // check adjacent entries
+    struct pmem_st search_entry = *region;
+    search_entry.addr -= 1;
+    int i = 0;
+    for (i = 0; i < 1; ++i, search_entry.addr += 2) {
+        old_entry = VG_(OSetGen_Lookup)(pmem.pmem_stores, &search_entry);
+        // no adjacent entry
+        if (old_entry == NULL)
+            continue;
+        // adjacent entry not merge'able
+        if(!is_store_mergeable(region, old_entry))
+            continue;
+
+        /* registering overlapping stores, glue them together */
+        merge_stores(region, old_entry);
+        old_entry = VG_(OSetGen_Remove)(pmem.pmem_stores, &search_entry);
+        VG_(OSetGen_FreeNode)(pmem.pmem_stores, old_entry);
+    }
+    VG_(OSetGen_Insert)(pmem.pmem_stores, region);
+}
+
+/**
+ * \brief Handle a new store checking for multiple overwrites.
+ * This should be called when track_multiple_stores is enabled.
+ *
+ * \param[in,out] store the store to be handled.
+ */
+static void
+handle_with_mult_stores(struct pmem_st *store)
+{
+    struct pmem_st *existing;
+    // remove any overlapping stores from the collection
+    while ((existing = VG_(OSetGen_Remove)(pmem.pmem_stores, store)) !=
+    NULL) {
+        /* check store indifference */
+        if ((store->block_num - existing->block_num) < pmem.store_sb_indiff
+                && existing->addr == store->addr
+                && existing->size == store->size
+                && existing->value == store->value) {
+            VG_(OSetGen_FreeNode)(pmem.pmem_stores, existing);
+            continue;
+        } else {
+            add_warning_event(pmem.multiple_stores, &pmem.multiple_stores_reg,
+                    existing, MAX_MULT_OVERWRITES,
+                    print_max_poss_overwrites_error);
+        }
+    }
+    /* it is now safe to insert the new store */
+    VG_(OSetGen_Insert)(pmem.pmem_stores, store);
+}
+
+/**
 * \brief Trace the given store if it was to any of the registered persistent
-*        memory regions
+*        memory regions.
 * \param[in] addr The base address of the store.
 * \param[in] size The size of the store.
 * \param[in] value The value of the store.
@@ -372,31 +538,10 @@ trace_pmem_store(Addr addr, SizeT size, UWord value)
             (pmem.loggable_regions, store)))
         VG_(emit)("|STORE;0x%lx;0x%lx;0x%lx", addr, value, size);
 
-    struct pmem_st *existing;
-    while ((existing = VG_(OSetGen_Lookup)(pmem.pmem_stores, store)) !=
-            NULL) {
-        VG_(OSetGen_Remove)(pmem.pmem_stores, existing);
-        /* not tracking multiple stores, remove and move on */
-        if (LIKELY(!pmem.track_multiple_stores)) {
-            VG_(OSetGen_FreeNode)(pmem.pmem_stores, existing);
-            continue;
-        }
-
-        /* check store indifference */
-        if ((store->block_num - existing->block_num) < pmem.store_sb_indiff
-                && existing->addr == store->addr
-                && existing->size == store->size
-                && existing->value == store->value) {
-            VG_(OSetGen_FreeNode)(pmem.pmem_stores, existing);
-            continue;
-        } else {
-            add_warning_event(pmem.multiple_stores, &pmem.multiple_stores_reg,
-                              existing, MAX_MULT_OVERWRITES,
-                              print_max_poss_overwrites_error);
-        }
-    }
-    /* it is now safe to insert the new store */
-    VG_(OSetGen_Insert)(pmem.pmem_stores, store);
+    if (pmem.track_multiple_stores)
+        handle_with_mult_stores(store);
+    else
+        add_and_merge_store(store);
 
     /* do transaction check */
     handle_tx_store(store);

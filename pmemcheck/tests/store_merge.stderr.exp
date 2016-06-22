@@ -1,0 +1,14 @@
+Number of stores not made persistent: 4
+Stores not made persistent properly:
+[0]    at 0x........: main (store_merge.c:50)
+	Address: 0x........	size: 1	state: FLUSHED
+[1]    at 0x........: main (store_merge.c:52)
+	Address: 0x........	size: 2	state: DIRTY
+[2]    at 0x........: fake_memset (store_merge.c:34)
+   by 0x........: main (store_merge.c:54)
+	Address: 0x........	size: 16	state: DIRTY
+[3]    at 0x........: fake_memcpy (store_merge.c:26)
+   by 0x........: main (store_merge.c:56)
+	Address: 0x........	size: 32	state: DIRTY
+Total memory not made persistent: 51
+ERROR SUMMARY: 4 errors

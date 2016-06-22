@@ -1,10 +1,8 @@
-Number of stores not made persistent: 3
+Number of stores not made persistent: 2
 Stores not made persistent properly:
 [0]    at 0x........: main (...:...)
-	Address: 0x........	size: 8	state: DIRTY
+	Address: 0x........	size: 16	state: DIRTY
 [1]    at 0x........: main (...:...)
-	Address: 0x........	size: 8	state: DIRTY
-[2]    at 0x........: main (...:...)
 	Address: 0x........	size: 4	state: DIRTY
 Total memory not made persistent: 20
-ERROR SUMMARY: 3 errors
+ERROR SUMMARY: 2 errors
