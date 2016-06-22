@@ -1,0 +1,33 @@
+Number of stores not made persistent: 7
+Stores not made persistent properly:
+[0]    at 0x........: do_overlap (store_split.c:22)
+   by 0x........: main (store_split.c:35)
+	Address: 0x........	size: 1	state: DIRTY
+[1]    at 0x........: do_overlap (store_split.c:23)
+   by 0x........: main (store_split.c:35)
+	Address: 0x........	size: 2	state: DIRTY
+[2]    at 0x........: do_overlap (store_split.c:23)
+   by 0x........: main (store_split.c:36)
+	Address: 0x........	size: 2	state: DIRTY
+[3]    at 0x........: do_overlap (store_split.c:22)
+   by 0x........: main (store_split.c:36)
+	Address: 0x........	size: 1	state: DIRTY
+[4]    at 0x........: main (store_split.c:41)
+	Address: 0x........	size: 1	state: DIRTY
+[5]    at 0x........: main (store_split.c:42)
+	Address: 0x........	size: 1	state: DIRTY
+[6]    at 0x........: main (store_split.c:41)
+	Address: 0x........	size: 2	state: DIRTY
+Total memory not made persistent: 10
+
+Number of overwritten stores: 3
+Overwritten stores before they were made persistent:
+[0]    at 0x........: do_overlap (store_split.c:22)
+   by 0x........: main (store_split.c:35)
+	Address: 0x........	size: 1	state: DIRTY
+[1]    at 0x........: do_overlap (store_split.c:22)
+   by 0x........: main (store_split.c:36)
+	Address: 0x........	size: 1	state: DIRTY
+[2]    at 0x........: main (store_split.c:41)
+	Address: 0x........	size: 1	state: DIRTY
+ERROR SUMMARY: 10 errors
