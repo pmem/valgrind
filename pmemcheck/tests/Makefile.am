@@ -43,7 +43,9 @@ EXTRA_DIST = \
 	trans_excl.stderr.exp trans_excl.vgtest \
 	trans_only.stderr.exp trans_only.vgtest \
 	trans_cache_overl.stderr.exp trans_cache_overl.vgtest \
-	trans_cache_flush.stderr.exp trans_cache_flush.vgtest
+	trans_cache_flush.stderr.exp trans_cache_flush.vgtest \
+	store_merge.stderr.exp store_merge.vgtest \
+	store_split.stderr.exp store_split.vgtest
 
 check_PROGRAMS = \
 	const_store \
@@ -67,4 +69,6 @@ check_PROGRAMS = \
 	trans_excl \
 	trans_only \
 	trans_cache_overl \
-	trans_cache_flush
+	trans_cache_flush \
+	store_merge \
+	store_split
