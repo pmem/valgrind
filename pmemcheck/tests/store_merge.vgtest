@@ -1,0 +1,2 @@
+prog: store_merge
+vgopts: --isa-rec=no -q

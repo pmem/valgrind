@@ -1,24 +1,6 @@
-Number of stores not made persistent: 10
+Number of stores not made persistent: 1
 Stores not made persistent properly:
 [0]    at 0x........: main (...:...)
-	Address: 0x........	size: 8	state: DIRTY
-[1]    at 0x........: main (...:...)
-	Address: 0x........	size: 8	state: DIRTY
-[2]    at 0x........: main (...:...)
-	Address: 0x........	size: 8	state: DIRTY
-[3]    at 0x........: main (...:...)
-	Address: 0x........	size: 8	state: DIRTY
-[4]    at 0x........: main (...:...)
-	Address: 0x........	size: 8	state: DIRTY
-[5]    at 0x........: main (...:...)
-	Address: 0x........	size: 8	state: DIRTY
-[6]    at 0x........: main (...:...)
-	Address: 0x........	size: 8	state: DIRTY
-[7]    at 0x........: main (...:...)
-	Address: 0x........	size: 8	state: DIRTY
-[8]    at 0x........: main (...:...)
-	Address: 0x........	size: 8	state: DIRTY
-[9]    at 0x........: main (...:...)
-	Address: 0x........	size: 8	state: DIRTY
+	Address: 0x........	size: 80	state: DIRTY
 Total memory not made persistent: 80
-ERROR SUMMARY: 10 errors
+ERROR SUMMARY: 1 errors

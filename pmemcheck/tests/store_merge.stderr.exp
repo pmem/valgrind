@@ -1,0 +1,29 @@
+Number of stores not made persistent: 10
+Stores not made persistent properly:
+[0]    at 0x........: main (store_merge.c:66)
+	Address: 0x........	size: 1	state: FLUSHED
+[1]    at 0x........: main (store_merge.c:68)
+	Address: 0x........	size: 2	state: DIRTY
+[2]    at 0x........: fake_memset (store_merge.c:34)
+   by 0x........: main (store_merge.c:70)
+	Address: 0x........	size: 16	state: DIRTY
+[3]    at 0x........: fake_memcpy (store_merge.c:26)
+   by 0x........: main (store_merge.c:72)
+	Address: 0x........	size: 32	state: DIRTY
+[4]    at 0x........: merge_memcpy (store_merge.c:44)
+   by 0x........: main (store_merge.c:74)
+	Address: 0x........	size: 3	state: DIRTY
+[5]    at 0x........: overlap_test_memset (store_merge.c:50)
+   by 0x........: main (store_merge.c:79)
+	Address: 0x........	size: 3	state: DIRTY
+[6]    at 0x........: overlap_test_memset (store_merge.c:50)
+   by 0x........: main (store_merge.c:80)
+	Address: 0x........	size: 3	state: DIRTY
+[7]    at 0x........: main (store_merge.c:84)
+	Address: 0x........	size: 2	state: DIRTY
+[8]    at 0x........: main (store_merge.c:86)
+	Address: 0x........	size: 2	state: DIRTY
+[9]    at 0x........: main (store_merge.c:88)
+	Address: 0x........	size: 2	state: DIRTY
+Total memory not made persistent: 66
+ERROR SUMMARY: 10 errors
