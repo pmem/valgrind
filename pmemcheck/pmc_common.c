@@ -30,8 +30,8 @@
 Word
 cmp_pmem_st(const void *key, const void *elem)
 {
-    struct pmem_st *lhs = (struct pmem_st *) (key);
-    struct pmem_st *rhs = (struct pmem_st *) (elem);
+    const struct pmem_st *lhs = (const struct pmem_st *) (key);
+    const struct pmem_st *rhs = (const struct pmem_st *) (elem);
 
     if (lhs->addr + lhs->size <= rhs->addr)
         return -1;
