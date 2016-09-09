@@ -141,6 +141,9 @@ case "${is_clang}-${gcc_version}" in
      notclang-5.*)
 	AC_MSG_RESULT([ok (${gcc_version})])
 	;;
+     notclang-6.*)
+	AC_MSG_RESULT([ok (${gcc_version})])
+	;;
      clang-2.9|clang-3.*|clang-4.*)
 	AC_MSG_RESULT([ok (clang-${gcc_version})])
 	;;
@@ -303,20 +306,14 @@ case "${host_os}" in
         kernel=`uname -r`
 
         case "${kernel}" in
-             2.6.*|3.*) 
-        	    AC_MSG_RESULT([2.6.x/3.x family (${kernel})])
-        	    AC_DEFINE([KERNEL_2_6], 1, [Define to 1 if you're using Linux 2.6.x or Linux 3.x])
-        	    ;;
-
-             2.4.*) 
-        	    AC_MSG_RESULT([2.4 family (${kernel})])
-        	    AC_DEFINE([KERNEL_2_4], 1, [Define to 1 if you're using Linux 2.4.x])
-        	    ;;
-
-             *) 
+             0.*|1.*|2.0.*|2.1.*|2.2.*|2.3.*|2.4.*|2.5.*) 
         	    AC_MSG_RESULT([unsupported (${kernel})])
-        	    AC_MSG_ERROR([Valgrind works on kernels 2.4, 2.6])
+        	    AC_MSG_ERROR([Valgrind needs a Linux kernel >= 2.6])
         	    ;;
+
+             *)
+        	    AC_MSG_RESULT([2.6 or later (${kernel})])
+                    ;;
         esac
 
         ;;
@@ -1012,6 +1009,13 @@ case "${GLIBC_VERSION}" in
 	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
 	;;
      2.20)
+	AC_MSG_RESULT(2.20 family)
+	AC_DEFINE([GLIBC_2_20], 1, [Define to 1 if you're using glibc 2.20.x])
+	DEFAULT_SUPP="glibc-2.X.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
+	;;
+     2.*)
 	AC_MSG_RESULT(2.20 family)
 	AC_DEFINE([GLIBC_2_20], 1, [Define to 1 if you're using glibc 2.20.x])
 	DEFAULT_SUPP="glibc-2.X.supp ${DEFAULT_SUPP}"
