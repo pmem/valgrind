@@ -1,0 +1,4 @@
+[submodule "VEX"]
+	path = VEX
+	url = https://github.com/pmem/VEX.git
+	branch = pmem-3.10
