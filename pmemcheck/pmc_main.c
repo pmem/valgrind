@@ -268,7 +268,7 @@ print_multiple_stores(void)
 static void
 print_store_stats(void)
 {
-    VG_(umsg)("Number of stores not made persistent: %lu\n", VG_(OSetGen_Size)
+    VG_(umsg)("Number of stores not made persistent: %u\n", VG_(OSetGen_Size)
             (pmem.pmem_stores));
 
     if (VG_(OSetGen_Size)(pmem.pmem_stores) != 0) {
@@ -356,13 +356,8 @@ print_redundant_flush_error(UWord limit)
 static Bool
 is_ip_memset_memcpy(Addr ip)
 {
-#define BUF_LEN   4096
-
-    static HChar buf[BUF_LEN];
-
     InlIPCursor *iipc = VG_(new_IIPC)(ip);
-    buf[BUF_LEN - 1] = '\0';
-    VG_(describe_IP)(ip, buf, BUF_LEN, iipc);
+    const HChar *buf = VG_(describe_IP)(ip,  iipc);
     Bool present = (VG_(strstr)(buf, "memcpy") != NULL);
     present |= (VG_(strstr)(buf, "memset") != NULL);
     VG_(delete_IIPC)(iipc);
@@ -1397,9 +1392,9 @@ static Bool handle_gdb_monitor_command(ThreadId tid, HChar *req)
 static IRSB*
 pmc_instrument(VgCallbackClosure *closure,
         IRSB *bb,
-        VexGuestLayout *layout,
-        VexGuestExtents *vge,
-        VexArchInfo *archinfo_host,
+        const VexGuestLayout *layout,
+        const VexGuestExtents *vge,
+        const VexArchInfo *archinfo_host,
         IRType gWordTy, IRType hWordTy)
 {
     Int i;
