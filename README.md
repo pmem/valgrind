@@ -19,8 +19,15 @@ The new tool is available in:
 All packages necessary to build this modified version of Valgrind are
 the same as for the original version.
 
-Once the build system is setup, Valgrind is built using
-these command at the top level:
+Note: This branch uses git submodule for VEX subproject. You can use git
+clone --recursive to download both or execute these commands on existing repository:
+```
+$ git submodule init
+$ git submodule update
+```
+Submodule update should be performed after each branch switch.
+
+Valgrind is built using these command at the top level:
 ```
 	$ ./autogen.sh
 	$ ./configure [--prefix=/where/to/install]
