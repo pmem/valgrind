@@ -132,16 +132,7 @@ fi
 AM_CONDITIONAL(COMPILER_IS_CLANG, test $is_clang = clang)
 
 case "${is_clang}-${gcc_version}" in
-     notclang-3.*)
-	AC_MSG_RESULT([ok (${gcc_version})])
-	;;
-     notclang-4.*)
-	AC_MSG_RESULT([ok (${gcc_version})])
-	;;
-     notclang-5.*)
-	AC_MSG_RESULT([ok (${gcc_version})])
-	;;
-     notclang-6.*)
+     notclang-[[3-9]]|notclang-[[3-9]].*|notclang-[[1-9][0-9]]*)
 	AC_MSG_RESULT([ok (${gcc_version})])
 	;;
      clang-2.9|clang-3.*|clang-4.*)
