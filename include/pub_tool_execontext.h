@@ -74,8 +74,9 @@ ExeContext* VG_(record_depth_1_ExeContext)(ThreadId tid, Word first_ip_delta);
 // Apply a function to every element in the ExeContext.  The parameter 'n'
 // gives the index of the passed ip.  Doesn't go below main() unless
 // --show-below-main=yes is set.
-extern void VG_(apply_ExeContext)( void(*action)(UInt n, Addr ip),
-                                   ExeContext* ec, UInt n_ips );
+extern void VG_(apply_ExeContext)( void(*action)(UInt n, Addr ip,
+                                   void *uu_opaque), ExeContext* ec,
+                                   UInt n_ips );
 
 // Compare two ExeContexts.  Number of callers considered depends on `res':
 //   Vg_LowRes:  2

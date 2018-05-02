@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2015 Julian Seward 
+   Copyright (C) 2000-2015 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -172,7 +172,7 @@ void VG_(print_ExeContext_stats) ( Bool with_stacktraces )
             VG_(pp_StackTrace)( ec->ips, ec->n_ips );
          }
       }
-      VG_(message)(Vg_DebugMsg, 
+      VG_(message)(Vg_DebugMsg,
                    "   exectx: Printed %'llu contexts stacktraces\n",
                    ec_totstored);
    }
@@ -182,22 +182,22 @@ void VG_(print_ExeContext_stats) ( Bool with_stacktraces )
       for (ec = ec_htab[i]; ec; ec = ec->chain)
          total_n_ips += ec->n_ips;
    }
-   VG_(message)(Vg_DebugMsg, 
+   VG_(message)(Vg_DebugMsg,
       "   exectx: %'lu lists, %'llu contexts (avg %3.2f per list)"
       " (avg %3.2f IP per context)\n",
       ec_htab_size, ec_totstored, (Double)ec_totstored / (Double)ec_htab_size,
       (Double)total_n_ips / (Double)ec_htab_size
    );
-   VG_(message)(Vg_DebugMsg, 
+   VG_(message)(Vg_DebugMsg,
       "   exectx: %'llu searches, %'llu full compares (%'llu per 1000)\n",
-      ec_searchreqs, ec_searchcmps, 
-      ec_searchreqs == 0 
-         ? 0ULL 
-         : ( (ec_searchcmps * 1000ULL) / ec_searchreqs ) 
+      ec_searchreqs, ec_searchcmps,
+      ec_searchreqs == 0
+         ? 0ULL
+         : ( (ec_searchcmps * 1000ULL) / ec_searchreqs )
    );
-   VG_(message)(Vg_DebugMsg, 
+   VG_(message)(Vg_DebugMsg,
       "   exectx: %'llu cmp2, %'llu cmp4, %'llu cmpAll\n",
-      ec_cmp2s, ec_cmp4s, ec_cmpAlls 
+      ec_cmp2s, ec_cmp4s, ec_cmpAlls
    );
 }
 
@@ -215,7 +215,7 @@ Bool VG_(eq_ExeContext) ( VgRes res, const ExeContext* e1,
 {
    Int i;
 
-   if (e1 == NULL || e2 == NULL) 
+   if (e1 == NULL || e2 == NULL)
       return False;
 
    // Must be at least one address in each trace.
@@ -425,7 +425,7 @@ static ExeContext* record_ExeContext_wrk2 ( const Addr* ips, UInt n_ips )
    /* Bummer.  We have to allocate a new context record. */
    ec_totstored++;
 
-   new_ec = VG_(perm_malloc)( sizeof(struct _ExeContext) 
+   new_ec = VG_(perm_malloc)( sizeof(struct _ExeContext)
                               + n_ips * sizeof(Addr),
                               vg_alignof(struct _ExeContext));
 
@@ -473,7 +473,7 @@ ExeContext* VG_(make_depth_1_ExeContext_from_Addr)( Addr a ) {
 
 StackTrace VG_(get_ExeContext_StackTrace) ( ExeContext* e ) {
    return e->ips;
-}  
+}
 
 UInt VG_(get_ECU_from_ExeContext)( const ExeContext* e ) {
    vg_assert(VG_(is_plausible_ECU)(e->ecu));
@@ -519,6 +519,12 @@ ExeContext* VG_(null_ExeContext) (void)
 {
    init_ExeContext_storage();
    return null_ExeContext;
+}
+
+void VG_(apply_ExeContext)( void(*action)(UInt n, Addr ip, void *uu_opaque),
+                                    ExeContext* ec, UInt n_ips )
+{
+   VG_(apply_StackTrace)( action, NULL, ec->ips, n_ips );
 }
 
 /*--------------------------------------------------------------------*/
