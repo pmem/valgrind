@@ -106,6 +106,9 @@ extern DiEpoch VG_(get_ExeContext_epoch)( const ExeContext* e );
 // How many entries (frames) in this ExeContext?
 extern Int VG_(get_ExeContext_n_ips)( const ExeContext* e );
 
+// Extract the StackTrace from an ExeContext.
+extern Addr* VG_(get_ExeContext_StackTrace) ( ExeContext* e );
+
 // Find the ExeContext that has the given ECU, if any.
 // NOTE: very slow.  Do not call often.
 extern ExeContext* VG_(get_ExeContext_from_ECU)( UInt uniq );
