@@ -33,8 +33,6 @@ int main ( void )
     /* full persist first store only */
     VALGRIND_PMC_DO_FLUSH(i16p, sizeof (*i16p));
     VALGRIND_PMC_DO_FENCE;
-    VALGRIND_PMC_DO_COMMIT;
-    VALGRIND_PMC_DO_FENCE;
 
     /* move far enough, for example to the next page */
     int64_t *i64p = (int64_t *)((uintptr_t )base + 4096);
@@ -42,8 +40,6 @@ int main ( void )
     /* split the store in half with a flush */
     void *flush_base = (uint8_t *)i64p + 4;
     VALGRIND_PMC_DO_FLUSH(flush_base, 4);
-    VALGRIND_PMC_DO_FENCE;
-    VALGRIND_PMC_DO_COMMIT;
 
     return 0;
 }

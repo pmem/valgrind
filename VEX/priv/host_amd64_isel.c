@@ -4669,8 +4669,6 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          case Imbe_LFence:
             addInstr(env, AMD64Instr_MFence());
             return;
-         case Imbe_Drain:
-            return;
          default:
             break;
       }

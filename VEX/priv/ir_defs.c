@@ -1562,8 +1562,6 @@ void ppIRMBusEvent ( IRMBusEvent event )
          vex_printf("Fence"); break;
       case Imbe_CancelReservation:
          vex_printf("CancelReservation"); break;
-      case Imbe_Drain:
-         vex_printf("Drain"); break;
       case Imbe_SFence:
          vex_printf("SFence"); break;
       case Imbe_LFence:
@@ -4643,7 +4641,7 @@ void tcStmt ( const IRSB* bb, const IRStmt* stmt, IRType gWordTy )
          break;
       case Ist_MBE:
          switch (stmt->Ist.MBE.event) {
-            case Imbe_Fence: case Imbe_CancelReservation: case Imbe_Drain:
+            case Imbe_Fence: case Imbe_CancelReservation:
             case Imbe_SFence: case Imbe_LFence:
                break;
             default: sanityCheckFail(bb,stmt,"IRStmt.MBE.event: unknown");
