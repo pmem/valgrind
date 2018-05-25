@@ -34,7 +34,7 @@
         reclaimed automatically on reboot. Because of the specific nature of
         persistent memory, the store scheme	has to follow a special pattern.
         To make the data persistent, preferably in a failsafe manner, you have
-        to do a	<emphasis>STORE->FLUSH->SFENCE->PCOMMIT->SFENCE</emphasis>
+        to do a	<emphasis>STORE->FLUSH->SFENCE</emphasis>
         sequence. Pmemcheck checks if this particular sequence of operations
         is made to any of the registered persistent memory regions. On program
         exit pmemcheck informs of all improperly made stores by providing the
@@ -53,20 +53,6 @@
 		<listitem>
 		  <para>
             <option>FLUSHED</option> - the write has been flushed
-          </para>
-		</listitem>
-
-		<listitem>
-		  <para>
-              <option>FENCED</option> - a store fence has been issued after
-              the flush
-          </para>
-		</listitem>
-
-		<listitem>
-		  <para>
-            <option>COMMITED</option> - a PCOMMIT instruction has been issued
-            after the fence
           </para>
 		</listitem>
 	  </itemizedlist>
@@ -106,8 +92,8 @@
           For the tool to be able to correctly inspect your program, you should
           inform it about the persistent memory specific operations your
           application performs. At the moment, pmemcheck does not automatically
-          recognize persistent memory regions, appropriate flushes, fences or
-          pcommits. Your code has to use special macros specified in
+          recognize persistent memory regions, appropriate flushes or fences.
+          Your code has to use special macros specified in
           <xref linkend="pmc-manual.client_requests"/>.
       </para>
 
@@ -192,10 +178,10 @@ Number of redundantly flushed stores: 3
 Stores flushed multiple times:
 [0]    at 0x400A5B: main (flush_check.c:27)
 	Address: 0x4fec000	size: 8	state: FLUSHED
-[1]    at 0x400A5B: main (flush_check.c:27)
-	Address: 0x4fec000	size: 8	state: FENCED
-[2]    at 0x400A5B: main (flush_check.c:27)
-	Address: 0x4fec000	size: 8	state: COMMITTED]]></programlisting>
+[1]    at 0x400A5C: main (flush_check.c:28)
+	Address: 0x4fec000	size: 8	state: FLUSHED
+[2]    at 0x400A5D: main (flush_check.c:29)
+	Address: 0x4fec000	size: 8	state: FLUSHED]]></programlisting>
         It indicates that the same store has been flushed multiple times,
         which is a potential performance issue.
       </para>
@@ -595,8 +581,7 @@ Overlapping regions:
 		</term>
 		<listitem>
 		  <para>
-            Simulates a commit operation for the appropriate stores to
-            registered persistent memory regions.
+	     Deprecated.
           </para>
 		</listitem>
 	  </varlistentry>
