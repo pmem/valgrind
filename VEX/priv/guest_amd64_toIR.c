@@ -14212,18 +14212,6 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          goto decode_success;
       }
 
-      /* 66 0F AE F8 = PCOMMIT -- persistent commit */
-      if (have66noF2noF3(pfx)
-          && getUChar(delta) == 0xF8
-          && sz == 2) {
-         delta += 1;
-         /* Drain iMC cache.  It's sometimes important that these
-            are carried through to the generated code. */
-         stmt( IRStmt_MBE(Imbe_Drain) );
-         DIP("pcommit\n");
-         goto decode_success;
-      }
-
       /* 0F AE /7 = CLFLUSH -- flush cache line */
       /* 66 0F AE /7 = CLFLUSHOPT -- flush cache line optimized */
       if (((haveNo66noF2noF3(pfx) && sz == 4)
