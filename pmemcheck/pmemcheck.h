@@ -128,7 +128,7 @@ typedef
     VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_DO_FENCE,               \
                                     0, 0, 0, 0, 0)
 
-/** Register a PCOMMIT */
+/** Register a PCOMMIT (DEPRECATED, DO NOT USE) */
 #define VALGRIND_PMC_DO_COMMIT                                              \
     VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_DO_COMMIT,              \
                                     0, 0, 0, 0, 0)

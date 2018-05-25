@@ -1,8 +1,6 @@
-Number of stores not made persistent: 2
+Number of stores not made persistent: 1
 Stores not made persistent properly:
-[0]    at 0x........: main (state_machine.c:36)
-	Address: 0x........	size: 2	state: COMMITTED
-[1]    at 0x........: main (state_machine.c:40)
+[0]    at 0x........: main (state_machine.c:37)
 	Address: 0x........	size: 4	state: FLUSHED
-Total memory not made persistent: 6
-ERROR SUMMARY: 2 errors
+Total memory not made persistent: 4
+ERROR SUMMARY: 1 errors

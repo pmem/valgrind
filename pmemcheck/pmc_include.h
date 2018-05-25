@@ -27,8 +27,6 @@ struct pmem_st {
         STST_CLEAN,
         STST_DIRTY,
         STST_FLUSHED,
-        STST_FENCED,
-        STST_COMMITTED
     } state;
 };
 

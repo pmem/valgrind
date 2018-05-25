@@ -31,7 +31,6 @@ int main ( void )
     VALGRIND_PMC_DO_FENCE;
     /* flush should be registered as "invalid" */
     VALGRIND_PMC_DO_FLUSH(base, 64);
-    VALGRIND_PMC_DO_COMMIT;
     /* flush should be registered as "invalid" */
     VALGRIND_PMC_DO_FLUSH(base, 64);
     return 0;

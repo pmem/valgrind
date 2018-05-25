@@ -186,10 +186,6 @@ store_state_to_string(enum store_state state)
             return "DIRTY";
         case STST_FLUSHED:
             return "FLUSHED";
-        case STST_FENCED:
-            return "FENCED";
-        case STST_COMMITTED:
-            return "COMMITTED";
         default:
             return NULL;
     }
@@ -1019,8 +1015,8 @@ add_event_dw(IRSB *sb, IRAtom *daddr, Int dsize, IRAtom *value)
 /**
 * \brief Register a fence.
 *
-* Marks flushed stores as fenced and committed stores as persistent.
-* The proper state transitions are DIRTY->FLUSHED->FENCED->COMMITTED->CLEAN.
+* Marks flushed stores as persistent.
+* The proper state transitions are DIRTY->FLUSHED->CLEAN.
 * The CLEAN state is not registered, the store is removed from the set.
 */
 static void
@@ -1030,13 +1026,11 @@ do_fence(void)
             || (VG_(OSetGen_Size)(pmem.loggable_regions) != 0)))
         VG_(emit)("|FENCE");
 
-    /* go through the stores and move them from flushed to fenced */
+    /* go through the stores and remove all flushed */
     VG_(OSetGen_ResetIter)(pmem.pmem_stores);
     struct pmem_st *being_fenced = NULL;
     while ((being_fenced = VG_(OSetGen_Next)(pmem.pmem_stores)) != NULL) {
         if (being_fenced->state == STST_FLUSHED) {
-            being_fenced->state = STST_FENCED;
-        } else if (being_fenced->state == STST_COMMITTED) {
             /* remove it from the oset */
             struct pmem_st temp = *being_fenced;
             VG_(OSetGen_Remove)(pmem.pmem_stores, being_fenced);
@@ -1044,29 +1038,6 @@ do_fence(void)
             /* reset the iterator (remove invalidated store) */
             VG_(OSetGen_ResetIterAt)(pmem.pmem_stores, &temp);
         }
-    }
-}
-
-/**
-* \brief Register a memory commit.
-*
-* Marks fenced stores as committed. To make committed stores persistent
-* for sure, a fence is needed afterwards. The proper state transitions
-* are DIRTY->FLUSHED->FENCED->COMMITTED->CLEAN. The CLEAN state is not
-* registered, the store is removed from the set.
-*/
-static void
-do_commit(void)
-{
-    if (pmem.log_stores && (pmem.loggin_on
-            || (VG_(OSetGen_Size)(pmem.loggable_regions) != 0)))
-        VG_(emit)("|COMMIT");
-    /* go through the stores and move them from fenced to clean */
-    VG_(OSetGen_ResetIter)(pmem.pmem_stores);
-    struct pmem_st *being_fenced = NULL;
-    while ((being_fenced = VG_(OSetGen_Next)(pmem.pmem_stores)) != NULL) {
-        if (being_fenced->state == STST_FENCED)
-            being_fenced->state = STST_COMMITTED;
     }
 }
 
@@ -1518,9 +1489,6 @@ pmc_instrument(VgCallbackClosure *closure,
                         case Imbe_SFence:
                             add_simple_event(sbOut, do_fence, "do_fence");
                             break;
-                        case Imbe_Drain:
-                            add_simple_event(sbOut, do_commit, "do_commit");
-                            break;
                         default:
                             break;
                     }
@@ -1732,7 +1700,7 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
         }
 
         case VG_USERREQ__PMC_DO_COMMIT: {
-            do_commit();
+            // now part to DO_FENCE
             break;
         }
 
