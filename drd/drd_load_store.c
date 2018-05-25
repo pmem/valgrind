@@ -635,7 +635,6 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
          case Imbe_Fence:
          case Imbe_LFence:
          case Imbe_SFence:
-         case Imbe_Drain:
             break; /* not interesting to DRD */
          case Imbe_CancelReservation:
             break; /* not interesting to DRD */
