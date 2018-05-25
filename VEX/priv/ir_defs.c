@@ -4164,7 +4164,7 @@ void assignedOnce_Stmt(const IRSB *bb, const IRStmt *stmt,
       break;
    // Ignore all other cases
    case Ist_NoOp: case Ist_IMark: case Ist_AbiHint: case Ist_Put: case Ist_PutI:
-   case Ist_Store: case Ist_StoreG: case Ist_MBE: case Ist_Exit:
+   case Ist_Store: case Ist_StoreG: case Ist_MBE: case Ist_Exit: case Ist_Flush:
       break;
    default:
       vassert(0);
