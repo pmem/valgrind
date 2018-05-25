@@ -31,12 +31,9 @@ int main ( void )
     /* full persist */
     VALGRIND_PMC_DO_FLUSH(i8p, 8);
     VALGRIND_PMC_DO_FENCE;
-    VALGRIND_PMC_DO_COMMIT;
-    VALGRIND_PMC_DO_FENCE;
     *i16p = 2;
     VALGRIND_PMC_DO_FLUSH(i16p, 8);
     VALGRIND_PMC_DO_FENCE;
-    VALGRIND_PMC_DO_COMMIT;
     *i32p = 3;
     VALGRIND_PMC_DO_FLUSH(i32p, 8);
     return 0;

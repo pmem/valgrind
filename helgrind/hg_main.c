@@ -4853,7 +4853,6 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                case Imbe_Fence:
                case Imbe_LFence:
                case Imbe_SFence:
-               case Imbe_Drain:
                case Imbe_CancelReservation:
                   break; /* not interesting */
                default:

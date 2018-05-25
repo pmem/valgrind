@@ -2,9 +2,9 @@ Number of stores not made persistent: 3
 Stores not made persistent properly:
 [0]    at 0x........: main (state_no_flush_align.c:32)
 	Address: 0x........	size: 4	state: DIRTY
-[1]    at 0x........: main (state_no_flush_align.c:41)
+[1]    at 0x........: main (state_no_flush_align.c:39)
 	Address: 0x........	size: 4	state: DIRTY
-[2]    at 0x........: main (state_no_flush_align.c:41)
-	Address: 0x........	size: 4	state: COMMITTED
+[2]    at 0x........: main (state_no_flush_align.c:39)
+	Address: 0x........	size: 4	state: FLUSHED
 Total memory not made persistent: 12
 ERROR SUMMARY: 3 errors
