@@ -127,6 +127,9 @@ static struct pmem_ops {
 
     /** Toggles error summary message */
     Bool error_summary;
+
+    /** Simulate 2-phase flushing. */
+    Bool weak_clflush;
 } pmem;
 
 /*
@@ -1474,9 +1477,11 @@ pmc_instrument(VgCallbackClosure *closure,
                     IRType type = typeOfIRExpr(tyenv, addr);
                     tl_assert(type != Ity_INVALID);
                     add_flush_event(sbOut, st->Ist.Flush.addr);
-                    /* treat clflush as strong memory ordered */
-                    if (st->Ist.Flush.fk == Ifk_flush)
-                        add_simple_event(sbOut, do_fence, "do_fence");
+
+		    /* treat clflush as strong memory ordered */
+		    if (st->Ist.Flush.fk == Ifk_flush)
+                       if (!pmem.weak_clflush)
+                          add_simple_event(sbOut, do_fence, "do_fence");
                 }
                 addStmtToIRSB(sbOut, st);
                 break;
@@ -1874,6 +1879,8 @@ pmc_process_cmd_line_option(const HChar *arg)
     else if VG_BOOL_CLO(arg, "--tx-only", pmem.transactions_only) {}
     else if VG_BOOL_CLO(arg, "--isa-rec", pmem.automatic_isa_rec) {}
     else if VG_BOOL_CLO(arg, "--error-summary", pmem.error_summary) {}
+    else if VG_BOOL_CLO(arg, "--expect-fence-after-clflush",
+		    pmem.weak_clflush) {}
     else
         return False;
 
@@ -1942,6 +1949,8 @@ pmc_print_usage(void)
             "                                           recognition default [yes]\n"
             "    --error-summary=<yes|no>               turn on error summary message\n"
             "                                           default [yes]\n"
+            "    --expect-fence-after-clflush=<yes|no>  simulate 2-phase flushing on old CPUs\n"
+            "                                           default [no]\n"
 
     );
 }
