@@ -127,6 +127,9 @@ static struct pmem_ops {
 
     /** Toggles error summary message */
     Bool error_summary;
+
+    /** Simulate 2-phase flushing. */
+    Bool weak_clflush;
 } pmem;
 
 /*
@@ -186,10 +189,6 @@ store_state_to_string(enum store_state state)
             return "DIRTY";
         case STST_FLUSHED:
             return "FLUSHED";
-        case STST_FENCED:
-            return "FENCED";
-        case STST_COMMITTED:
-            return "COMMITTED";
         default:
             return NULL;
     }
@@ -1019,8 +1018,8 @@ add_event_dw(IRSB *sb, IRAtom *daddr, Int dsize, IRAtom *value)
 /**
 * \brief Register a fence.
 *
-* Marks flushed stores as fenced and committed stores as persistent.
-* The proper state transitions are DIRTY->FLUSHED->FENCED->COMMITTED->CLEAN.
+* Marks flushed stores as persistent.
+* The proper state transitions are DIRTY->FLUSHED->CLEAN.
 * The CLEAN state is not registered, the store is removed from the set.
 */
 static void
@@ -1030,13 +1029,11 @@ do_fence(void)
             || (VG_(OSetGen_Size)(pmem.loggable_regions) != 0)))
         VG_(emit)("|FENCE");
 
-    /* go through the stores and move them from flushed to fenced */
+    /* go through the stores and remove all flushed */
     VG_(OSetGen_ResetIter)(pmem.pmem_stores);
     struct pmem_st *being_fenced = NULL;
     while ((being_fenced = VG_(OSetGen_Next)(pmem.pmem_stores)) != NULL) {
         if (being_fenced->state == STST_FLUSHED) {
-            being_fenced->state = STST_FENCED;
-        } else if (being_fenced->state == STST_COMMITTED) {
             /* remove it from the oset */
             struct pmem_st temp = *being_fenced;
             VG_(OSetGen_Remove)(pmem.pmem_stores, being_fenced);
@@ -1044,29 +1041,6 @@ do_fence(void)
             /* reset the iterator (remove invalidated store) */
             VG_(OSetGen_ResetIterAt)(pmem.pmem_stores, &temp);
         }
-    }
-}
-
-/**
-* \brief Register a memory commit.
-*
-* Marks fenced stores as committed. To make committed stores persistent
-* for sure, a fence is needed afterwards. The proper state transitions
-* are DIRTY->FLUSHED->FENCED->COMMITTED->CLEAN. The CLEAN state is not
-* registered, the store is removed from the set.
-*/
-static void
-do_commit(void)
-{
-    if (pmem.log_stores && (pmem.loggin_on
-            || (VG_(OSetGen_Size)(pmem.loggable_regions) != 0)))
-        VG_(emit)("|COMMIT");
-    /* go through the stores and move them from fenced to clean */
-    VG_(OSetGen_ResetIter)(pmem.pmem_stores);
-    struct pmem_st *being_fenced = NULL;
-    while ((being_fenced = VG_(OSetGen_Next)(pmem.pmem_stores)) != NULL) {
-        if (being_fenced->state == STST_FENCED)
-            being_fenced->state = STST_COMMITTED;
     }
 }
 
@@ -1503,9 +1477,11 @@ pmc_instrument(VgCallbackClosure *closure,
                     IRType type = typeOfIRExpr(tyenv, addr);
                     tl_assert(type != Ity_INVALID);
                     add_flush_event(sbOut, st->Ist.Flush.addr);
-                    /* treat clflush as strong memory ordered */
-                    if (st->Ist.Flush.fk == Ifk_flush)
-                        add_simple_event(sbOut, do_fence, "do_fence");
+
+		    /* treat clflush as strong memory ordered */
+		    if (st->Ist.Flush.fk == Ifk_flush)
+                       if (!pmem.weak_clflush)
+                          add_simple_event(sbOut, do_fence, "do_fence");
                 }
                 addStmtToIRSB(sbOut, st);
                 break;
@@ -1517,9 +1493,6 @@ pmc_instrument(VgCallbackClosure *closure,
                         case Imbe_Fence:
                         case Imbe_SFence:
                             add_simple_event(sbOut, do_fence, "do_fence");
-                            break;
-                        case Imbe_Drain:
-                            add_simple_event(sbOut, do_commit, "do_commit");
                             break;
                         default:
                             break;
@@ -1732,7 +1705,7 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
         }
 
         case VG_USERREQ__PMC_DO_COMMIT: {
-            do_commit();
+            // now part to DO_FENCE
             break;
         }
 
@@ -1906,6 +1879,8 @@ pmc_process_cmd_line_option(const HChar *arg)
     else if VG_BOOL_CLO(arg, "--tx-only", pmem.transactions_only) {}
     else if VG_BOOL_CLO(arg, "--isa-rec", pmem.automatic_isa_rec) {}
     else if VG_BOOL_CLO(arg, "--error-summary", pmem.error_summary) {}
+    else if VG_BOOL_CLO(arg, "--expect-fence-after-clflush",
+		    pmem.weak_clflush) {}
     else
         return False;
 
@@ -1974,6 +1949,8 @@ pmc_print_usage(void)
             "                                           recognition default [yes]\n"
             "    --error-summary=<yes|no>               turn on error summary message\n"
             "                                           default [yes]\n"
+            "    --expect-fence-after-clflush=<yes|no>  simulate 2-phase flushing on old CPUs\n"
+            "                                           default [no]\n"
 
     );
 }

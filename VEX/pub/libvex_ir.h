@@ -2495,8 +2495,6 @@ typedef
          preceding Linked-Load, and needs to be handed through to the
          back end, just as LL and SC themselves are. */
       Imbe_CancelReservation,
-      /* Needed only on amd64.  It drains the iMC cache. */
-      Imbe_Drain,
       /* Might be interesting for some kinds of tools */
       /* XXX it would probably be a good idea to add a new fence kind to the
        MBE statement, this however needs a lot of changes - to be considered
