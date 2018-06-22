@@ -706,6 +706,18 @@ Overlapping regions:
         </listitem>
       </varlistentry>
 
+      <varlistentry id="crm.default_reorder" xreflabel="VALGRIND_PMC_DEFAULT_REORDER">
+        <term>
+          <option><![CDATA[VALGRIND_PMC_DEFAULT_REORDER]]></option>
+        </term>
+        <listitem>
+          <para>
+            Issues a default reorder engine. Useful in some types of
+            postprocessing.
+          </para>
+        </listitem>
+      </varlistentry>
+
       <varlistentry id="crm.start_tx" xreflabel="VALGRIND_PMC_START_TX">
         <term>
           <option><![CDATA[VALGRIND_PMC_START_TX]]></option>
