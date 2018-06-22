@@ -1639,6 +1639,7 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             && VG_USERREQ__PMC_PARTIAL_REORDER != arg[0]
             && VG_USERREQ__PMC_ONLY_FAULT != arg[0]
             && VG_USERREQ__PMC_STOP_REORDER_FAULT != arg[0]
+            && VG_USERREQ__PMC_DEFAULT_REORDER != arg[0]
             && VG_USERREQ__PMC_START_TX != arg[0]
             && VG_USERREQ__PMC_START_TX_N != arg[0]
             && VG_USERREQ__PMC_END_TX != arg[0]
@@ -1776,6 +1777,13 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
                     (pmem.loggable_regions) != 0)))
                 VG_(emit)("|NO_REORDER_FAULT");
+            break;
+        }
+
+        case VG_USERREQ__PMC_DEFAULT_REORDER: {
+            if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
+                    (pmem.loggable_regions) != 0)))
+                VG_(emit)("|DEFAULT_REORDER");
             break;
         }
 
