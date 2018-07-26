@@ -16,6 +16,11 @@
 #ifndef PMC_INCLUDE_H
 #define PMC_INCLUDE_H
 
+#define EMIT_LOG_LEN 256
+
+/** Emited value buffer  */
+char emit_log[EMIT_LOG_LEN];
+
 /** Single store to memory. */
 struct pmem_st {
     Addr addr;
