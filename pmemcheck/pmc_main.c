@@ -1635,11 +1635,6 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             && VG_USERREQ__PMC_NO_LOG_STORES != arg[0]
             && VG_USERREQ__PMC_ADD_LOG_REGION != arg[0]
             && VG_USERREQ__PMC_REMOVE_LOG_REGION != arg[0]
-            && VG_USERREQ__PMC_FULL_REORDED != arg[0]
-            && VG_USERREQ__PMC_PARTIAL_REORDER != arg[0]
-            && VG_USERREQ__PMC_ONLY_FAULT != arg[0]
-            && VG_USERREQ__PMC_STOP_REORDER_FAULT != arg[0]
-            && VG_USERREQ__PMC_DEFAULT_REORDER != arg[0]
             && VG_USERREQ__PMC_EMIT_LOG != arg[0]
             && VG_USERREQ__PMC_START_TX != arg[0]
             && VG_USERREQ__PMC_START_TX_N != arg[0]
@@ -1750,41 +1745,6 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             temp_info.size = arg[2];
 
             remove_region(&temp_info, pmem.loggable_regions);
-            break;
-        }
-
-        case VG_USERREQ__PMC_FULL_REORDED: {
-            if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
-                    (pmem.loggable_regions) != 0)))
-                VG_(emit)("|FREORDER");
-            break;
-        }
-
-        case VG_USERREQ__PMC_PARTIAL_REORDER: {
-            if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
-                    (pmem.loggable_regions) != 0)))
-                VG_(emit)("|PREORDER");
-            break;
-        }
-
-        case VG_USERREQ__PMC_ONLY_FAULT: {
-            if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
-                    (pmem.loggable_regions) != 0)))
-                VG_(emit)("|FAULT_ONLY");
-            break;
-        }
-
-        case VG_USERREQ__PMC_STOP_REORDER_FAULT: {
-            if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
-                    (pmem.loggable_regions) != 0)))
-                VG_(emit)("|NO_REORDER_FAULT");
-            break;
-        }
-
-        case VG_USERREQ__PMC_DEFAULT_REORDER: {
-            if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
-                    (pmem.loggable_regions) != 0)))
-                VG_(emit)("|DEFAULT_REORDER");
             break;
         }
 
