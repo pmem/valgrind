@@ -16,6 +16,7 @@
 #include <stdint.h>
 
 #define FILE_SIZE (16 * 1024 * 1024)
+#define EMIT_LOG_VALUE "EMIT_TEST_VALUE"
 
 int main ( void )
 {
@@ -47,5 +48,6 @@ int main ( void )
     VALGRIND_PMC_PARTIAL_REORDER;
     VALGRIND_PMC_STOP_REORDER_FAULT;
     VALGRIND_PMC_DEFAULT_REORDER;
+    VALGRIND_PMC_EMIT_LOG(EMIT_LOG_VALUE);
     return 0;
 }
