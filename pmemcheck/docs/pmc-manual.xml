@@ -575,17 +575,6 @@ Overlapping regions:
 		</listitem>
 	  </varlistentry>
 
-      <varlistentry id="crm.commit" xreflabel="VALGRIND_PMC_DO_COMMIT">
-	    <term>
-		  <option><![CDATA[VALGRIND_PMC_DO_COMMIT]]></option>
-		</term>
-		<listitem>
-		  <para>
-	     Deprecated.
-          </para>
-		</listitem>
-	  </varlistentry>
-
       <varlistentry id="crm.clean" xreflabel="VALGRIND_PMC_SET_CLEAN">
 	<term>
 	  <option><![CDATA[VALGRIND_PMC_SET_CLEAN]]></option>
