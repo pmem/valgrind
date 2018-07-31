@@ -1627,7 +1627,6 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             && VG_USERREQ__PMC_CHECK_IS_PMEM_MAPPING != arg[0]
             && VG_USERREQ__PMC_DO_FLUSH != arg[0]
             && VG_USERREQ__PMC_DO_FENCE != arg[0]
-            && VG_USERREQ__PMC_DO_COMMIT != arg[0]
             && VG_USERREQ__PMC_WRITE_STATS != arg[0]
             && VG_USERREQ__GDB_MONITOR_COMMAND != arg[0]
             && VG_USERREQ__PMC_PRINT_PMEM_MAPPINGS != arg[0]
@@ -1647,6 +1646,12 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             && VG_USERREQ__PMC_ADD_THREAD_TO_TX_N != arg[0]
             && VG_USERREQ__PMC_REMOVE_THREAD_FROM_TX_N != arg[0]
             && VG_USERREQ__PMC_ADD_TO_GLOBAL_TX_IGNORE != arg[0]
+            && VG_USERREQ__PMC_RESERVED1 != arg[0]
+            && VG_USERREQ__PMC_RESERVED2 != arg[0]
+            && VG_USERREQ__PMC_RESERVED3 != arg[0]
+            && VG_USERREQ__PMC_RESERVED4 != arg[0]
+            && VG_USERREQ__PMC_RESERVED5 != arg[0]
+            && VG_USERREQ__PMC_RESERVED6 != arg[0]
             )
         return False;
 
@@ -1698,11 +1703,6 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
 
         case VG_USERREQ__PMC_DO_FENCE: {
             do_fence();
-            break;
-        }
-
-        case VG_USERREQ__PMC_DO_COMMIT: {
-            // now part to DO_FENCE
             break;
         }
 
@@ -1823,6 +1823,20 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
 
             add_to_global_excludes(&temp_info);
             break;
+        }
+
+        case VG_USERREQ__PMC_RESERVED1:
+        case VG_USERREQ__PMC_RESERVED2:
+        case VG_USERREQ__PMC_RESERVED3:
+        case VG_USERREQ__PMC_RESERVED4:
+        case VG_USERREQ__PMC_RESERVED5:
+        case VG_USERREQ__PMC_RESERVED6: {
+            VG_(message)(
+                    Vg_UserMsg,
+                    "Warning: deprecated pmemcheck client request code 0x%llx\n",
+                    (ULong)arg[0]
+            );
+            return False;
         }
 
         default:
