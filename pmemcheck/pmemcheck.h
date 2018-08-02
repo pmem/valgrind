@@ -57,16 +57,16 @@ typedef
        VG_USERREQ__PMC_PRINT_PMEM_MAPPINGS,
        VG_USERREQ__PMC_DO_FLUSH,
        VG_USERREQ__PMC_DO_FENCE,
-       VG_USERREQ__PMC_RESERVED1, /* Do not use. */
+       VG_USERREQ__PMC_RESERVED1,  /* Do not use. */
        VG_USERREQ__PMC_WRITE_STATS,
-       VG_USERREQ__PMC_LOG_STORES,
-       VG_USERREQ__PMC_NO_LOG_STORES,
-       VG_USERREQ__PMC_ADD_LOG_REGION,
-       VG_USERREQ__PMC_REMOVE_LOG_REGION,
-       VG_USERREQ__PMC_RESERVED2, /* Do not use. */
-       VG_USERREQ__PMC_RESERVED3, /* Do not use. */
-       VG_USERREQ__PMC_RESERVED4, /* Do not use. */
-       VG_USERREQ__PMC_RESERVED5, /* Do not use. */
+       VG_USERREQ__PMC_RESERVED2,  /* Do not use. */
+       VG_USERREQ__PMC_RESERVED3,  /* Do not use. */
+       VG_USERREQ__PMC_RESERVED4,  /* Do not use. */
+       VG_USERREQ__PMC_RESERVED5,  /* Do not use. */
+       VG_USERREQ__PMC_RESERVED7,  /* Do not use. */
+       VG_USERREQ__PMC_RESERVED8,  /* Do not use. */
+       VG_USERREQ__PMC_RESERVED9,  /* Do not use. */
+       VG_USERREQ__PMC_RESERVED10, /* Do not use. */
        VG_USERREQ__PMC_SET_CLEAN,
        /* transaction support */
        VG_USERREQ__PMC_START_TX,
@@ -80,7 +80,7 @@ typedef
        VG_USERREQ__PMC_ADD_THREAD_TO_TX_N,
        VG_USERREQ__PMC_REMOVE_THREAD_FROM_TX_N,
        VG_USERREQ__PMC_ADD_TO_GLOBAL_TX_IGNORE,
-       VG_USERREQ__PMC_RESERVED6, /* Do not use. */
+       VG_USERREQ__PMC_RESERVED6,  /* Do not use. */
        VG_USERREQ__PMC_EMIT_LOG,
    } Vg_PMemCheckClientRequest;
 
@@ -134,29 +134,6 @@ typedef
 #define VALGRIND_PMC_WRITE_STATS                                            \
     VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_WRITE_STATS,            \
                                     0, 0, 0, 0, 0)
-
-/** Start logging memory operations */
-#define VALGRIND_PMC_LOG_STORES                                             \
-    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_LOG_STORES,             \
-                                    0, 0, 0, 0, 0)
-
-/** Stop logging memory operations */
-#define VALGRIND_PMC_NO_LOG_STORES                                          \
-    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_NO_LOG_STORES,          \
-                                    0, 0, 0, 0, 0)
-
-/** Add a region of persistent memory, for which all operations will be
-* logged */
-#define VALGRIND_PMC_ADD_LOG_REGION(_qzz_addr,_qzz_len)                     \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
-                            VG_USERREQ__PMC_ADD_LOG_REGION,                 \
-                            (_qzz_addr), (_qzz_len), 0, 0, 0)
-
-/** Remove the loggable persistent memory region */
-#define VALGRIND_PMC_REMOVE_LOG_REGION(_qzz_addr,_qzz_len)                  \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
-                            VG_USERREQ__PMC_REMOVE_LOG_REGION,              \
-                            (_qzz_addr), (_qzz_len), 0, 0, 0)
 
 /** Emit user log */
 #define VALGRIND_PMC_EMIT_LOG(_qzz_emit_log)                                \
