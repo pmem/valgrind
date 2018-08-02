@@ -25,8 +25,6 @@ int main ( void )
     int16_t *i16p = base;
     int32_t *i32p = (int32_t *)(i16p + 1);
 
-    VALGRIND_PMC_LOG_STORES;
-
     /* dirty stores, both on the same cache line */
     *i16p = 1;
     *i32p = 2;
