@@ -598,66 +598,6 @@ Overlapping regions:
 	</listitem>
       </varlistentry>
 
-      <varlistentry id="crm.log_on" xreflabel="VALGRIND_PMC_LOG_STORES">
-        <term>
-          <option><![CDATA[VALGRIND_PMC_LOG_STORES]]></option>
-        </term>
-        <listitem>
-          <para>
-            Turns on logging of persistent memory related events.
-          </para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry id="crm.log_stop" xreflabel="VALGRIND_PMC_NO_LOG_STORES">
-        <term>
-          <option><![CDATA[VALGRIND_PMC_NO_LOG_STORES]]></option>
-        </term>
-        <listitem>
-          <para>
-            Turns off logging of persistent memory related events.
-          </para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry id="crm.add_log_reg" xreflabel="VALGRIND_PMC_ADD_LOG_REGION">
-	    <term>
-		  <option><![CDATA[VALGRIND_PMC_ADD_LOG_REGION(addr, size)]]></option>
-		</term>
-		<listitem>
-		  <para>
-            Registers a loggable persistent memory region. Events related to
-            registered loggable regions are always logged, regardless of the
-            <xref linkend="crm.log_on"/> and <xref linkend="crm.log_stop"/>
-            macros.
-          </para>
-		</listitem>
-      </varlistentry>
-
-      <varlistentry id="crm.rm_log_reg" xreflabel="VALGRIND_PMC_REMOVE_LOG_REGION">
-        <term>
-          <option><![CDATA[VALGRIND_PMC_REMOVE_LOG_REGION(addr, size)]]></option>
-        </term>
-        <listitem>
-          <para>
-            Removes a registered loggable persistent memory region from the
-            appropriate pmemcheck register. Behavior is identical to
-            <xref linkend="crm.rem_pmem"/>.
-          </para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry id="crm.emit_log" xreflabel="VALGRIND_PMC_EMIT_LOG">
-        <term>
-          <option><![CDATA[VALGRIND_PMC_EMIT_LOG]]></option>
-        </term>
-        <listitem>
-          <para>
-	    Issues a emit log event. Useful to emit any string to log file.
-          </para>
-        </listitem>
-      </varlistentry>
-
       <varlistentry id="crm.start_tx" xreflabel="VALGRIND_PMC_START_TX">
         <term>
           <option><![CDATA[VALGRIND_PMC_START_TX]]></option>
