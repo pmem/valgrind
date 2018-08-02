@@ -67,9 +67,6 @@ static struct pmem_ops {
     /** Set of registered persistent memory regions. */
     OSet *pmem_mappings;
 
-    /** Set of registered loggable persistent memory regions. */
-    OSet *loggable_regions;
-
     /** Holds possible multiple overwrite error events. */
     struct pmem_st **multiple_stores;
 
@@ -97,9 +94,6 @@ static struct pmem_ops {
 
     /** Turns on logging persistent memory events. */
     Bool log_stores;
-
-    /** Toggles logging on user requests */
-    Bool loggin_on;
 
     /** Toggles summary printing. */
     Bool print_summary;
@@ -703,8 +697,7 @@ trace_pmem_store(Addr addr, SizeT size, UWord value)
     store->context = VG_(record_ExeContext)(VG_(get_running_tid)(), 0);
 
     /* log the store, regardless if it is a double store */
-    if (pmem.log_stores && ( pmem.loggin_on || VG_(OSetGen_Contains)
-            (pmem.loggable_regions, store))) {
+    if (pmem.log_stores) {
         VG_(emit)("|STORE;0x%lx;0x%lx;0x%lx", addr, value, size);
         if (pmem.store_traces)
             pp_store_trace(store, pmem.store_traces_depth);
@@ -1025,8 +1018,7 @@ add_event_dw(IRSB *sb, IRAtom *daddr, Int dsize, IRAtom *value)
 static void
 do_fence(void)
 {
-    if (pmem.log_stores && (pmem.loggin_on
-            || (VG_(OSetGen_Size)(pmem.loggable_regions) != 0)))
+    if (pmem.log_stores)
         VG_(emit)("|FENCE");
 
     /* go through the stores and remove all flushed */
@@ -1068,8 +1060,7 @@ do_flush(UWord base, UWord size)
         flush_info.size = roundup(size, pmem.flush_align_size);
     }
 
-    if (pmem.log_stores && (pmem.loggin_on
-            || (VG_(OSetGen_Size)(pmem.loggable_regions) != 0)))
+    if (pmem.log_stores)
         VG_(emit)("|FLUSH;0x%lx;0x%llx", flush_info.addr, flush_info.size);
 
     /* unfortunately lookup doesn't work here, the oset is an avl tree */
@@ -1342,8 +1333,6 @@ print_monitor_help(void)
             "        prints the summary\n"
             "  print_pmem_regions \n"
             "        prints the registered persistent memory regions\n"
-            "  print_log_regions\n"
-            "        prints the registered loggable persistent memory regions\n"
             "\n");
 }
 
@@ -1363,7 +1352,7 @@ static Bool handle_gdb_monitor_command(ThreadId tid, HChar *req)
 
     wcmd = VG_(strtok_r) (s, " ", &ssaveptr);
     switch (VG_(keyword_id)
-            ("help print_stats print_pmem_regions print_log_regions",
+            ("help print_stats print_pmem_regions",
                     wcmd, kwd_report_duplicated_matches)) {
         case -2: /* multiple matches */
             return True;
@@ -1383,16 +1372,6 @@ static Bool handle_gdb_monitor_command(ThreadId tid, HChar *req)
             VG_(gdb_printf)("Registered persistent memory regions:\n");
             struct pmem_st *tmp;
             while ((tmp = VG_(OSetGen_Next)(pmem.pmem_stores)) != NULL) {
-                VG_(gdb_printf)("\tAddress: 0x%lx \tsize: %llu\n",
-                        tmp->addr, tmp->size);
-            }
-            return True;
-        }
-
-        case  3: { /* print_log_regions */
-            VG_(gdb_printf)("Registered loggable persistent memory regions:\n");
-            struct pmem_st *tmp;
-            while ((tmp = VG_(OSetGen_Next)(pmem.loggable_regions)) != NULL) {
                 VG_(gdb_printf)("\tAddress: 0x%lx \tsize: %llu\n",
                         tmp->addr, tmp->size);
             }
@@ -1630,10 +1609,6 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             && VG_USERREQ__PMC_WRITE_STATS != arg[0]
             && VG_USERREQ__GDB_MONITOR_COMMAND != arg[0]
             && VG_USERREQ__PMC_PRINT_PMEM_MAPPINGS != arg[0]
-            && VG_USERREQ__PMC_LOG_STORES != arg[0]
-            && VG_USERREQ__PMC_NO_LOG_STORES != arg[0]
-            && VG_USERREQ__PMC_ADD_LOG_REGION != arg[0]
-            && VG_USERREQ__PMC_REMOVE_LOG_REGION != arg[0]
             && VG_USERREQ__PMC_EMIT_LOG != arg[0]
             && VG_USERREQ__PMC_START_TX != arg[0]
             && VG_USERREQ__PMC_START_TX_N != arg[0]
@@ -1652,6 +1627,10 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             && VG_USERREQ__PMC_RESERVED4 != arg[0]
             && VG_USERREQ__PMC_RESERVED5 != arg[0]
             && VG_USERREQ__PMC_RESERVED6 != arg[0]
+            && VG_USERREQ__PMC_RESERVED7 != arg[0]
+            && VG_USERREQ__PMC_RESERVED8 != arg[0]
+            && VG_USERREQ__PMC_RESERVED9 != arg[0]
+            && VG_USERREQ__PMC_RESERVED10 != arg[0]
             )
         return False;
 
@@ -1720,37 +1699,8 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             return handled;
         }
 
-        case VG_USERREQ__PMC_LOG_STORES: {
-            pmem.loggin_on = True;
-            break;
-        }
-
-        case VG_USERREQ__PMC_NO_LOG_STORES: {
-            pmem.loggin_on = False;
-            break;
-        }
-
-        case VG_USERREQ__PMC_ADD_LOG_REGION: {
-            struct pmem_st temp_info = {0};
-            temp_info.addr = arg[1];
-            temp_info.size = arg[2];
-
-            add_region(&temp_info, pmem.loggable_regions);
-            break;
-        }
-
-        case VG_USERREQ__PMC_REMOVE_LOG_REGION: {
-            struct pmem_st temp_info = {0};
-            temp_info.addr = arg[1];
-            temp_info.size = arg[2];
-
-            remove_region(&temp_info, pmem.loggable_regions);
-            break;
-        }
-
         case VG_USERREQ__PMC_EMIT_LOG: {
-            if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
-                    (pmem.loggable_regions) != 0))) {
+            if (pmem.log_stores) {
                 VG_(emit)("|%s", (char *)arg[1]);
             }
             break;
@@ -1830,7 +1780,11 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
         case VG_USERREQ__PMC_RESERVED3:
         case VG_USERREQ__PMC_RESERVED4:
         case VG_USERREQ__PMC_RESERVED5:
-        case VG_USERREQ__PMC_RESERVED6: {
+        case VG_USERREQ__PMC_RESERVED6:
+        case VG_USERREQ__PMC_RESERVED7:
+        case VG_USERREQ__PMC_RESERVED8:
+        case VG_USERREQ__PMC_RESERVED9:
+        case VG_USERREQ__PMC_RESERVED10: {
             VG_(message)(
                     Vg_UserMsg,
                     "Warning: deprecated pmemcheck client request code 0x%llx\n",
@@ -1896,9 +1850,6 @@ pmc_post_clo_init(void)
 
     pmem.pmem_mappings = VG_(OSetGen_Create)(/*keyOff*/0, cmp_pmem_st,
             VG_(malloc), "pmc.main.cpci.4", VG_(free));
-
-    pmem.loggable_regions = VG_(OSetGen_Create)(/*keyOff*/0, cmp_pmem_st,
-            VG_(malloc), "pmc.main.cpci.5", VG_(free));
 
     pmem.superfluous_flushes = VG_(malloc)("pmc.main.cpci.6",
             MAX_FLUSH_ERROR_EVENTS * sizeof (struct pmem_st *));
