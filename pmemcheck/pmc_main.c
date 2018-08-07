@@ -1627,7 +1627,6 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             && VG_USERREQ__PMC_CHECK_IS_PMEM_MAPPING != arg[0]
             && VG_USERREQ__PMC_DO_FLUSH != arg[0]
             && VG_USERREQ__PMC_DO_FENCE != arg[0]
-            && VG_USERREQ__PMC_DO_COMMIT != arg[0]
             && VG_USERREQ__PMC_WRITE_STATS != arg[0]
             && VG_USERREQ__GDB_MONITOR_COMMAND != arg[0]
             && VG_USERREQ__PMC_PRINT_PMEM_MAPPINGS != arg[0]
@@ -1635,11 +1634,6 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             && VG_USERREQ__PMC_NO_LOG_STORES != arg[0]
             && VG_USERREQ__PMC_ADD_LOG_REGION != arg[0]
             && VG_USERREQ__PMC_REMOVE_LOG_REGION != arg[0]
-            && VG_USERREQ__PMC_FULL_REORDED != arg[0]
-            && VG_USERREQ__PMC_PARTIAL_REORDER != arg[0]
-            && VG_USERREQ__PMC_ONLY_FAULT != arg[0]
-            && VG_USERREQ__PMC_STOP_REORDER_FAULT != arg[0]
-            && VG_USERREQ__PMC_DEFAULT_REORDER != arg[0]
             && VG_USERREQ__PMC_EMIT_LOG != arg[0]
             && VG_USERREQ__PMC_START_TX != arg[0]
             && VG_USERREQ__PMC_START_TX_N != arg[0]
@@ -1652,6 +1646,12 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             && VG_USERREQ__PMC_ADD_THREAD_TO_TX_N != arg[0]
             && VG_USERREQ__PMC_REMOVE_THREAD_FROM_TX_N != arg[0]
             && VG_USERREQ__PMC_ADD_TO_GLOBAL_TX_IGNORE != arg[0]
+            && VG_USERREQ__PMC_RESERVED1 != arg[0]
+            && VG_USERREQ__PMC_RESERVED2 != arg[0]
+            && VG_USERREQ__PMC_RESERVED3 != arg[0]
+            && VG_USERREQ__PMC_RESERVED4 != arg[0]
+            && VG_USERREQ__PMC_RESERVED5 != arg[0]
+            && VG_USERREQ__PMC_RESERVED6 != arg[0]
             )
         return False;
 
@@ -1706,11 +1706,6 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             break;
         }
 
-        case VG_USERREQ__PMC_DO_COMMIT: {
-            // now part to DO_FENCE
-            break;
-        }
-
         case VG_USERREQ__PMC_WRITE_STATS: {
             print_pmem_stats(True);
             break;
@@ -1750,41 +1745,6 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             temp_info.size = arg[2];
 
             remove_region(&temp_info, pmem.loggable_regions);
-            break;
-        }
-
-        case VG_USERREQ__PMC_FULL_REORDED: {
-            if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
-                    (pmem.loggable_regions) != 0)))
-                VG_(emit)("|FREORDER");
-            break;
-        }
-
-        case VG_USERREQ__PMC_PARTIAL_REORDER: {
-            if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
-                    (pmem.loggable_regions) != 0)))
-                VG_(emit)("|PREORDER");
-            break;
-        }
-
-        case VG_USERREQ__PMC_ONLY_FAULT: {
-            if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
-                    (pmem.loggable_regions) != 0)))
-                VG_(emit)("|FAULT_ONLY");
-            break;
-        }
-
-        case VG_USERREQ__PMC_STOP_REORDER_FAULT: {
-            if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
-                    (pmem.loggable_regions) != 0)))
-                VG_(emit)("|NO_REORDER_FAULT");
-            break;
-        }
-
-        case VG_USERREQ__PMC_DEFAULT_REORDER: {
-            if (pmem.log_stores && (pmem.loggin_on || (VG_(OSetGen_Size)
-                    (pmem.loggable_regions) != 0)))
-                VG_(emit)("|DEFAULT_REORDER");
             break;
         }
 
@@ -1863,6 +1823,20 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
 
             add_to_global_excludes(&temp_info);
             break;
+        }
+
+        case VG_USERREQ__PMC_RESERVED1:
+        case VG_USERREQ__PMC_RESERVED2:
+        case VG_USERREQ__PMC_RESERVED3:
+        case VG_USERREQ__PMC_RESERVED4:
+        case VG_USERREQ__PMC_RESERVED5:
+        case VG_USERREQ__PMC_RESERVED6: {
+            VG_(message)(
+                    Vg_UserMsg,
+                    "Warning: deprecated pmemcheck client request code 0x%llx\n",
+                    (ULong)arg[0]
+            );
+            return False;
         }
 
         default:

@@ -575,17 +575,6 @@ Overlapping regions:
 		</listitem>
 	  </varlistentry>
 
-      <varlistentry id="crm.commit" xreflabel="VALGRIND_PMC_DO_COMMIT">
-	    <term>
-		  <option><![CDATA[VALGRIND_PMC_DO_COMMIT]]></option>
-		</term>
-		<listitem>
-		  <para>
-	     Deprecated.
-          </para>
-		</listitem>
-	  </varlistentry>
-
       <varlistentry id="crm.clean" xreflabel="VALGRIND_PMC_SET_CLEAN">
 	<term>
 	  <option><![CDATA[VALGRIND_PMC_SET_CLEAN]]></option>
@@ -658,62 +647,13 @@ Overlapping regions:
         </listitem>
       </varlistentry>
 
-      <varlistentry id="crm.full_reor" xreflabel="VALGRIND_PMC_FULL_REORDER">
+      <varlistentry id="crm.emit_log" xreflabel="VALGRIND_PMC_EMIT_LOG">
         <term>
-          <option><![CDATA[VALGRIND_PMC_FULL_REORDER]]></option>
+          <option><![CDATA[VALGRIND_PMC_EMIT_LOG]]></option>
         </term>
         <listitem>
           <para>
-            Issues a full reorder marker log. Useful in some types of
-            postprocessing.
-          </para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry id="crm.part_reor" xreflabel="VALGRIND_PMC_PARTIAL_REORDER">
-        <term>
-          <option><![CDATA[VALGRIND_PMC_PARTIAL_REORDER]]></option>
-        </term>
-        <listitem>
-          <para>
-            Issues a partial reorder marker log. Useful in some types of
-            postprocessing.
-          </para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry id="crm.fault_only" xreflabel="VALGRIND_PMC_ONLY_FAULT">
-        <term>
-          <option><![CDATA[VALGRIND_PMC_ONLY_FAULT]]></option>
-        </term>
-        <listitem>
-          <para>
-            Issues a no reorder marker log. Useful in some types of
-            postprocessing.
-          </para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry id="crm.no_fault" xreflabel="VALGRIND_PMC_STOP_REORDER_FAULT">
-        <term>
-          <option><![CDATA[VALGRIND_PMC_STOP_REORDER_FAULT]]></option>
-        </term>
-        <listitem>
-          <para>
-            Issues a stop reorder and check marker log. Useful in some types of
-            postprocessing.
-          </para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry id="crm.default_reorder" xreflabel="VALGRIND_PMC_DEFAULT_REORDER">
-        <term>
-          <option><![CDATA[VALGRIND_PMC_DEFAULT_REORDER]]></option>
-        </term>
-        <listitem>
-          <para>
-            Issues a default reorder engine event. Useful in some types of
-            postprocessing.
+	    Issues a emit log event. Useful to emit any string to log file.
           </para>
         </listitem>
       </varlistentry>
