@@ -1825,7 +1825,11 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             break;
         }
 
-        case VG_USERREQ__PMC_RESERVED1:
+        case VG_USERREQ__PMC_RESERVED1: {
+            /* deprecated - do not use */
+            break;
+        }
+
         case VG_USERREQ__PMC_RESERVED2:
         case VG_USERREQ__PMC_RESERVED3:
         case VG_USERREQ__PMC_RESERVED4:
