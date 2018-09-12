@@ -25,7 +25,7 @@
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="quick-start.intro"></a>1. Introduction</h2></div></div></div>
+<a name="quick-start.intro"></a>1. Introduction</h2></div></div></div>
 <p>The Valgrind tool suite provides a number of debugging and
 profiling tools that help you make your programs faster and more correct.
 The most popular of these tools is called Memcheck.  It can detect many
@@ -38,7 +38,7 @@ documentation of Memcheck and the other tools, please read the User Manual.
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="quick-start.prepare"></a>2. Preparing your program</h2></div></div></div>
+<a name="quick-start.prepare"></a>2. Preparing your program</h2></div></div></div>
 <p>Compile your program with <code class="option">-g</code> to include debugging
 information so that Memcheck's error messages include exact line
 numbers.  Using <code class="option">-O0</code> is also a good
@@ -54,7 +54,7 @@ really exist.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="quick-start.mcrun"></a>3. Running your program under Memcheck</h2></div></div></div>
+<a name="quick-start.mcrun"></a>3. Running your program under Memcheck</h2></div></div></div>
 <p>If you normally run your program like this:</p>
 <pre class="programlisting">  myprog arg1 arg2
 </pre>
@@ -69,7 +69,7 @@ memory errors and leaks that it detects.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="quick-start.interpret"></a>4. Interpreting Memcheck's output</h2></div></div></div>
+<a name="quick-start.interpret"></a>4. Interpreting Memcheck's output</h2></div></div></div>
 <p>Here's an example C program, in a file called a.c, with a memory error
 and a memory leak.</p>
 <pre class="programlisting">
@@ -150,15 +150,15 @@ This makes Memcheck run slower, but the extra information you get often
 saves a lot of time figuring out where the uninitialised values are coming
 from.</p>
 <p>If you don't understand an error message, please consult
-<a class="xref" href="mc-manual.html#mc-manual.errormsgs" title="4.2. Explanation of error messages from Memcheck">Explanation of error messages from Memcheck</a> in the <a class="xref" href="manual.html" title="Valgrind User Manual">Valgrind User Manual</a>
+<a class="xref" href="mc-manual.html#mc-manual.errormsgs" title="4.2. Explanation of error messages from Memcheck">Explanation of error messages from Memcheck</a> in the <a class="xref" href="manual.html" title="Valgrind User Manual">Valgrind User Manual</a>
 which has examples of all the error messages Memcheck produces.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="quick-start.caveats"></a>5. Caveats</h2></div></div></div>
+<a name="quick-start.caveats"></a>5. Caveats</h2></div></div></div>
 <p>Memcheck is not perfect;  it occasionally produces false positives,
 and there are mechanisms for suppressing these (see 
-<a class="xref" href="manual-core.html#manual-core.suppress" title="2.5. Suppressing errors">Suppressing errors</a> in the <a class="xref" href="manual.html" title="Valgrind User Manual">Valgrind User Manual</a>).
+<a class="xref" href="manual-core.html#manual-core.suppress" title="2.5. Suppressing errors">Suppressing errors</a> in the <a class="xref" href="manual.html" title="Valgrind User Manual">Valgrind User Manual</a>).
 However, it is typically right 99% of the time, so you should be wary of
 ignoring its error messages.  After all, you wouldn't ignore warning
 messages produced by a compiler, right?  The suppression mechanism is
@@ -180,7 +180,7 @@ close to it.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="quick-start.info"></a>6. More information</h2></div></div></div>
+<a name="quick-start.info"></a>6. More information</h2></div></div></div>
 <p>Please consult the <a class="xref" href="FAQ.html" title="Valgrind FAQ">Valgrind FAQ</a> and the 
 <a class="xref" href="manual.html" title="Valgrind User Manual">Valgrind User Manual</a>, which have much more information.  Note that
 the other tools in the Valgrind distribution can be invoked with the
@@ -191,9 +191,9 @@ the other tools in the Valgrind distribution can be invoked with the
 <br><table class="nav" width="100%" cellspacing="3" cellpadding="2" border="0" summary="Navigation footer">
 <tr>
 <td rowspan="2" width="40%" align="left">
-<a accesskey="p" href="QuickStart.html">&lt;&lt; The Valgrind Quick Start Guide</a> </td>
+<a accesskey="p" href="QuickStart.html">&lt;&lt; The Valgrind Quick Start Guide</a> </td>
 <td width="20%" align="center"><a accesskey="u" href="QuickStart.html">Up</a></td>
-<td rowspan="2" width="40%" align="right"> <a accesskey="n" href="manual.html">Valgrind User Manual &gt;&gt;</a>
+<td rowspan="2" width="40%" align="right"> <a accesskey="n" href="manual.html">Valgrind User Manual &gt;&gt;</a>
 </td>
 </tr>
 <tr><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td></tr>

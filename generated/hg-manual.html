@@ -1,13 +1,13 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>7. Helgrind: a thread error detector</title>
+<title>7. Helgrind: a thread error detector</title>
 <link rel="stylesheet" type="text/css" href="vg_basic.css">
 <meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="Valgrind Documentation">
 <link rel="up" href="manual.html" title="Valgrind User Manual">
-<link rel="prev" href="cl-manual.html" title="6. Callgrind: a call-graph generating cache and branch prediction profiler">
-<link rel="next" href="drd-manual.html" title="8. DRD: a thread error detector">
+<link rel="prev" href="cl-manual.html" title="6. Callgrind: a call-graph generating cache and branch prediction profiler">
+<link rel="next" href="drd-manual.html" title="8. DRD: a thread error detector">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
 <div><table class="nav" width="100%" cellspacing="3" cellpadding="3" border="0" summary="Navigation header"><tr>
@@ -19,7 +19,7 @@
 </tr></table></div>
 <div class="chapter">
 <div class="titlepage"><div><div><h1 class="title">
-<a name="hg-manual"></a>7. Helgrind: a thread error detector</h1></div></div></div>
+<a name="hg-manual"></a>7. Helgrind: a thread error detector</h1></div></div></div>
 <div class="toc">
 <p><b>Table of Contents</b></p>
 <dl class="toc">
@@ -44,7 +44,7 @@
 command line.</p>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="hg-manual.overview"></a>7.1. Overview</h2></div></div></div>
+<a name="hg-manual.overview"></a>7.1. Overview</h2></div></div></div>
 <p>Helgrind is a Valgrind tool for detecting synchronisation errors
 in C, C++ and Fortran programs that use the POSIX pthreads
 threading primitives.</p>
@@ -56,12 +56,12 @@ barriers.</p>
 <p>Helgrind can detect three classes of errors, which are discussed
 in detail in the next three sections:</p>
 <div class="orderedlist"><ol class="orderedlist" type="1">
-<li class="listitem"><p><a class="link" href="hg-manual.html#hg-manual.api-checks" title="7.2. Detected errors: Misuses of the POSIX pthreads API">
+<li class="listitem"><p><a class="link" href="hg-manual.html#hg-manual.api-checks" title="7.2. Detected errors: Misuses of the POSIX pthreads API">
         Misuses of the POSIX pthreads API.</a></p></li>
-<li class="listitem"><p><a class="link" href="hg-manual.html#hg-manual.lock-orders" title="7.3. Detected errors: Inconsistent Lock Orderings">
+<li class="listitem"><p><a class="link" href="hg-manual.html#hg-manual.lock-orders" title="7.3. Detected errors: Inconsistent Lock Orderings">
         Potential deadlocks arising from lock
         ordering problems.</a></p></li>
-<li class="listitem"><p><a class="link" href="hg-manual.html#hg-manual.data-races" title="7.4. Detected errors: Data Races">
+<li class="listitem"><p><a class="link" href="hg-manual.html#hg-manual.data-races" title="7.4. Detected errors: Data Races">
         Data races -- accessing memory without adequate locking
                       or synchronisation</a>.
   </p></li>
@@ -81,26 +81,26 @@ pthreads API.  However, if you want to use custom threading
 primitives, you can describe their behaviour to Helgrind using the
 <code class="varname">ANNOTATE_*</code> macros defined
 in <code class="varname">helgrind.h</code>.</p>
-<p>Helgrind also provides <a class="xref" href="manual-core.html#manual-core.xtree" title="2.9. Execution Trees">Execution Trees</a> memory
+<p>Helgrind also provides <a class="xref" href="manual-core.html#manual-core.xtree" title="2.9. Execution Trees">Execution Trees</a> memory
   profiling using the command line
   option <code class="computeroutput">--xtree-memory</code> and the monitor command
    <code class="computeroutput">xtmemory</code>.</p>
 <p>Following those is a section containing 
-<a class="link" href="hg-manual.html#hg-manual.effective-use" title="7.5. Hints and Tips for Effective Use of Helgrind">
+<a class="link" href="hg-manual.html#hg-manual.effective-use" title="7.5. Hints and Tips for Effective Use of Helgrind">
 hints and tips on how to get the best out of Helgrind.</a>
 </p>
 <p>Then there is a
-<a class="link" href="hg-manual.html#hg-manual.options" title="7.6. Helgrind Command-line Options">summary of command-line
+<a class="link" href="hg-manual.html#hg-manual.options" title="7.6. Helgrind Command-line Options">summary of command-line
 options.</a>
 </p>
 <p>Finally, there is 
-<a class="link" href="hg-manual.html#hg-manual.todolist" title="7.9. A To-Do List for Helgrind">a brief summary of areas in which Helgrind
+<a class="link" href="hg-manual.html#hg-manual.todolist" title="7.9. A To-Do List for Helgrind">a brief summary of areas in which Helgrind
 could be improved.</a>
 </p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="hg-manual.api-checks"></a>7.2. Detected errors: Misuses of the POSIX pthreads API</h2></div></div></div>
+<a name="hg-manual.api-checks"></a>7.2. Detected errors: Misuses of the POSIX pthreads API</h2></div></div></div>
 <p>Helgrind intercepts calls to many POSIX pthreads functions, and
 is therefore able to report on various common problems.  Although
 these are unglamourous errors, their presence can lead to undefined
@@ -169,12 +169,12 @@ Thread #1 unlocked a not-locked lock at 0x7FEFFFA90
 you see here with the text "<code class="computeroutput">Thread
 #1</code>".  This is so that it can speak about threads and
 sets of threads without overwhelming you with details.  See 
-<a class="link" href="hg-manual.html#hg-manual.data-races.errmsgs" title="7.4.3. Interpreting Race Error Messages">below</a>
+<a class="link" href="hg-manual.html#hg-manual.data-races.errmsgs" title="7.4.3. Interpreting Race Error Messages">below</a>
 for more information on interpreting error messages.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="hg-manual.lock-orders"></a>7.3. Detected errors: Inconsistent Lock Orderings</h2></div></div></div>
+<a name="hg-manual.lock-orders"></a>7.3. Detected errors: Inconsistent Lock Orderings</h2></div></div></div>
 <p>In this section, and in general, to "acquire" a lock simply
 means to lock that lock, and to "release" a lock means to unlock
 it.</p>
@@ -259,7 +259,7 @@ Observed (incorrect) order is: acquisition of lock at 0x8049A00
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="hg-manual.data-races"></a>7.4. Detected errors: Data Races</h2></div></div></div>
+<a name="hg-manual.data-races"></a>7.4. Detected errors: Data Races</h2></div></div></div>
 <p>A data race happens, or could happen, when two threads access a
 shared memory location without using suitable locks or other
 synchronisation to ensure single-threaded access.  Such missing
@@ -271,7 +271,7 @@ of Helgrind's internals are devoted to dealing with it.
 We begin with a simple example.</p>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="hg-manual.data-races.example"></a>7.4.1. A Simple Data Race</h3></div></div></div>
+<a name="hg-manual.data-races.example"></a>7.4.1. A Simple Data Race</h3></div></div></div>
 <p>About the simplest possible example of a race is as follows.  In
 this program, it is impossible to know what the value
 of <code class="computeroutput">var</code> is at the end of the program.
@@ -373,7 +373,7 @@ algorithm in more detail.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="hg-manual.data-races.algorithm"></a>7.4.2. Helgrind's Race Detection Algorithm</h3></div></div></div>
+<a name="hg-manual.data-races.algorithm"></a>7.4.2. Helgrind's Race Detection Algorithm</h3></div></div></div>
 <p>Most programmers think about threaded programming in terms of
 the basic functionality provided by the threading library (POSIX
 Pthreads): thread creation, thread joining, locks, condition
@@ -543,7 +543,7 @@ to the other, then it reports a race.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="hg-manual.data-races.errmsgs"></a>7.4.3. Interpreting Race Error Messages</h3></div></div></div>
+<a name="hg-manual.data-races.errmsgs"></a>7.4.3. Interpreting Race Error Messages</h3></div></div></div>
 <p>Helgrind's race detection algorithm collects a lot of
 information, and tries to present it in a helpful way when a race is
 detected.  Here's an example:</p>
@@ -644,7 +644,7 @@ thread-safe:</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="hg-manual.effective-use"></a>7.5. Hints and Tips for Effective Use of Helgrind</h2></div></div></div>
+<a name="hg-manual.effective-use"></a>7.5. Hints and Tips for Effective Use of Helgrind</h2></div></div></div>
 <p>Helgrind can be very helpful in finding and resolving
 threading-related problems.  Like all sophisticated tools, it is most
 effective when you understand how to play to its strengths.</p>
@@ -934,7 +934,7 @@ unlock(mx)                             unlock(mx)
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="hg-manual.options"></a>7.6. Helgrind Command-line Options</h2></div></div></div>
+<a name="hg-manual.options"></a>7.6. Helgrind Command-line Options</h2></div></div></div>
 <p>The following end-user options are available:</p>
 <div class="variablelist">
 <a name="hg.opts.list"></a><dl class="variablelist">
@@ -1090,9 +1090,9 @@ unlock(mx)                             unlock(mx)
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="hg-manual.monitor-commands"></a>7.7. Helgrind Monitor Commands</h2></div></div></div>
+<a name="hg-manual.monitor-commands"></a>7.7. Helgrind Monitor Commands</h2></div></div></div>
 <p>The Helgrind tool provides monitor commands handled by Valgrind's
-built-in gdbserver (see <a class="xref" href="manual-core-adv.html#manual-core-adv.gdbserver-commandhandling" title="3.2.5. Monitor command handling by the Valgrind gdbserver">Monitor command handling by the Valgrind gdbserver</a>).
+built-in gdbserver (see <a class="xref" href="manual-core-adv.html#manual-core-adv.gdbserver-commandhandling" title="3.2.5. Monitor command handling by the Valgrind gdbserver">Monitor command handling by the Valgrind gdbserver</a>).
 </p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem">
@@ -1176,7 +1176,7 @@ write of size 4 at 0x8049D88 by thread #9 tid 2
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="hg-manual.client-requests"></a>7.8. Helgrind Client Requests</h2></div></div></div>
+<a name="hg-manual.client-requests"></a>7.8. Helgrind Client Requests</h2></div></div></div>
 <p>The following client requests are defined in
 <code class="filename">helgrind.h</code>.  See that file for exact details of their
 arguments.</p>
@@ -1205,7 +1205,7 @@ arguments.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="hg-manual.todolist"></a>7.9. A To-Do List for Helgrind</h2></div></div></div>
+<a name="hg-manual.todolist"></a>7.9. A To-Do List for Helgrind</h2></div></div></div>
 <p>The following is a list of loose ends which should be tidied up
 some time.</p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
@@ -1240,9 +1240,9 @@ some time.</p>
 <br><table class="nav" width="100%" cellspacing="3" cellpadding="2" border="0" summary="Navigation footer">
 <tr>
 <td rowspan="2" width="40%" align="left">
-<a accesskey="p" href="cl-manual.html">&lt;&lt; 6. Callgrind: a call-graph generating cache and branch prediction profiler</a> </td>
+<a accesskey="p" href="cl-manual.html">&lt;&lt; 6. Callgrind: a call-graph generating cache and branch prediction profiler</a> </td>
 <td width="20%" align="center"><a accesskey="u" href="manual.html">Up</a></td>
-<td rowspan="2" width="40%" align="right"> <a accesskey="n" href="drd-manual.html">8. DRD: a thread error detector &gt;&gt;</a>
+<td rowspan="2" width="40%" align="right"> <a accesskey="n" href="drd-manual.html">8. DRD: a thread error detector &gt;&gt;</a>
 </td>
 </tr>
 <tr><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td></tr>

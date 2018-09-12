@@ -1,13 +1,13 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>6. Callgrind: a call-graph generating cache and branch prediction profiler</title>
+<title>6. Callgrind: a call-graph generating cache and branch prediction profiler</title>
 <link rel="stylesheet" type="text/css" href="vg_basic.css">
 <meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="Valgrind Documentation">
 <link rel="up" href="manual.html" title="Valgrind User Manual">
-<link rel="prev" href="cg-manual.html" title="5. Cachegrind: a cache and branch-prediction profiler">
-<link rel="next" href="hg-manual.html" title="7. Helgrind: a thread error detector">
+<link rel="prev" href="cg-manual.html" title="5. Cachegrind: a cache and branch-prediction profiler">
+<link rel="next" href="hg-manual.html" title="7. Helgrind: a thread error detector">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
 <div><table class="nav" width="100%" cellspacing="3" cellpadding="3" border="0" summary="Navigation header"><tr>
@@ -19,7 +19,7 @@
 </tr></table></div>
 <div class="chapter">
 <div class="titlepage"><div><div><h1 class="title">
-<a name="cl-manual"></a>6. Callgrind: a call-graph generating cache and branch prediction profiler</h1></div></div></div>
+<a name="cl-manual"></a>6. Callgrind: a call-graph generating cache and branch prediction profiler</h1></div></div></div>
 <div class="toc">
 <p><b>Table of Contents</b></p>
 <dl class="toc">
@@ -56,7 +56,7 @@
 Valgrind command line.</p>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="cl-manual.use"></a>6.1. Overview</h2></div></div></div>
+<a name="cl-manual.use"></a>6.1. Overview</h2></div></div></div>
 <p>Callgrind is a profiling tool that records the call history among
 functions in a program's run as a call-graph.
 By default, the collected data consists of
@@ -88,7 +88,7 @@ of the profiling, two command line tools are provided:</p>
 </dl></div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="cl-manual.functionality"></a>6.1.1. Functionality</h3></div></div></div>
+<a name="cl-manual.functionality"></a>6.1.1. Functionality</h3></div></div></div>
 <p>Cachegrind collects flat profile data: event counts (data reads,
 cache misses, etc.) are attributed directly to the function they
 occurred in.  This cost attribution mechanism is
@@ -116,7 +116,7 @@ for profiling functions called from multiple call sites, and where
 optimization opportunities depend on changing code in the callers, in
 particular by reducing the call count.</p>
 <p>Callgrind's cache simulation is based on that of Cachegrind.
-Read the documentation for <a class="xref" href="cg-manual.html" title="5. Cachegrind: a cache and branch-prediction profiler">Cachegrind: a cache and branch-prediction profiler</a> first.  The material
+Read the documentation for <a class="xref" href="cg-manual.html" title="5. Cachegrind: a cache and branch-prediction profiler">Cachegrind: a cache and branch-prediction profiler</a> first.  The material
 below describes the features supported in addition to Cachegrind's
 features.</p>
 <p>Callgrind's ability to detect function calls and returns depends
@@ -128,7 +128,7 @@ has to rely on heuristics to detect calls and returns.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="cl-manual.basics"></a>6.1.2. Basic Usage</h3></div></div></div>
+<a name="cl-manual.basics"></a>6.1.2. Basic Usage</h3></div></div></div>
 <p>As with Cachegrind, you probably want to compile with debugging info
   (the <code class="option">-g</code> option) and with optimization turned on.</p>
 <p>To start a profile run for a program, execute:
@@ -222,10 +222,10 @@ has to rely on heuristics to detect calls and returns.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="cl-manual.usage"></a>6.2. Advanced Usage</h2></div></div></div>
+<a name="cl-manual.usage"></a>6.2. Advanced Usage</h2></div></div></div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="cl-manual.dumps"></a>6.2.1. Multiple profiling dumps from one program run</h3></div></div></div>
+<a name="cl-manual.dumps"></a>6.2.1. Multiple profiling dumps from one program run</h3></div></div></div>
 <p>Sometimes you are not interested in characteristics of a full 
   program run, but only of a small part of it, for example execution of one
   algorithm.  If there are multiple algorithms, or one algorithm 
@@ -296,7 +296,7 @@ callgrind.out.<span class="emphasis"><em>pid</em></span>.<span class="emphasis">
       at the position in your code where you want a profile dump to happen. Use 
       <code class="computeroutput"><a class="xref" href="cl-manual.html#cr.zero-stats">CALLGRIND_ZERO_STATS</a>;</code> to only 
       zero profile counters.
-      See <a class="xref" href="cl-manual.html#cl-manual.clientrequests" title="6.5. Callgrind specific client requests">Client request reference</a> for more information on
+      See <a class="xref" href="cl-manual.html#cl-manual.clientrequests" title="6.5. Callgrind specific client requests">Client request reference</a> for more information on
       Callgrind specific client requests.</p></li>
 </ul></div>
 <p>If you are running a multi-threaded application and specify the
@@ -308,7 +308,7 @@ callgrind.out.<span class="emphasis"><em>pid</em></span>.<span class="emphasis">
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="cl-manual.limits"></a>6.2.2. Limiting the range of collected events</h3></div></div></div>
+<a name="cl-manual.limits"></a>6.2.2. Limiting the range of collected events</h3></div></div></div>
 <p>By default, whenever events are happening (such as an
     instruction execution or cache hit/miss), Callgrind is aggregating
     them into event counters. However, you may be interested only in
@@ -383,7 +383,7 @@ callgrind.out.<span class="emphasis"><em>pid</em></span>.<span class="emphasis">
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="cl-manual.busevents"></a>6.2.3. Counting global bus events</h3></div></div></div>
+<a name="cl-manual.busevents"></a>6.2.3. Counting global bus events</h3></div></div></div>
 <p>For access to shared data among threads in a multithreaded
   code, synchronization is required to avoid raced conditions.
   Synchronization primitives are usually implemented via atomic instructions.
@@ -400,7 +400,7 @@ callgrind.out.<span class="emphasis"><em>pid</em></span>.<span class="emphasis">
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="cl-manual.cycles"></a>6.2.4. Avoiding cycles</h3></div></div></div>
+<a name="cl-manual.cycles"></a>6.2.4. Avoiding cycles</h3></div></div></div>
 <p>Informally speaking, a cycle is a group of functions which
   call each other in a recursive way.</p>
 <p>Formally speaking, a cycle is a nonempty set S of functions,
@@ -489,7 +489,7 @@ callgrind.out.<span class="emphasis"><em>pid</em></span>.<span class="emphasis">
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="cl-manual.forkingprograms"></a>6.2.5. Forking Programs</h3></div></div></div>
+<a name="cl-manual.forkingprograms"></a>6.2.5. Forking Programs</h3></div></div></div>
 <p>If your program forks, the child will inherit all the profiling
   data that has been gathered for the parent. To start with empty profile
   counter values in the child, the client request
@@ -507,7 +507,7 @@ callgrind.out.<span class="emphasis"><em>pid</em></span>.<span class="emphasis">
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="cl-manual.options"></a>6.3. Callgrind Command-line Options</h2></div></div></div>
+<a name="cl-manual.options"></a>6.3. Callgrind Command-line Options</h2></div></div></div>
 <p>
 In the following, options are grouped into classes.
 </p>
@@ -524,7 +524,7 @@ usage, the function would have to be specified in full extent, including
 parameter signature. </p>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="cl-manual.options.creation"></a>6.3.1. Dump creation options</h3></div></div></div>
+<a name="cl-manual.options.creation"></a>6.3.1. Dump creation options</h3></div></div></div>
 <p>
 These options influence the name and format of the profile data files.
 </p>
@@ -596,7 +596,7 @@ These options influence the name and format of the profile data files.
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="cl-manual.options.activity"></a>6.3.2. Activity options</h3></div></div></div>
+<a name="cl-manual.options.activity"></a>6.3.2. Activity options</h3></div></div></div>
 <p>
 These options specify when actions relating to event counts are to
 be executed. For interactive control use callgrind_control.
@@ -636,10 +636,10 @@ be executed. For interactive control use callgrind_control.
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="cl-manual.options.collection"></a>6.3.3. Data collection options</h3></div></div></div>
+<a name="cl-manual.options.collection"></a>6.3.3. Data collection options</h3></div></div></div>
 <p>
 These options specify when events are to be aggregated into event counts.
-Also see <a class="xref" href="cl-manual.html#cl-manual.limits" title="6.2.2. Limiting the range of collected events">Limiting range of event collection</a>.</p>
+Also see <a class="xref" href="cl-manual.html#cl-manual.limits" title="6.2.2. Limiting the range of collected events">Limiting range of event collection</a>.</p>
 <div class="variablelist">
 <a name="cl.opts.list.collection"></a><dl class="variablelist">
 <dt>
@@ -739,14 +739,14 @@ Also see <a class="xref" href="cl-manual.html#cl-manual.limits" title="6.2.2. Li
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="cl-manual.options.separation"></a>6.3.4. Cost entity separation options</h3></div></div></div>
+<a name="cl-manual.options.separation"></a>6.3.4. Cost entity separation options</h3></div></div></div>
 <p>
 These options specify how event counts should be attributed to execution
 contexts.
 For example, they specify whether the recursion level or the
 call chain leading to a function should be taken into account, 
 and whether the thread ID should be considered.
-Also see <a class="xref" href="cl-manual.html#cl-manual.cycles" title="6.2.4. Avoiding cycles">Avoiding cycles</a>.</p>
+Also see <a class="xref" href="cl-manual.html#cl-manual.cycles" title="6.2.4. Avoiding cycles">Avoiding cycles</a>.</p>
 <div class="variablelist">
 <a name="cmd-options.separation"></a><dl class="variablelist">
 <dt>
@@ -763,28 +763,28 @@ Also see <a class="xref" href="cl-manual.html#cl-manual.cycles" title="6.2.4. Av
     </span>
 </dt>
 <dd><p>Separate contexts by at most &lt;callers&gt; functions in the
-      call chain. See <a class="xref" href="cl-manual.html#cl-manual.cycles" title="6.2.4. Avoiding cycles">Avoiding cycles</a>.</p></dd>
+      call chain. See <a class="xref" href="cl-manual.html#cl-manual.cycles" title="6.2.4. Avoiding cycles">Avoiding cycles</a>.</p></dd>
 <dt>
 <a name="opt.separate-callers-num"></a><span class="term">
       <code class="option">--separate-callers&lt;number&gt;=&lt;function&gt; </code>
     </span>
 </dt>
 <dd><p>Separate <code class="option">number</code> callers for <code class="option">function</code>.
-      See <a class="xref" href="cl-manual.html#cl-manual.cycles" title="6.2.4. Avoiding cycles">Avoiding cycles</a>.</p></dd>
+      See <a class="xref" href="cl-manual.html#cl-manual.cycles" title="6.2.4. Avoiding cycles">Avoiding cycles</a>.</p></dd>
 <dt>
 <a name="opt.separate-recs"></a><span class="term">
       <code class="option">--separate-recs=&lt;level&gt; [default: 2] </code>
     </span>
 </dt>
 <dd><p>Separate function recursions by at most <code class="option">level</code> levels.
-      See <a class="xref" href="cl-manual.html#cl-manual.cycles" title="6.2.4. Avoiding cycles">Avoiding cycles</a>.</p></dd>
+      See <a class="xref" href="cl-manual.html#cl-manual.cycles" title="6.2.4. Avoiding cycles">Avoiding cycles</a>.</p></dd>
 <dt>
 <a name="opt.separate-recs-num"></a><span class="term">
       <code class="option">--separate-recs&lt;number&gt;=&lt;function&gt; </code>
     </span>
 </dt>
 <dd><p>Separate <code class="option">number</code> recursions for <code class="option">function</code>.
-      See <a class="xref" href="cl-manual.html#cl-manual.cycles" title="6.2.4. Avoiding cycles">Avoiding cycles</a>.</p></dd>
+      See <a class="xref" href="cl-manual.html#cl-manual.cycles" title="6.2.4. Avoiding cycles">Avoiding cycles</a>.</p></dd>
 <dt>
 <a name="opt.skip-plt"></a><span class="term">
       <code class="option">--skip-plt=&lt;no|yes&gt; [default: yes] </code>
@@ -818,7 +818,7 @@ Also see <a class="xref" href="cl-manual.html#cl-manual.cycles" title="6.2.4. Av
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="cl-manual.options.simulation"></a>6.3.5. Simulation options</h3></div></div></div>
+<a name="cl-manual.options.simulation"></a>6.3.5. Simulation options</h3></div></div></div>
 <div class="variablelist">
 <a name="cl.opts.list.simulation"></a><dl class="variablelist">
 <dt>
@@ -832,7 +832,7 @@ Also see <a class="xref" href="cl-manual.html#cl-manual.cycles" title="6.2.4. Av
       Cache misses on instruction reads ("I1mr"/"ILmr"),
       data read accesses ("Dr") and related cache misses ("D1mr"/"DLmr"),
       data write accesses ("Dw") and related cache misses ("D1mw"/"DLmw").
-      For more information, see <a class="xref" href="cg-manual.html" title="5. Cachegrind: a cache and branch-prediction profiler">Cachegrind: a cache and branch-prediction profiler</a>.
+      For more information, see <a class="xref" href="cg-manual.html" title="5. Cachegrind: a cache and branch-prediction profiler">Cachegrind: a cache and branch-prediction profiler</a>.
       </p></dd>
 <dt>
 <a name="clopt.branch-sim"></a><span class="term">
@@ -849,7 +849,7 @@ Also see <a class="xref" href="cl-manual.html#cl-manual.cycles" title="6.2.4. Av
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="cl-manual.options.cachesimulation"></a>6.3.6. Cache simulation options</h3></div></div></div>
+<a name="cl-manual.options.cachesimulation"></a>6.3.6. Cache simulation options</h3></div></div></div>
 <div class="variablelist">
 <a name="cl.opts.list.cachesimulation"></a><dl class="variablelist">
 <dt>
@@ -943,9 +943,9 @@ Also see <a class="xref" href="cl-manual.html#cl-manual.cycles" title="6.2.4. Av
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="cl-manual.monitor-commands"></a>6.4. Callgrind Monitor Commands</h2></div></div></div>
+<a name="cl-manual.monitor-commands"></a>6.4. Callgrind Monitor Commands</h2></div></div></div>
 <p>The Callgrind tool provides monitor commands handled by the Valgrind
-gdbserver (see <a class="xref" href="manual-core-adv.html#manual-core-adv.gdbserver-commandhandling" title="3.2.5. Monitor command handling by the Valgrind gdbserver">Monitor command handling by the Valgrind gdbserver</a>).
+gdbserver (see <a class="xref" href="manual-core-adv.html#manual-core-adv.gdbserver-commandhandling" title="3.2.5. Monitor command handling by the Valgrind gdbserver">Monitor command handling by the Valgrind gdbserver</a>).
 </p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem"><p><code class="varname">dump [&lt;dump_hint&gt;]</code> requests to dump the
@@ -961,7 +961,7 @@ gdbserver (see <a class="xref" href="manual-core-adv.html#manual-core-adv.gdbser
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="cl-manual.clientrequests"></a>6.5. Callgrind specific client requests</h2></div></div></div>
+<a name="cl-manual.clientrequests"></a>6.5. Callgrind specific client requests</h2></div></div></div>
 <p>Callgrind provides the following specific client requests in
 <code class="filename">callgrind.h</code>.  See that file for the exact details of
 their arguments.</p>
@@ -1026,7 +1026,7 @@ their arguments.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="cl-manual.callgrind_annotate-options"></a>6.6. callgrind_annotate Command-line Options</h2></div></div></div>
+<a name="cl-manual.callgrind_annotate-options"></a>6.6. callgrind_annotate Command-line Options</h2></div></div></div>
 <div class="variablelist">
 <a name="callgrind_annotate.opts.list"></a><dl class="variablelist">
 <dt><span class="term"><code class="option">-h --help</code></span></dt>
@@ -1079,7 +1079,7 @@ their arguments.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="cl-manual.callgrind_control-options"></a>6.7. callgrind_control Command-line Options</h2></div></div></div>
+<a name="cl-manual.callgrind_control-options"></a>6.7. callgrind_control Command-line Options</h2></div></div></div>
 <p>By default, callgrind_control acts on all programs run by the
   current user under Callgrind.  It is possible to limit the actions to
   specified Callgrind runs by providing a list of pids or program names as
@@ -1139,9 +1139,9 @@ their arguments.</p>
 <br><table class="nav" width="100%" cellspacing="3" cellpadding="2" border="0" summary="Navigation footer">
 <tr>
 <td rowspan="2" width="40%" align="left">
-<a accesskey="p" href="cg-manual.html">&lt;&lt; 5. Cachegrind: a cache and branch-prediction profiler</a> </td>
+<a accesskey="p" href="cg-manual.html">&lt;&lt; 5. Cachegrind: a cache and branch-prediction profiler</a> </td>
 <td width="20%" align="center"><a accesskey="u" href="manual.html">Up</a></td>
-<td rowspan="2" width="40%" align="right"> <a accesskey="n" href="hg-manual.html">7. Helgrind: a thread error detector &gt;&gt;</a>
+<td rowspan="2" width="40%" align="right"> <a accesskey="n" href="hg-manual.html">7. Helgrind: a thread error detector &gt;&gt;</a>
 </td>
 </tr>
 <tr><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td></tr>

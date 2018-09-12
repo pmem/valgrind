@@ -1,13 +1,13 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>11. SGCheck: an experimental stack and global array overrun detector</title>
+<title>11. SGCheck: an experimental stack and global array overrun detector</title>
 <link rel="stylesheet" type="text/css" href="vg_basic.css">
 <meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="Valgrind Documentation">
 <link rel="up" href="manual.html" title="Valgrind User Manual">
-<link rel="prev" href="dh-manual.html" title="10. DHAT: a dynamic heap analysis tool">
-<link rel="next" href="bbv-manual.html" title="12. BBV: an experimental basic block vector generation tool">
+<link rel="prev" href="dh-manual.html" title="10. DHAT: a dynamic heap analysis tool">
+<link rel="next" href="bbv-manual.html" title="12. BBV: an experimental basic block vector generation tool">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
 <div><table class="nav" width="100%" cellspacing="3" cellpadding="3" border="0" summary="Navigation header"><tr>
@@ -19,7 +19,7 @@
 </tr></table></div>
 <div class="chapter">
 <div class="titlepage"><div><div><h1 class="title">
-<a name="sg-manual"></a>11. SGCheck: an experimental stack and global array overrun detector</h1></div></div></div>
+<a name="sg-manual"></a>11. SGCheck: an experimental stack and global array overrun detector</h1></div></div></div>
 <div class="toc">
 <p><b>Table of Contents</b></p>
 <dl class="toc">
@@ -37,7 +37,7 @@
 command line.</p>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="sg-manual.overview"></a>11.1. Overview</h2></div></div></div>
+<a name="sg-manual.overview"></a>11.1. Overview</h2></div></div></div>
 <p>SGCheck is a tool for finding overruns of stack and global
 arrays.  It works by using a heuristic approach derived from an
 observation about the likely forms of stack and global array accesses.
@@ -45,12 +45,12 @@ observation about the likely forms of stack and global array accesses.
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="sg-manual.options"></a>11.2. SGCheck Command-line Options</h2></div></div></div>
+<a name="sg-manual.options"></a>11.2. SGCheck Command-line Options</h2></div></div></div>
 <p><a name="sg.opts.list"></a>There are no SGCheck-specific command-line options at present.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="sg-manual.how-works.sg-checks"></a>11.3. How SGCheck Works</h2></div></div></div>
+<a name="sg-manual.how-works.sg-checks"></a>11.3. How SGCheck Works</h2></div></div></div>
 <p>When a source file is compiled
 with <code class="option">-g</code>, the compiler attaches DWARF3
 debugging information which describes the location of all stack and
@@ -103,12 +103,12 @@ multiple threads may make multiple simultaneous calls to
   again during the same function call, then SGCheck might report a
   problem, if these further executions are not accessing the same
   array. This technique causes several limitations in SGCheck, see
-  <a class="xref" href="sg-manual.html#sg-manual.limitations" title="11.5. Limitations">Limitations</a>.
+  <a class="xref" href="sg-manual.html#sg-manual.limitations" title="11.5. Limitations">Limitations</a>.
 </p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="sg-manual.cmp-w-memcheck"></a>11.4. Comparison with Memcheck</h2></div></div></div>
+<a name="sg-manual.cmp-w-memcheck"></a>11.4. Comparison with Memcheck</h2></div></div></div>
 <p>SGCheck and Memcheck are complementary: their capabilities do
 not overlap.  Memcheck performs bounds checks and use-after-free
 checks for heap arrays.  It also finds uses of uninitialised values
@@ -119,7 +119,7 @@ global arrays, but it doesn't do anything else.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="sg-manual.limitations"></a>11.5. Limitations</h2></div></div></div>
+<a name="sg-manual.limitations"></a>11.5. Limitations</h2></div></div></div>
 <p>This is an experimental tool, which relies rather too heavily on some
 not-as-robust-as-I-would-like assumptions on the behaviour of correct
 programs.  There are a number of limitations which you should be aware
@@ -127,7 +127,7 @@ of.</p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem">
 <p>False negatives (missed errors): it follows from the
-   description above (<a class="xref" href="sg-manual.html#sg-manual.how-works.sg-checks" title="11.3. How SGCheck Works">How SGCheck Works</a>)
+   description above (<a class="xref" href="sg-manual.html#sg-manual.how-works.sg-checks" title="11.3. How SGCheck Works">How SGCheck Works</a>)
    that the first access by a memory referencing instruction to a
    stack or global array creates an association between that
    instruction and the array, which is checked on subsequent accesses
@@ -214,7 +214,7 @@ of.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="sg-manual.todo-user-visible"></a>11.6. Still To Do: User-visible Functionality</h2></div></div></div>
+<a name="sg-manual.todo-user-visible"></a>11.6. Still To Do: User-visible Functionality</h2></div></div></div>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem"><p>Extend system call checking to work on stack and global arrays.</p></li>
 <li class="listitem"><p>Print a warning if a shared object does not have debug info
@@ -228,7 +228,7 @@ of.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="sg-manual.todo-implementation"></a>11.7. Still To Do: Implementation Tidying</h2></div></div></div>
+<a name="sg-manual.todo-implementation"></a>11.7. Still To Do: Implementation Tidying</h2></div></div></div>
 <p>Items marked CRITICAL are considered important for correctness:
 non-fixage of them is liable to lead to crashes or assertion failures
 in real use.</p>
@@ -252,9 +252,9 @@ in real use.</p>
 <br><table class="nav" width="100%" cellspacing="3" cellpadding="2" border="0" summary="Navigation footer">
 <tr>
 <td rowspan="2" width="40%" align="left">
-<a accesskey="p" href="dh-manual.html">&lt;&lt; 10. DHAT: a dynamic heap analysis tool</a> </td>
+<a accesskey="p" href="dh-manual.html">&lt;&lt; 10. DHAT: a dynamic heap analysis tool</a> </td>
 <td width="20%" align="center"><a accesskey="u" href="manual.html">Up</a></td>
-<td rowspan="2" width="40%" align="right"> <a accesskey="n" href="bbv-manual.html">12. BBV: an experimental basic block vector generation tool &gt;&gt;</a>
+<td rowspan="2" width="40%" align="right"> <a accesskey="n" href="bbv-manual.html">12. BBV: an experimental basic block vector generation tool &gt;&gt;</a>
 </td>
 </tr>
 <tr><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td></tr>

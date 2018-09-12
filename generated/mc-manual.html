@@ -1,13 +1,13 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>4. Memcheck: a memory error detector</title>
+<title>4. Memcheck: a memory error detector</title>
 <link rel="stylesheet" type="text/css" href="vg_basic.css">
 <meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="Valgrind Documentation">
 <link rel="up" href="manual.html" title="Valgrind User Manual">
-<link rel="prev" href="manual-core-adv.html" title="3. Using and understanding the Valgrind core: Advanced Topics">
-<link rel="next" href="cg-manual.html" title="5. Cachegrind: a cache and branch-prediction profiler">
+<link rel="prev" href="manual-core-adv.html" title="3. Using and understanding the Valgrind core: Advanced Topics">
+<link rel="next" href="cg-manual.html" title="5. Cachegrind: a cache and branch-prediction profiler">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
 <div><table class="nav" width="100%" cellspacing="3" cellpadding="3" border="0" summary="Navigation header"><tr>
@@ -19,7 +19,7 @@
 </tr></table></div>
 <div class="chapter">
 <div class="titlepage"><div><div><h1 class="title">
-<a name="mc-manual"></a>4. Memcheck: a memory error detector</h1></div></div></div>
+<a name="mc-manual"></a>4. Memcheck: a memory error detector</h1></div></div></div>
 <div class="toc">
 <p><b>Table of Contents</b></p>
 <dl class="toc">
@@ -65,7 +65,7 @@ on the Valgrind command line.  You don't have to, though, since Memcheck
 is the default tool.</p>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="mc-manual.overview"></a>4.1. Overview</h2></div></div></div>
+<a name="mc-manual.overview"></a>4.1. Overview</h2></div></div></div>
 <p>Memcheck is a memory error detector.  It can detect the following
 problems that are common in C and C++ programs.</p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
@@ -91,20 +91,20 @@ problems that are common in C and C++ programs.</p>
 <p>Problems like these can be difficult to find by other means,
 often remaining undetected for long periods, then causing occasional,
   difficult-to-diagnose crashes.</p>
-<p>Memcheck also provides <a class="xref" href="manual-core.html#manual-core.xtree" title="2.9. Execution Trees">Execution Trees</a> memory
+<p>Memcheck also provides <a class="xref" href="manual-core.html#manual-core.xtree" title="2.9. Execution Trees">Execution Trees</a> memory
   profiling using the command line
   option <code class="computeroutput">--xtree-memory</code> and the monitor command
    <code class="computeroutput">xtmemory</code>.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="mc-manual.errormsgs"></a>4.2. Explanation of error messages from Memcheck</h2></div></div></div>
+<a name="mc-manual.errormsgs"></a>4.2. Explanation of error messages from Memcheck</h2></div></div></div>
 <p>Memcheck issues a range of error messages.  This section presents a
 quick summary of what error messages mean.  The precise behaviour of the
-error-checking machinery is described in <a class="xref" href="mc-manual.html#mc-manual.machine" title="4.5. Details of Memcheck's checking machinery">Details of Memcheck's checking machinery</a>.</p>
+error-checking machinery is described in <a class="xref" href="mc-manual.html#mc-manual.machine" title="4.5. Details of Memcheck's checking machinery">Details of Memcheck's checking machinery</a>.</p>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.badrw"></a>4.2.1. Illegal read / Illegal write errors</h3></div></div></div>
+<a name="mc-manual.badrw"></a>4.2.1. Illegal read / Illegal write errors</h3></div></div></div>
 <p>For example:</p>
 <pre class="programlisting">
 Invalid read of size 4
@@ -143,7 +143,7 @@ non-fatal, and the program stays alive.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.uninitvals"></a>4.2.2. Use of uninitialised values</h3></div></div></div>
+<a name="mc-manual.uninitvals"></a>4.2.2. Use of uninitialised values</h3></div></div></div>
 <p>For example:</p>
 <pre class="programlisting">
 Conditional jump or move depends on uninitialised value(s)
@@ -189,7 +189,7 @@ the root causes of uninitialised value errors.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.bad-syscall-args"></a>4.2.3. Use of uninitialised or unaddressable values in system
+<a name="mc-manual.bad-syscall-args"></a>4.2.3. Use of uninitialised or unaddressable values in system
        calls</h3></div></div></div>
 <p>Memcheck checks all parameters to system calls:
 </p>
@@ -244,7 +244,7 @@ refers directly to <code class="computeroutput">exit</code>'s argument
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.badfrees"></a>4.2.4. Illegal frees</h3></div></div></div>
+<a name="mc-manual.badfrees"></a>4.2.4. Illegal frees</h3></div></div></div>
 <p>For example:</p>
 <pre class="programlisting">
 Invalid free()
@@ -268,7 +268,7 @@ heap block.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.rudefn"></a>4.2.5. When a heap block is freed with an inappropriate deallocation
+<a name="mc-manual.rudefn"></a>4.2.5. When a heap block is freed with an inappropriate deallocation
 function</h3></div></div></div>
 <p>In the following example, a block allocated with
 <code class="function">new[]</code> has wrongly been deallocated with
@@ -315,7 +315,7 @@ confused, possibly corrupting the heap.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.overlap"></a>4.2.6. Overlapping source and destination blocks</h3></div></div></div>
+<a name="mc-manual.overlap"></a>4.2.6. Overlapping source and destination blocks</h3></div></div></div>
 <p>The following C library functions copy some data from one
 memory block to another (or something similar):
 <code class="function">memcpy</code>,
@@ -352,7 +352,7 @@ implementation.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.fishyvalue"></a>4.2.7. Fishy argument values</h3></div></div></div>
+<a name="mc-manual.fishyvalue"></a>4.2.7. Fishy argument values</h3></div></div></div>
 <p>All memory allocation functions take an argument specifying the
 size of the memory block that should be allocated. Clearly, the requested
 size should be a non-negative value and is typically not excessively large. 
@@ -388,7 +388,7 @@ as "silly arguments" and no back-trace was included.
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.leaks"></a>4.2.8. Memory leak detection</h3></div></div></div>
+<a name="mc-manual.leaks"></a>4.2.8. Memory leak detection</h3></div></div></div>
 <p>Memcheck keeps track of all heap blocks issued in response to
 calls to
 <code class="function">malloc</code>/<code class="function">new</code> et al.
@@ -621,7 +621,7 @@ is <code class="option">--errors-for-leak-kinds=definite,possible</code>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="mc-manual.options"></a>4.3. Memcheck Command-Line Options</h2></div></div></div>
+<a name="mc-manual.options"></a>4.3. Memcheck Command-Line Options</h2></div></div></div>
 <div class="variablelist">
 <a name="mc.opts.list"></a><dl class="variablelist">
 <dt>
@@ -757,7 +757,7 @@ is <code class="option">--errors-for-leak-kinds=definite,possible</code>
         increase of the <code class="option">RB</code> event, <code class="option">dPBk</code> is the
         decrease of <code class="option">PBk</code> event. The values for the increase and
         decrease events will be zero for the first leak search done.</p>
-<p>See <a class="xref" href="manual-core.html#manual-core.xtree" title="2.9. Execution Trees">Execution Trees</a> for a detailed explanation
+<p>See <a class="xref" href="manual-core.html#manual-core.xtree" title="2.9. Execution Trees">Execution Trees</a> for a detailed explanation
         about execution trees.</p>
 </dd>
 <dt>
@@ -774,7 +774,7 @@ is <code class="option">--errors-for-leak-kinds=definite,possible</code>
         in exactly the same way as they are for <code class="option">--log-file</code>.
         See the description of <a class="xref" href="manual-core.html#opt.log-file">--log-file</a>
         for details. </p>
-<p>See <a class="xref" href="manual-core.html#manual-core.xtree" title="2.9. Execution Trees">Execution Trees</a>
+<p>See <a class="xref" href="manual-core.html#manual-core.xtree" title="2.9. Execution Trees">Execution Trees</a>
       for a detailed explanation about execution trees formats. </p>
 </dd>
 <dt>
@@ -928,7 +928,7 @@ is <code class="option">--errors-for-leak-kinds=definite,possible</code>
       </p>
 <p>If you want to use
         <code class="computeroutput">--xtree-memory=full</code> memory profiling
-        (see <a class="xref" href="manual-core.html#manual-core.xtree" title="2.9. Execution Trees">Execution Trees</a> ), then you cannot
+        (see <a class="xref" href="manual-core.html#manual-core.xtree" title="2.9. Execution Trees">Execution Trees</a> ), then you cannot
         specify <code class="varname">--keep-stacktraces=free</code>
         or <code class="varname">--keep-stacktraces=none</code>.</p>
 </dd>
@@ -1097,9 +1097,9 @@ is <code class="option">--errors-for-leak-kinds=definite,possible</code>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="mc-manual.suppfiles"></a>4.4. Writing suppression files</h2></div></div></div>
+<a name="mc-manual.suppfiles"></a>4.4. Writing suppression files</h2></div></div></div>
 <p>The basic suppression format is described in 
-<a class="xref" href="manual-core.html#manual-core.suppress" title="2.5. Suppressing errors">Suppressing errors</a>.</p>
+<a class="xref" href="manual-core.html#manual-core.suppress" title="2.5. Suppressing errors">Suppressing errors</a>.</p>
 <p>The suppression-type (second) line should have the form:</p>
 <pre class="programlisting">
 Memcheck:suppression_type</pre>
@@ -1197,12 +1197,12 @@ calling context that needs to be matched.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="mc-manual.machine"></a>4.5. Details of Memcheck's checking machinery</h2></div></div></div>
+<a name="mc-manual.machine"></a>4.5. Details of Memcheck's checking machinery</h2></div></div></div>
 <p>Read this section if you want to know, in detail, exactly
 what and how Memcheck is checking.</p>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.value"></a>4.5.1. Valid-value (V) bits</h3></div></div></div>
+<a name="mc-manual.value"></a>4.5.1. Valid-value (V) bits</h3></div></div></div>
 <p>It is simplest to think of Memcheck implementing a synthetic CPU
 which is identical to a real CPU, except for one crucial detail.  Every
 bit (literally) of data processed, stored and handled by the real CPU
@@ -1302,7 +1302,7 @@ used.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.vaddress"></a>4.5.2. Valid-address (A) bits</h3></div></div></div>
+<a name="mc-manual.vaddress"></a>4.5.2. Valid-address (A) bits</h3></div></div></div>
 <p>Notice that the previous subsection describes how the validity of
 values is established and maintained without having to say whether the
 program does or does not have the right to access any particular memory
@@ -1349,7 +1349,7 @@ themselves do not change the A bits, only consult them.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.together"></a>4.5.3. Putting it all together</h3></div></div></div>
+<a name="mc-manual.together"></a>4.5.3. Putting it all together</h3></div></div></div>
 <p>Memcheck's checking machinery can be summarised as
 follows:</p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
@@ -1430,9 +1430,9 @@ is:</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="mc-manual.monitor-commands"></a>4.6. Memcheck Monitor Commands</h2></div></div></div>
+<a name="mc-manual.monitor-commands"></a>4.6. Memcheck Monitor Commands</h2></div></div></div>
 <p>The Memcheck tool provides monitor commands handled by Valgrind's
-built-in gdbserver (see <a class="xref" href="manual-core-adv.html#manual-core-adv.gdbserver-commandhandling" title="3.2.5. Monitor command handling by the Valgrind gdbserver">Monitor command handling by the Valgrind gdbserver</a>).
+built-in gdbserver (see <a class="xref" href="manual-core-adv.html#manual-core-adv.gdbserver-commandhandling" title="3.2.5. Monitor command handling by the Valgrind gdbserver">Monitor command handling by the Valgrind gdbserver</a>).
 </p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem">
@@ -1581,7 +1581,7 @@ Address 0x8049E28 len 1 defined
     </p>
 <p>The value <code class="varname">xtleak</code> also produces a full leak report,
       but output it as an xtree in a file xtleak.kcg.%p.%n (see <a class="xref" href="manual-core.html#opt.log-file">--log-file</a>).
-      See <a class="xref" href="manual-core.html#manual-core.xtree" title="2.9. Execution Trees">Execution Trees</a>
+      See <a class="xref" href="manual-core.html#manual-core.xtree" title="2.9. Execution Trees">Execution Trees</a>
       for a detailed explanation about execution trees formats.
       See <a class="xref" href="mc-manual.html#opt.xtree-leak">--xtree-leak</a> for the description of the events
       in a xtree leak file.
@@ -1830,7 +1830,7 @@ Address 0x8049E28 len 1 defined
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="mc-manual.clientreqs"></a>4.7. Client Requests</h2></div></div></div>
+<a name="mc-manual.clientreqs"></a>4.7. Client Requests</h2></div></div></div>
 <p>The following client requests are defined in
 <code class="filename">memcheck.h</code>.
 See <code class="filename">memcheck.h</code> for exact details of their
@@ -1925,7 +1925,7 @@ arguments.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="mc-manual.mempools"></a>4.8. Memory Pools: describing and working with custom allocators</h2></div></div></div>
+<a name="mc-manual.mempools"></a>4.8. Memory Pools: describing and working with custom allocators</h2></div></div></div>
 <p>Some programs use custom memory allocators, often for performance
 reasons.  Left to itself, Memcheck is unable to understand the
 behaviour of custom allocation schemes as well as it understands the
@@ -2137,7 +2137,7 @@ inform Memcheck about changes to the state of a mempool:</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="mc-manual.mpiwrap"></a>4.9. Debugging MPI Parallel Programs with Valgrind</h2></div></div></div>
+<a name="mc-manual.mpiwrap"></a>4.9. Debugging MPI Parallel Programs with Valgrind</h2></div></div></div>
 <p>Memcheck supports debugging of distributed-memory applications
 which use the MPI message passing standard.  This support consists of a
 library of wrapper functions for the
@@ -2161,7 +2161,7 @@ See the top of <code class="computeroutput">mpi/libmpiwrap.c</code>
 for license details.</p>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.mpiwrap.build"></a>4.9.1. Building and installing the wrappers</h3></div></div></div>
+<a name="mc-manual.mpiwrap.build"></a>4.9.1. Building and installing the wrappers</h3></div></div></div>
 <p> The wrapper library will be built automatically if possible.
 Valgrind's configure script will look for a suitable
 <code class="computeroutput">mpicc</code> to build it with.  This must be
@@ -2206,7 +2206,7 @@ changed if required.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.mpiwrap.gettingstarted"></a>4.9.2. Getting started</h3></div></div></div>
+<a name="mc-manual.mpiwrap.gettingstarted"></a>4.9.2. Getting started</h3></div></div></div>
 <p>Compile your MPI application as usual, taking care to link it
 using the same <code class="computeroutput">mpicc</code> that your
 Valgrind build was configured with.</p>
@@ -2228,7 +2228,7 @@ native behaviour of your application in any way.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.mpiwrap.controlling"></a>4.9.3. Controlling the wrapper library</h3></div></div></div>
+<a name="mc-manual.mpiwrap.controlling"></a>4.9.3. Controlling the wrapper library</h3></div></div></div>
 <p>Environment variable
 <code class="computeroutput">MPIWRAP_DEBUG</code> is consulted at
 startup.  The default behaviour is to print a starting banner</p>
@@ -2267,7 +2267,7 @@ extraneous printing from the wrappers.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.mpiwrap.limitations.functions"></a>4.9.4. Functions</h3></div></div></div>
+<a name="mc-manual.mpiwrap.limitations.functions"></a>4.9.4. Functions</h3></div></div></div>
 <p>All MPI2 functions except
 <code class="computeroutput">MPI_Wtick</code>,
 <code class="computeroutput">MPI_Wtime</code> and
@@ -2327,7 +2327,7 @@ complex types.  The most common functions called are
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.mpiwrap.limitations.types"></a>4.9.5. Types</h3></div></div></div>
+<a name="mc-manual.mpiwrap.limitations.types"></a>4.9.5. Types</h3></div></div></div>
 <p> MPI-1.1 structured types are supported, and walked exactly.
 The currently supported combiners are
 <code class="computeroutput">MPI_COMBINER_NAMED</code>,
@@ -2376,7 +2376,7 @@ large performance cost.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.mpiwrap.writingwrappers"></a>4.9.6. Writing new wrappers</h3></div></div></div>
+<a name="mc-manual.mpiwrap.writingwrappers"></a>4.9.6. Writing new wrappers</h3></div></div></div>
 <p>
 For the most part the wrappers are straightforward.  The only
 significant complexity arises with nonblocking receives.</p>
@@ -2410,7 +2410,7 @@ bottom of the file (do not remove it, just comment it out).</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="mc-manual.mpiwrap.whattoexpect"></a>4.9.7. What to expect when using the wrappers</h3></div></div></div>
+<a name="mc-manual.mpiwrap.whattoexpect"></a>4.9.7. What to expect when using the wrappers</h3></div></div></div>
 <p>The wrappers should reduce Memcheck's false-error rate on MPI
 applications.  Because the wrapping is done at the MPI interface,
 there will still potentially be a large number of errors reported in
@@ -2445,9 +2445,9 @@ may see false positives reported in your reduction function.</p>
 <br><table class="nav" width="100%" cellspacing="3" cellpadding="2" border="0" summary="Navigation footer">
 <tr>
 <td rowspan="2" width="40%" align="left">
-<a accesskey="p" href="manual-core-adv.html">&lt;&lt; 3. Using and understanding the Valgrind core: Advanced Topics</a> </td>
+<a accesskey="p" href="manual-core-adv.html">&lt;&lt; 3. Using and understanding the Valgrind core: Advanced Topics</a> </td>
 <td width="20%" align="center"><a accesskey="u" href="manual.html">Up</a></td>
-<td rowspan="2" width="40%" align="right"> <a accesskey="n" href="cg-manual.html">5. Cachegrind: a cache and branch-prediction profiler &gt;&gt;</a>
+<td rowspan="2" width="40%" align="right"> <a accesskey="n" href="cg-manual.html">5. Cachegrind: a cache and branch-prediction profiler &gt;&gt;</a>
 </td>
 </tr>
 <tr><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td></tr>

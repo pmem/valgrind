@@ -1,13 +1,13 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>14. Pmemcheck: persistent memory analyzer</title>
+<title>14. Pmemcheck: persistent memory analyzer</title>
 <link rel="stylesheet" type="text/css" href="vg_basic.css">
 <meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="Valgrind Documentation">
 <link rel="up" href="manual.html" title="Valgrind User Manual">
-<link rel="prev" href="lk-manual.html" title="13. Lackey: an example tool">
-<link rel="next" href="nl-manual.html" title="15. Nulgrind: the minimal Valgrind tool">
+<link rel="prev" href="lk-manual.html" title="13. Lackey: an example tool">
+<link rel="next" href="nl-manual.html" title="15. Nulgrind: the minimal Valgrind tool">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
 <div><table class="nav" width="100%" cellspacing="3" cellpadding="3" border="0" summary="Navigation header"><tr>
@@ -19,7 +19,7 @@
 </tr></table></div>
 <div class="chapter">
 <div class="titlepage"><div><div><h1 class="title">
-<a name="pmc-manual"></a>14. Pmemcheck: persistent memory analyzer</h1></div></div></div>
+<a name="pmc-manual"></a>14. Pmemcheck: persistent memory analyzer</h1></div></div></div>
 <div class="toc">
 <p><b>Table of Contents</b></p>
 <dl class="toc">
@@ -41,7 +41,7 @@
   </p>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="pmc-manual.overview"></a>14.1. Overview</h2></div></div></div>
+<a name="pmc-manual.overview"></a>14.1. Overview</h2></div></div></div>
 <p>
       Pmemcheck is a persistent memory profiler, which helps analyze the
       way user applications utilize persistent memory. It helps recognize
@@ -53,7 +53,7 @@
     </p>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="pmc-manual.functionality"></a>14.1.1. Functionality</h3></div></div></div>
+<a name="pmc-manual.functionality"></a>14.1.1. Functionality</h3></div></div></div>
 <p>
         Pmemcheck instruments client code and tracks all stores made to a user
         provided range of memory addresses. Writing applications which make use
@@ -94,7 +94,7 @@
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="pmc-manual.basic_usage"></a>14.1.2. Basic Usage</h3></div></div></div>
+<a name="pmc-manual.basic_usage"></a>14.1.2. Basic Usage</h3></div></div></div>
 <p>
         As with most other Valgrind tools, compiling your program with debugging
         info (the <code class="option">-g</code> option) provides the most valuable output.
@@ -111,7 +111,7 @@
           application performs. At the moment, pmemcheck does not automatically
           recognize persistent memory regions, appropriate flushes or fences.
           Your code has to use special macros specified in
-          <a class="xref" href="pmc-manual.html#pmc-manual.client_requests" title="14.3. Pmemcheck Client Requests">Pmemcheck Client Requests</a>.
+          <a class="xref" href="pmc-manual.html#pmc-manual.client_requests" title="14.3. Pmemcheck Client Requests">Pmemcheck Client Requests</a>.
       </p>
 <p>
         Pmemcheck also has a logging functionality, which when enabled, logs
@@ -123,7 +123,7 @@
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="pmc-manual.error_types"></a>14.1.3. Pmemcheck error types</h3></div></div></div>
+<a name="pmc-manual.error_types"></a>14.1.3. Pmemcheck error types</h3></div></div></div>
 <p>
         Pmemcheck is able to catch a couple of possible errors related to
         programming using persistent memory. The most probable is that some
@@ -221,7 +221,7 @@ Number of unnecessary flushes: 3
 <p>
 	Pmemcheck also allows tracking of persistent memory transactions.
 	To learn more about the built-in transaction support in pmemcheck
-	see <a class="xref" href="pmc-manual.html#pmc-manual.transactions" title="14.1.4. Pmemcheck transaction support">Transactions</a>. The primary type of issue
+	see <a class="xref" href="pmc-manual.html#pmc-manual.transactions" title="14.1.4. Pmemcheck transaction support">Transactions</a>. The primary type of issue
 	found by pmemcheck are stores made to regions of memory not tracked
 	by transactions.  An example output of the out-of-transaction stores
 	has the following form:
@@ -275,7 +275,7 @@ Overlapping regions:
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="pmc-manual.transactions"></a>14.1.4. Pmemcheck transaction support</h3></div></div></div>
+<a name="pmc-manual.transactions"></a>14.1.4. Pmemcheck transaction support</h3></div></div></div>
 <p>
 	Contemporary hardware architectures guarantee that only stores up to
 	a certain size can be made atomically. Here atomicity refers to non-torn
@@ -358,7 +358,7 @@ Overlapping regions:
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="pmc-manual.options"></a>14.2. Pmemcheck Command-line Options</h2></div></div></div>
+<a name="pmc-manual.options"></a>14.2. Pmemcheck Command-line Options</h2></div></div></div>
 <p>Pmemcheck-specific command-line options are:</p>
 <div class="variablelist">
 <a name="pmc.opts.list"></a><dl class="variablelist">
@@ -394,7 +394,7 @@ Overlapping regions:
 </dt>
 <dd><p>
             Turns on logging all persistent memory related events (most
-            <a class="xref" href="pmc-manual.html#pmc-manual.client_requests" title="14.3. Pmemcheck Client Requests">Pmemcheck Client Requests</a> and stores to
+            <a class="xref" href="pmc-manual.html#pmc-manual.client_requests" title="14.3. Pmemcheck Client Requests">Pmemcheck Client Requests</a> and stores to
             persistent memory) in a human-readable, parsable format. This is
             useful if some postprocessing or in depth analysis is to be made.
             Depending on the usage, the log output can be huge - use with
@@ -447,14 +447,14 @@ Overlapping regions:
 	    rolled-back/redone on transaction recovery, after an interruption.
 	    All changes, also those made without a running transaction, will
 	    be reported by the tool. For more information on transaction support
-	    built into pmemcheck see <a class="xref" href="pmc-manual.html#pmc-manual.transactions" title="14.1.4. Pmemcheck transaction support">Transactions</a>.
+	    built into pmemcheck see <a class="xref" href="pmc-manual.html#pmc-manual.transactions" title="14.1.4. Pmemcheck transaction support">Transactions</a>.
           </p></dd>
 </dl>
 </div>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="pmc-manual.client_requests"></a>14.3. Pmemcheck Client Requests</h2></div></div></div>
+<a name="pmc-manual.client_requests"></a>14.3. Pmemcheck Client Requests</h2></div></div></div>
 <p>Pmemcheck-specific client requests are:</p>
 <div class="variablelist">
 <a name="pmc.crm.list"></a><dl class="variablelist">
@@ -702,11 +702,11 @@ Overlapping regions:
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="pmc-manual.monitor_commands"></a>14.4. Pmemcheck Monitor Commands</h2></div></div></div>
+<a name="pmc-manual.monitor_commands"></a>14.4. Pmemcheck Monitor Commands</h2></div></div></div>
 <p>
         The Pmemcheck tool provides monitor commands handled by the Valgrind
         gdbserver (see
-        <a class="xref" href="manual-core-adv.html#manual-core-adv.gdbserver-commandhandling" title="3.2.5. Monitor command handling by the Valgrind gdbserver">Monitor command handling by the Valgrind gdbserver</a>). Tool
+        <a class="xref" href="manual-core-adv.html#manual-core-adv.gdbserver-commandhandling" title="3.2.5. Monitor command handling by the Valgrind gdbserver">Monitor command handling by the Valgrind gdbserver</a>). Tool
         specific monitor commands are:
       </p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
@@ -731,9 +731,9 @@ Overlapping regions:
 <br><table class="nav" width="100%" cellspacing="3" cellpadding="2" border="0" summary="Navigation footer">
 <tr>
 <td rowspan="2" width="40%" align="left">
-<a accesskey="p" href="lk-manual.html">&lt;&lt; 13. Lackey: an example tool</a> </td>
+<a accesskey="p" href="lk-manual.html">&lt;&lt; 13. Lackey: an example tool</a> </td>
 <td width="20%" align="center"><a accesskey="u" href="manual.html">Up</a></td>
-<td rowspan="2" width="40%" align="right"> <a accesskey="n" href="nl-manual.html">15. Nulgrind: the minimal Valgrind tool &gt;&gt;</a>
+<td rowspan="2" width="40%" align="right"> <a accesskey="n" href="nl-manual.html">15. Nulgrind: the minimal Valgrind tool &gt;&gt;</a>
 </td>
 </tr>
 <tr><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td></tr>
