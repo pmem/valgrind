@@ -753,9 +753,9 @@ make_expr(IRSB *sb, IRType ty, IRExpr *e)
 * \return True if needs to be widened, false otherwise.
 */
 static Bool
-tmp_needs_widen(IRSB *sb, IRAtom *e)
+tmp_needs_widen(IRType type)
 {
-    switch (typeOfIRExpr(sb->tyenv, e)) {
+    switch (type) {
         case Ity_I1:
         case Ity_I8:
         case Ity_I16:
@@ -954,9 +954,9 @@ add_event_dw_guarded(IRSB *sb, IRAtom *daddr, Int dsize, IRAtom *guard,
     void *helperAddr = trace_pmem_store;
     IRExpr **argv;
     IRDirty *di;
+    IRType type = typeOfIRExpr(sb->tyenv, value);
 
-    if (value->tag == Iex_RdTmp
-            && typeOfIRExpr(sb->tyenv, value) == Ity_I64) {
+    if (value->tag == Iex_RdTmp && type == Ity_I64) {
         /* handle the normal case */
         argv = mkIRExprVec_3(daddr, mkIRExpr_HWord(dsize),
                 value);
@@ -966,7 +966,7 @@ add_event_dw_guarded(IRSB *sb, IRAtom *daddr, Int dsize, IRAtom *guard,
             di->guard = guard;
         }
         addStmtToIRSB(sb, IRStmt_Dirty(di));
-    } else if ( value->tag == Iex_RdTmp && tmp_needs_widen(sb, value)) {
+    } else if (value->tag == Iex_RdTmp && tmp_needs_widen(type)) {
         /* the operation needs to be widened */
         argv = mkIRExprVec_3(daddr, mkIRExpr_HWord(dsize),
                 make_expr(sb, Ity_I64, unop(widen_operation(sb, value),
@@ -987,8 +987,7 @@ add_event_dw_guarded(IRSB *sb, IRAtom *daddr, Int dsize, IRAtom *guard,
             di->guard = guard;
         }
         addStmtToIRSB(sb, IRStmt_Dirty(di));
-    } else if (typeOfIRExpr(sb->tyenv, value) == Ity_V128 ||
-            typeOfIRExpr(sb->tyenv, value) == Ity_V256 ) {
+    } else if (type == Ity_V128 || type == Ity_V256 ) {
         handle_wide_expr(sb, Iend_LE, daddr, value, guard, dsize);
     } else {
         VG_(umsg)("Unable to trace store - unsupported type of store\n");
