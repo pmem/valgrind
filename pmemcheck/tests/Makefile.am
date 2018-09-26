@@ -21,6 +21,9 @@ dist_noinst_SCRIPTS = \
 
 noinst_HEADERS = common.h
 
+# to trigger 64-bit float store
+floats_CFLAGS = -mno-sse2 -g -O3
+
 EXTRA_DIST = \
 	const_store.stderr.exp const_store.vgtest \
 	tmp_store.stderr.exp tmp_store.vgtest \
@@ -45,7 +48,8 @@ EXTRA_DIST = \
 	trans_cache_overl.stderr.exp trans_cache_overl.vgtest \
 	trans_cache_flush.stderr.exp trans_cache_flush.vgtest \
 	store_merge.stderr.exp store_merge.vgtest \
-	store_split.stderr.exp store_split.vgtest
+	store_split.stderr.exp store_split.vgtest \
+	floats.stderr.exp floats.vgtest
 
 check_PROGRAMS = \
 	const_store \
@@ -71,4 +75,5 @@ check_PROGRAMS = \
 	trans_cache_overl \
 	trans_cache_flush \
 	store_merge \
-	store_split
+	store_split \
+	floats
