@@ -1,0 +1,9 @@
+START|STORE;0x........;0x........;0x........|STORE;0x........;0x........;0x........|STOP
+Number of stores not made persistent: 2
+Stores not made persistent properly:
+[0]    at 0x........: main (floats.c:29)
+	Address: 0x........	size: 4	state: DIRTY
+[1]    at 0x........: main (floats.c:30)
+	Address: 0x........	size: 8	state: DIRTY
+Total memory not made persistent: 12
+ERROR SUMMARY: 2 errors
