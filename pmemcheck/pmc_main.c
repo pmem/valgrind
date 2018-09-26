@@ -990,7 +990,8 @@ add_event_dw_guarded(IRSB *sb, IRAtom *daddr, Int dsize, IRAtom *guard,
     } else if (type == Ity_V128 || type == Ity_V256 ) {
         handle_wide_expr(sb, Iend_LE, daddr, value, guard, dsize);
     } else {
-        VG_(umsg)("Unable to trace store - unsupported type of store\n");
+        VG_(umsg)("Unable to trace store - unsupported type of store 0x%x 0x%x\n",
+                  value->tag, type);
     }
 }
 
