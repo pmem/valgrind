@@ -966,6 +966,16 @@ add_event_dw_guarded(IRSB *sb, IRAtom *daddr, Int dsize, IRAtom *guard,
             di->guard = guard;
         }
         addStmtToIRSB(sb, IRStmt_Dirty(di));
+    } else if (value->tag == Iex_RdTmp && type == Ity_F64) {
+        argv = mkIRExprVec_3(daddr, mkIRExpr_HWord(dsize),
+                make_expr(sb, Ity_I64, unop(Iop_ReinterpF64asI64,
+                        value)));
+        di = unsafeIRDirty_0_N(/*regparms*/3, helperName,
+                VG_(fnptr_to_fnentry)(helperAddr), argv);
+        if (guard) {
+            di->guard = guard;
+        }
+        addStmtToIRSB(sb, IRStmt_Dirty(di));
     } else if (value->tag == Iex_RdTmp && tmp_needs_widen(type)) {
         /* the operation needs to be widened */
         argv = mkIRExprVec_3(daddr, mkIRExpr_HWord(dsize),
