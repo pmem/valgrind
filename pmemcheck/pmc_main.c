@@ -352,14 +352,14 @@ print_redundant_flush_error(UWord limit)
  * \details Print store context.
  */
 static void
-print_store_ip_desc(UInt n, Addr ip, void *uu_opaque)
+print_store_ip_desc(UInt n, DiEpoch ep, Addr ip, void *uu_opaque)
 {
-   InlIPCursor *iipc = VG_(new_IIPC)(ip);
+   InlIPCursor *iipc = VG_(new_IIPC)(ep, ip);
 
    VG_(emit)(";");
 
    do {
-      const HChar *buf = VG_(describe_IP)(ip, iipc);
+      const HChar *buf = VG_(describe_IP)(ep, ip, iipc);
 
       if (VG_(clo_xml))
          VG_(printf_xml)("%s\n", buf);
@@ -388,7 +388,8 @@ pp_store_trace(const struct pmem_st *store, UInt n_ips)
     if (VG_(clo_xml))
          VG_(printf_xml)("    <stack>\n");
 
-    VG_(apply_StackTrace)(print_store_ip_desc, NULL,
+    DiEpoch ep = VG_(current_DiEpoch)();
+    VG_(apply_StackTrace)(print_store_ip_desc, NULL, ep,
          VG_(get_ExeContext_StackTrace(store->context)), n_ips);
 
     if (VG_(clo_xml))
@@ -405,8 +406,9 @@ pp_store_trace(const struct pmem_st *store, UInt n_ips)
 static Bool
 is_ip_memset_memcpy(Addr ip)
 {
-    InlIPCursor *iipc = VG_(new_IIPC)(ip);
-    const HChar *buf = VG_(describe_IP)(ip,  iipc);
+    DiEpoch ep = VG_(current_DiEpoch)();
+    InlIPCursor *iipc = VG_(new_IIPC)(ep, ip);
+    const HChar *buf = VG_(describe_IP)(ep, ip,  iipc);
     Bool present = (VG_(strstr)(buf, "memcpy") != NULL);
     present |= (VG_(strstr)(buf, "memset") != NULL);
     VG_(delete_IIPC)(iipc);
