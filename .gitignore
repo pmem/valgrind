@@ -2080,6 +2080,66 @@
 /perf/tinycc
 /perf/vg_perf
 
+# /pmemcheck/
+/pmemcheck/.deps
+/pmemcheck/Makefile
+/pmemcheck/Makefile.in
+/pmemcheck/pmemcheck-*-linux
+
+# /pmemcheck/tests/
+/pmemcheck/tests/.deps
+/pmemcheck/tests/Makefile
+/pmemcheck/tests/Makefile.in
+/pmemcheck/tests/cas
+/pmemcheck/tests/const_store
+/pmemcheck/tests/floats
+/pmemcheck/tests/flush_check
+/pmemcheck/tests/isa_check
+/pmemcheck/tests/missed_flush
+/pmemcheck/tests/multiple_stores
+/pmemcheck/tests/nt_stores
+/pmemcheck/tests/set_clean
+/pmemcheck/tests/sse_stores
+/pmemcheck/tests/state_machine
+/pmemcheck/tests/state_machine2
+/pmemcheck/tests/state_no_flush_align
+/pmemcheck/tests/store_merge
+/pmemcheck/tests/store_split
+/pmemcheck/tests/tmp_store
+/pmemcheck/tests/trans_cache_flush
+/pmemcheck/tests/trans_cache_overl
+/pmemcheck/tests/trans_excl
+/pmemcheck/tests/trans_expl
+/pmemcheck/tests/trans_impl
+/pmemcheck/tests/trans_impl_nest
+/pmemcheck/tests/trans_nest
+/pmemcheck/tests/trans_no_pmem
+/pmemcheck/tests/trans_only
+
+# /pmemcheck/tests/address_specific
+/pmemcheck/tests/address_specific/.deps
+/pmemcheck/tests/address_specific/Makefile
+/pmemcheck/tests/address_specific/Makefile.in
+/pmemcheck/tests/address_specific/flush_align
+/pmemcheck/tests/address_specific/region_coalescing
+/pmemcheck/tests/address_specific/region_manipulation
+/pmemcheck/tests/address_specific/remove_aligned_region
+/pmemcheck/tests/address_specific/remove_regions
+
+# /pmemcheck/tests/logging_related
+/pmemcheck/tests/logging_related/.deps
+/pmemcheck/tests/logging_related/Makefile
+/pmemcheck/tests/logging_related/Makefile.in
+/pmemcheck/tests/logging_related/logging
+/pmemcheck/tests/logging_related/register_file
+
+# /pmemcheck/tests/small_stacktrace
+/pmemcheck/tests/small_stacktrace/.deps
+/pmemcheck/tests/small_stacktrace/Makefile
+/pmemcheck/tests/small_stacktrace/Makefile.in
+/pmemcheck/tests/small_stacktrace/trans_mt
+/pmemcheck/tests/small_stacktrace/trans_mt_cross
+
 # /shared/
 /shared/Makefile
 /shared/Makefile.in
