@@ -8518,6 +8518,7 @@ static void preInstrumentationAnalysis ( /*OUT*/HowUsed** useEnvP,
          case Ist_MBE:
          case Ist_IMark:
          case Ist_NoOp:
+         case Ist_Flush:
             break;
          default: {
             ppIRStmt(st);
