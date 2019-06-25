@@ -1318,6 +1318,7 @@ DiImage* find_debug_file( struct _DebugInfo* di,
 
    if (dimg == NULL && debugname != NULL) {
       HChar *objdir = ML_(dinfo_strdup)("di.fdf.2", objpath);
+      HChar *usrmerge_objdir = objdir;
       HChar *objdirptr;
 
       if ((objdirptr = VG_(strrchr)(objdir, '/')) != NULL)
@@ -1335,7 +1336,14 @@ DiImage* find_debug_file( struct _DebugInfo* di,
          if (dimg != NULL) goto dimg_ok;
       }
 
+      if ((objdirptr = VG_(strstr)(usrmerge_objdir, "usr")) != NULL)
+         usrmerge_objdir = objdirptr + VG_(strlen)("usr");
+
       VG_(sprintf)(debugpath, "%s/%s", objdir, debugname);
+      dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
+      if (dimg != NULL) goto dimg_ok;
+
+      VG_(sprintf)(debugpath, "%s/%s", usrmerge_objdir, debugname);
       dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
       if (dimg != NULL) goto dimg_ok;
 
@@ -1343,13 +1351,26 @@ DiImage* find_debug_file( struct _DebugInfo* di,
       dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
       if (dimg != NULL) goto dimg_ok;
       
+      VG_(sprintf)(debugpath, "%s/.debug/%s", usrmerge_objdir, debugname);
+      dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
+      if (dimg != NULL) goto dimg_ok;
+
       VG_(sprintf)(debugpath, "/usr/lib/debug%s/%s", objdir, debugname);
+      dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
+      if (dimg != NULL) goto dimg_ok;
+
+      VG_(sprintf)(debugpath, "/usr/lib/debug%s/%s", usrmerge_objdir, debugname);
       dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
       if (dimg != NULL) goto dimg_ok;
 
       if (extrapath) {
          VG_(sprintf)(debugpath, "%s%s/%s", extrapath,
                                             objdir, debugname);
+         dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
+         if (dimg != NULL) goto dimg_ok;
+
+         VG_(sprintf)(debugpath, "%s%s/%s", extrapath,
+                                            usrmerge_objdir, debugname);
          dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
          if (dimg != NULL) goto dimg_ok;
       }
