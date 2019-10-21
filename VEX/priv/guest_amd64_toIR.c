@@ -2291,7 +2291,6 @@ static void jmp_lit( /*MOD*/DisResult* dres,
 {
    vassert(dres->whatNext    == Dis_Continue);
    vassert(dres->len         == 0);
-   vassert(dres->continueAt  == 0);
    vassert(dres->jk_StopHere == Ijk_INVALID);
    dres->whatNext    = Dis_StopHere;
    dres->jk_StopHere = kind;
@@ -2303,7 +2302,6 @@ static void jmp_treg( /*MOD*/DisResult* dres,
 {
    vassert(dres->whatNext    == Dis_Continue);
    vassert(dres->len         == 0);
-   vassert(dres->continueAt  == 0);
    vassert(dres->jk_StopHere == Ijk_INVALID);
    dres->whatNext    = Dis_StopHere;
    dres->jk_StopHere = kind;
@@ -2318,7 +2316,6 @@ void jcc_01 ( /*MOD*/DisResult* dres,
    AMD64Condcode condPos;
    vassert(dres->whatNext    == Dis_Continue);
    vassert(dres->len         == 0);
-   vassert(dres->continueAt  == 0);
    vassert(dres->jk_StopHere == Ijk_INVALID);
    dres->whatNext    = Dis_StopHere;
    dres->jk_StopHere = Ijk_Boring;
@@ -19897,9 +19894,6 @@ static
 Long dis_ESC_NONE (
         /*MB_OUT*/DisResult* dres,
         /*MB_OUT*/Bool*      expect_CAS,
-        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
-        Bool         resteerCisOk,
-        void*        callback_opaque,
         const VexArchInfo* archinfo,
         const VexAbiInfo*  vbi,
         Prefix pfx, Int sz, Long deltaIN 
@@ -20309,53 +20303,10 @@ Long dis_ESC_NONE (
       vassert(-128 <= jmpDelta && jmpDelta < 128);
       d64 = (guest_RIP_bbstart+delta+1) + jmpDelta;
       delta++;
-      if (resteerCisOk
-          && vex_control.guest_chase_cond
-          && (Addr64)d64 != (Addr64)guest_RIP_bbstart
-          && jmpDelta < 0
-          && resteerOkFn( callback_opaque, (Addr64)d64) ) {
-         /* Speculation: assume this backward branch is taken.  So we
-            need to emit a side-exit to the insn following this one,
-            on the negation of the condition, and continue at the
-            branch target address (d64).  If we wind up back at the
-            first instruction of the trace, just stop; it's better to
-            let the IR loop unroller handle that case. */
-         stmt( IRStmt_Exit( 
-                  mk_amd64g_calculate_condition(
-                     (AMD64Condcode)(1 ^ (opc - 0x70))),
-                  Ijk_Boring,
-                  IRConst_U64(guest_RIP_bbstart+delta),
-                  OFFB_RIP ) );
-         dres->whatNext   = Dis_ResteerC;
-         dres->continueAt = d64;
-         comment = "(assumed taken)";
-      }
-      else
-      if (resteerCisOk
-          && vex_control.guest_chase_cond
-          && (Addr64)d64 != (Addr64)guest_RIP_bbstart
-          && jmpDelta >= 0
-          && resteerOkFn( callback_opaque, guest_RIP_bbstart+delta ) ) {
-         /* Speculation: assume this forward branch is not taken.  So
-            we need to emit a side-exit to d64 (the dest) and continue
-            disassembling at the insn immediately following this
-            one. */
-         stmt( IRStmt_Exit( 
-                  mk_amd64g_calculate_condition((AMD64Condcode)(opc - 0x70)),
-                  Ijk_Boring,
-                  IRConst_U64(d64),
-                  OFFB_RIP ) );
-         dres->whatNext   = Dis_ResteerC;
-         dres->continueAt = guest_RIP_bbstart+delta;
-         comment = "(assumed not taken)";
-      }
-      else {
-         /* Conservative default translation - end the block at this
-            point. */
-         jcc_01( dres, (AMD64Condcode)(opc - 0x70),
-                 guest_RIP_bbstart+delta, d64 );
-         vassert(dres->whatNext == Dis_StopHere);
-      }
+      /* End the block at this point. */
+      jcc_01( dres, (AMD64Condcode)(opc - 0x70),
+              guest_RIP_bbstart+delta, d64 );
+      vassert(dres->whatNext == Dis_StopHere);
       DIP("j%s-8 0x%llx %s\n", name_AMD64Condcode(opc - 0x70), (ULong)d64,
           comment);
       return delta;
@@ -21485,14 +21436,8 @@ Long dis_ESC_NONE (
       t2 = newTemp(Ity_I64);
       assign(t2, mkU64((Addr64)d64));
       make_redzone_AbiHint(vbi, t1, t2/*nia*/, "call-d32");
-      if (resteerOkFn( callback_opaque, (Addr64)d64) ) {
-         /* follow into the call target. */
-         dres->whatNext   = Dis_ResteerU;
-         dres->continueAt = d64;
-      } else {
-         jmp_lit(dres, Ijk_Call, d64);
-         vassert(dres->whatNext == Dis_StopHere);
-      }
+      jmp_lit(dres, Ijk_Call, d64);
+      vassert(dres->whatNext == Dis_StopHere);
       DIP("call 0x%llx\n", (ULong)d64);
       return delta;
 
@@ -21503,13 +21448,8 @@ Long dis_ESC_NONE (
       if (haveF2(pfx)) DIP("bnd ; "); /* MPX bnd prefix. */
       d64 = (guest_RIP_bbstart+delta+sz) + getSDisp(sz,delta); 
       delta += sz;
-      if (resteerOkFn(callback_opaque, (Addr64)d64)) {
-         dres->whatNext   = Dis_ResteerU;
-         dres->continueAt = d64;
-      } else {
-         jmp_lit(dres, Ijk_Boring, d64);
-         vassert(dres->whatNext == Dis_StopHere);
-      }
+      jmp_lit(dres, Ijk_Boring, d64);
+      vassert(dres->whatNext == Dis_StopHere);
       DIP("jmp 0x%llx\n", (ULong)d64);
       return delta;
 
@@ -21520,13 +21460,8 @@ Long dis_ESC_NONE (
       if (haveF2(pfx)) DIP("bnd ; "); /* MPX bnd prefix. */
       d64 = (guest_RIP_bbstart+delta+1) + getSDisp8(delta); 
       delta++;
-      if (resteerOkFn(callback_opaque, (Addr64)d64)) {
-         dres->whatNext   = Dis_ResteerU;
-         dres->continueAt = d64;
-      } else {
-         jmp_lit(dres, Ijk_Boring, d64);
-         vassert(dres->whatNext == Dis_StopHere);
-      }
+      jmp_lit(dres, Ijk_Boring, d64);
+      vassert(dres->whatNext == Dis_StopHere);
       DIP("jmp-8 0x%llx\n", (ULong)d64);
       return delta;
 
@@ -21709,9 +21644,6 @@ static
 Long dis_ESC_0F (
         /*MB_OUT*/DisResult* dres,
         /*MB_OUT*/Bool*      expect_CAS,
-        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
-        Bool         resteerCisOk,
-        void*        callback_opaque,
         const VexArchInfo* archinfo,
         const VexAbiInfo*  vbi,
         Prefix pfx, Int sz, Long deltaIN 
@@ -21961,56 +21893,10 @@ Long dis_ESC_0F (
       jmpDelta = getSDisp32(delta);
       d64 = (guest_RIP_bbstart+delta+4) + jmpDelta;
       delta += 4;
-      if (resteerCisOk
-          && vex_control.guest_chase_cond
-          && (Addr64)d64 != (Addr64)guest_RIP_bbstart
-          && jmpDelta < 0
-          && resteerOkFn( callback_opaque, (Addr64)d64) ) {
-         /* Speculation: assume this backward branch is taken.  So
-            we need to emit a side-exit to the insn following this
-            one, on the negation of the condition, and continue at
-            the branch target address (d64).  If we wind up back at
-            the first instruction of the trace, just stop; it's
-            better to let the IR loop unroller handle that case. */
-         stmt( IRStmt_Exit( 
-                  mk_amd64g_calculate_condition(
-                     (AMD64Condcode)(1 ^ (opc - 0x80))),
-                  Ijk_Boring,
-                  IRConst_U64(guest_RIP_bbstart+delta),
-                  OFFB_RIP
-             ));
-         dres->whatNext   = Dis_ResteerC;
-         dres->continueAt = d64;
-         comment = "(assumed taken)";
-      }
-      else
-      if (resteerCisOk
-          && vex_control.guest_chase_cond
-          && (Addr64)d64 != (Addr64)guest_RIP_bbstart
-          && jmpDelta >= 0
-          && resteerOkFn( callback_opaque, guest_RIP_bbstart+delta ) ) {
-         /* Speculation: assume this forward branch is not taken.
-            So we need to emit a side-exit to d64 (the dest) and
-            continue disassembling at the insn immediately
-            following this one. */
-         stmt( IRStmt_Exit( 
-                  mk_amd64g_calculate_condition((AMD64Condcode)
-                                                (opc - 0x80)),
-                  Ijk_Boring,
-                  IRConst_U64(d64),
-                  OFFB_RIP
-             ));
-         dres->whatNext   = Dis_ResteerC;
-         dres->continueAt = guest_RIP_bbstart+delta;
-         comment = "(assumed not taken)";
-      }
-      else {
-         /* Conservative default translation - end the block at
-            this point. */
-         jcc_01( dres, (AMD64Condcode)(opc - 0x80),
-                 guest_RIP_bbstart+delta, d64 );
-         vassert(dres->whatNext == Dis_StopHere);
-      }
+      /* End the block at this point. */
+      jcc_01( dres, (AMD64Condcode)(opc - 0x80),
+              guest_RIP_bbstart+delta, d64 );
+      vassert(dres->whatNext == Dis_StopHere);
       DIP("j%s-32 0x%llx %s\n", name_AMD64Condcode(opc - 0x80), (ULong)d64,
           comment);
       return delta;
@@ -22778,9 +22664,6 @@ __attribute__((noinline))
 static
 Long dis_ESC_0F38 (
         /*MB_OUT*/DisResult* dres,
-        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
-        Bool         resteerCisOk,
-        void*        callback_opaque,
         const VexArchInfo* archinfo,
         const VexAbiInfo*  vbi,
         Prefix pfx, Int sz, Long deltaIN 
@@ -22896,9 +22779,6 @@ __attribute__((noinline))
 static
 Long dis_ESC_0F3A (
         /*MB_OUT*/DisResult* dres,
-        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
-        Bool         resteerCisOk,
-        void*        callback_opaque,
         const VexArchInfo* archinfo,
         const VexAbiInfo*  vbi,
         Prefix pfx, Int sz, Long deltaIN 
@@ -24238,9 +24118,6 @@ static
 Long dis_ESC_0F__VEX (
         /*MB_OUT*/DisResult* dres,
         /*OUT*/   Bool*      uses_vvvv,
-        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
-        Bool         resteerCisOk,
-        void*        callback_opaque,
         const VexArchInfo* archinfo,
         const VexAbiInfo*  vbi,
         Prefix pfx, Int sz, Long deltaIN 
@@ -28209,9 +28086,6 @@ static
 Long dis_ESC_0F38__VEX (
         /*MB_OUT*/DisResult* dres,
         /*OUT*/   Bool*      uses_vvvv,
-        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
-        Bool         resteerCisOk,
-        void*        callback_opaque,
         const VexArchInfo* archinfo,
         const VexAbiInfo*  vbi,
         Prefix pfx, Int sz, Long deltaIN 
@@ -30636,9 +30510,6 @@ static
 Long dis_ESC_0F3A__VEX (
         /*MB_OUT*/DisResult* dres,
         /*OUT*/   Bool*      uses_vvvv,
-        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
-        Bool         resteerCisOk,
-        void*        callback_opaque,
         const VexArchInfo* archinfo,
         const VexAbiInfo*  vbi,
         Prefix pfx, Int sz, Long deltaIN 
@@ -32257,9 +32128,6 @@ Long dis_ESC_0F3A__VEX (
 static
 DisResult disInstr_AMD64_WRK ( 
              /*OUT*/Bool* expect_CAS,
-             Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
-             Bool         resteerCisOk,
-             void*        callback_opaque,
              Long         delta64,
              const VexArchInfo* archinfo,
              const VexAbiInfo*  vbi,
@@ -32292,7 +32160,6 @@ DisResult disInstr_AMD64_WRK (
    /* Set result defaults. */
    dres.whatNext    = Dis_Continue;
    dres.len         = 0;
-   dres.continueAt  = 0;
    dres.jk_StopHere = Ijk_INVALID;
    dres.hint        = Dis_HintNone;
    *expect_CAS = False;
@@ -32554,22 +32421,18 @@ DisResult disInstr_AMD64_WRK (
       switch (esc) {
          case ESC_NONE:
             delta = dis_ESC_NONE( &dres, expect_CAS,
-                                  resteerOkFn, resteerCisOk, callback_opaque,
                                   archinfo, vbi, pfx, sz, delta );
             break;
          case ESC_0F:
             delta = dis_ESC_0F  ( &dres, expect_CAS,
-                                  resteerOkFn, resteerCisOk, callback_opaque,
                                   archinfo, vbi, pfx, sz, delta );
             break;
          case ESC_0F38:
             delta = dis_ESC_0F38( &dres,
-                                  resteerOkFn, resteerCisOk, callback_opaque,
                                   archinfo, vbi, pfx, sz, delta );
             break;
          case ESC_0F3A:
             delta = dis_ESC_0F3A( &dres,
-                                  resteerOkFn, resteerCisOk, callback_opaque,
                                   archinfo, vbi, pfx, sz, delta );
             break;
          default:
@@ -32584,20 +32447,14 @@ DisResult disInstr_AMD64_WRK (
       switch (esc) {
          case ESC_0F:
             delta = dis_ESC_0F__VEX ( &dres, &uses_vvvv,
-                                      resteerOkFn, resteerCisOk,
-                                      callback_opaque,
                                       archinfo, vbi, pfx, sz, delta );
             break;
          case ESC_0F38:
             delta = dis_ESC_0F38__VEX ( &dres, &uses_vvvv,
-                                        resteerOkFn, resteerCisOk,
-                                        callback_opaque,
                                         archinfo, vbi, pfx, sz, delta );
             break;
          case ESC_0F3A:
             delta = dis_ESC_0F3A__VEX ( &dres, &uses_vvvv,
-                                        resteerOkFn, resteerCisOk,
-                                        callback_opaque,
                                         archinfo, vbi, pfx, sz, delta );
             break;
          case ESC_NONE:
@@ -32681,10 +32538,6 @@ DisResult disInstr_AMD64_WRK (
       case Dis_Continue:
          stmt( IRStmt_Put( OFFB_RIP, mkU64(guest_RIP_bbstart + delta) ) );
          break;
-      case Dis_ResteerU:
-      case Dis_ResteerC:
-         stmt( IRStmt_Put( OFFB_RIP, mkU64(dres.continueAt) ) );
-         break;
       case Dis_StopHere:
          break;
       default:
@@ -32708,9 +32561,6 @@ DisResult disInstr_AMD64_WRK (
    is located in host memory at &guest_code[delta]. */
 
 DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
-                           Bool         (*resteerOkFn) ( void*, Addr ),
-                           Bool         resteerCisOk,
-                           void*        callback_opaque,
                            const UChar* guest_code_IN,
                            Long         delta,
                            Addr         guest_IP,
@@ -32738,9 +32588,7 @@ DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
 
    x1 = irsb_IN->stmts_used;
    expect_CAS = False;
-   dres = disInstr_AMD64_WRK ( &expect_CAS, resteerOkFn,
-                               resteerCisOk,
-                               callback_opaque,
+   dres = disInstr_AMD64_WRK ( &expect_CAS,
                                delta, archinfo, abiinfo, sigill_diag_IN );
    x2 = irsb_IN->stmts_used;
    vassert(x2 >= x1);
@@ -32771,9 +32619,7 @@ DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
       /* inconsistency detected.  re-disassemble the instruction so as
          to generate a useful error message; then assert. */
       vex_traceflags |= VEX_TRACE_FE;
-      dres = disInstr_AMD64_WRK ( &expect_CAS, resteerOkFn,
-                                  resteerCisOk,
-                                  callback_opaque,
+      dres = disInstr_AMD64_WRK ( &expect_CAS,
                                   delta, archinfo, abiinfo, sigill_diag_IN );
       for (i = x1; i < x2; i++) {
          vex_printf("\t\t");
