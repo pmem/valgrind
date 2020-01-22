@@ -1075,19 +1075,62 @@ do_flush(UWord base, UWord size)
     if (pmem.log_stores)
         VG_(emit)("|FLUSH;0x%lx;0x%llx", flush_info.addr, flush_info.size);
 
-    /* unfortunately lookup doesn't work here, the oset is an avl tree */
-
     Bool valid_flush = False;
-    /* reset the iterator */
-    VG_(OSetGen_ResetIter)(pmem.pmem_stores);
+
+    /* try to find any region that overlaps with what we want to flush */
+    struct pmem_st *f = VG_(OSetGen_Lookup)(pmem.pmem_stores, &flush_info);
+    /*
+     * If there's none, then there's no point in searching for the first one
+     * and iterating - just skip to the end where we report unneeded flushes.
+     */
+    if (!f)
+        goto end;
+
+    /*
+     * Find out if we have a perfect match and region is expected state (we'll
+     * report it in the slow path otherwise).
+     */
+    if (f->addr == flush_info.addr && f->size == flush_info.size &&
+		    f->state == STST_DIRTY) {
+        f->state = STST_FLUSHED;
+        return;
+    }
+
+    /* Let's find out the first overlapping region. */
+    struct pmem_st *first_overlapping;
+    struct pmem_st first_overlapping_tmpl = {0};
+    first_overlapping_tmpl.addr = flush_info.addr;
+    first_overlapping_tmpl.size = 1;
+
+    do {
+        first_overlapping = VG_(OSetGen_Lookup)(pmem.pmem_stores,
+                                                &first_overlapping_tmpl);
+        first_overlapping_tmpl.addr++;
+    } while (first_overlapping == NULL);
+
     Addr flush_max = flush_info.addr + flush_info.size;
     struct pmem_st *being_flushed;
+
+    /* reset the iterator */
+    VG_(OSetGen_ResetIterAt)(pmem.pmem_stores, first_overlapping);
+
+    int found = 0;
     while ((being_flushed = VG_(OSetGen_Next)(pmem.pmem_stores)) != NULL){
 
        /* not an interesting entry, flush doesn't matter */
        if (cmp_pmem_st(&flush_info, being_flushed) != 0) {
-           continue;
+           if (found)
+               /*
+                * If previously we found at least one overlapping region and
+                * the current one doesn't overlap, then there's no point in
+                * looking further.
+                */
+               break;
+
+           /* impossible, first region cannot not overlap */
+           tl_assert(0);
        }
+       found++;
 
        valid_flush = True;
        /* check for multiple flushes of stores */
@@ -1146,6 +1189,7 @@ do_flush(UWord base, UWord size)
        }
     }
 
+end:
     if (!valid_flush && pmem.check_flush) {
         /* unnecessary flush event - probably an issue */
         struct pmem_st *wrong_flush = VG_(malloc)("pmc.main.cpci.6",
