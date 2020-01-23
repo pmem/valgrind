@@ -1,6 +1,6 @@
 /*
  * Persistent memory checker.
- * Copyright (c) 2015, Intel Corporation.
+ * Copyright (c) 2015-2020, Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -19,27 +19,6 @@
 #include "pub_tool_libcassert.h"
 
 #include "pmc_include.h"
-
-/**
-* \brief A compare function for regions stored in the OSetGen.
-* \param[in] key The key to compare.
-* \param[in] elem The element to compare with.
-* \return -1 if key is smaller, 1 if key is greater and 0 if key is equal
-* to elem. This means that the region is either before, after or overlaps.
-*/
-Word
-cmp_pmem_st(const void *key, const void *elem)
-{
-    const struct pmem_st *lhs = (const struct pmem_st *) (key);
-    const struct pmem_st *rhs = (const struct pmem_st *) (elem);
-
-    if (lhs->addr + lhs->size <= rhs->addr)
-        return -1;
-    else if (lhs->addr >= rhs->addr + rhs->size)
-        return 1;
-    else
-        return 0;
-}
 
 /**
  * \brief Check if regions overlap.
