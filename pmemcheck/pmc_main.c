@@ -1,6 +1,6 @@
 /*
  * Persistent memory checker.
- * Copyright (c) 2014-2016, Intel Corporation.
+ * Copyright (c) 2014-2020, Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -397,22 +397,123 @@ pp_store_trace(const struct pmem_st *store, UInt n_ips)
 }
 
 /**
- * \brief Check if a memcpy/memset is at the given instruction address.
- *
- * \param[in] ip The instruction address to check.
- * \return True if the function name has memcpy/memset in its name,
+ * \brief Check if both addresses belong to functions that do have
+ *        memcpy or memset in their names.
+ * \param[in] ep current context
+ * \param[in] a1 instruction pointer
+ * \param[in] a2 instruction pointer
+ * \return True if both instruction pointers belong to memcpy/memset,
  *         False otherwise.
  */
 static Bool
-is_ip_memset_memcpy(Addr ip)
+addresses_belong_to_memcpy_memset(DiEpoch ep, Addr a1, Addr a2)
 {
-    DiEpoch ep = VG_(current_DiEpoch)();
-    InlIPCursor *iipc = VG_(new_IIPC)(ep, ip);
-    const HChar *buf = VG_(describe_IP)(ep, ip,  iipc);
-    Bool present = (VG_(strstr)(buf, "memcpy") != NULL);
-    present |= (VG_(strstr)(buf, "memset") != NULL);
-    VG_(delete_IIPC)(iipc);
-    return present;
+	const HChar *fn;
+	if (!VG_(get_fnname)(ep, a1, &fn))
+		return False;
+
+	UInt fn1_is_memcpy = VG_(strstr)(fn, "memcpy") != NULL;
+	UInt fn1_is_memset = VG_(strstr)(fn, "memset") != NULL;
+
+	if (!fn1_is_memcpy && !fn1_is_memset)
+		return False;
+
+	if (!VG_(get_fnname)(ep, a2, &fn))
+		return False;
+
+	UInt fn2_is_memcpy = VG_(strstr)(fn, "memcpy") != NULL;
+	UInt fn2_is_memset = VG_(strstr)(fn, "memset") != NULL;
+
+	/*
+	 * If both IPs belong to function with memcpy in the name, then
+	 * consider them as the same.
+	 */
+	if (fn1_is_memcpy && fn2_is_memcpy)
+		return True;
+
+	/* Same story with memset. */
+	if (fn1_is_memset && fn2_is_memset)
+		return True;
+
+	return False;
+}
+
+/**
+ * \brief Check if Instruction Pointers should be considered the same.
+ *
+ * \param[in] a1 instruction pointer
+ * \param[in] a2 instruction pointer
+ * \return True if instruction pointers are the same, False otherwise.
+ */
+static Bool
+addresses_are_mergeable(Addr a1, Addr a2)
+{
+	DiEpoch ep = VG_(current_DiEpoch)();
+
+	if (a1 == a2)
+		return True;
+
+	/* if the addresses are far from each other, then return early */
+#define SAME_FUNC_LIMIT 4096
+	if (a1 > a2 + SAME_FUNC_LIMIT)
+		return False;
+	if (a2 > a1 + SAME_FUNC_LIMIT)
+		return False;
+#undef SAME_FUNC_LIMIT
+
+	const HChar *filename;
+
+	if (!VG_(get_filename)(ep, a1, &filename))
+		goto fallback;
+
+	HChar tmp[4096];
+
+	/*
+	 * Copy file name, because original pointer will be overwritten
+	 * the next time get_filename will be called.
+	 */
+	HChar *filename1;
+
+	/* Try to keep it on the stack. */
+	if (VG_(strlen)(filename) + 1 < sizeof(tmp)) {
+		filename1 = tmp;
+		VG_(strcpy)(filename1, filename);
+	} else {
+		filename1 = VG_(strdup)("addresses_are_mergable", filename);
+	}
+
+	const HChar *filename2;
+	if (!VG_(get_filename)(ep, a2, &filename2)) {
+		if (filename1 != tmp)
+			VG_(free)(filename1);
+		goto fallback;
+	}
+
+	/*
+	 * If instruction pointers belong to different files, then they are
+	 * not mergeable.
+	 */
+	Bool files_eq = VG_(strcmp)(filename1, filename2) == 0;
+	if (filename1 != tmp)
+		VG_(free)(filename1);
+
+	if (!files_eq)
+		return False;
+
+	UInt line1, line2;
+
+	if (!VG_(get_linenum)(ep, a1, &line1))
+		goto fallback;
+
+	if (!VG_(get_linenum)(ep, a2, &line2))
+		goto fallback;
+
+	/* Exact line match -> mergeable. */
+	if (line1 == line2)
+		return True;
+
+fallback:
+	return addresses_belong_to_memcpy_memset(ep, a1, a2);
 }
 
 /**
@@ -448,17 +549,12 @@ cmp_exe_context(const ExeContext* lhs, const ExeContext* rhs)
     if (n_ips1 != n_ips2)
         return False;
 
-    /* omit memcpy/memset at the top of the callstack */
-    Int i = 0;
-    if ((ips1[0] == ips2[0])
-            || (is_ip_memset_memcpy(ips1[0]) && is_ip_memset_memcpy(ips2[0])))
-        ++i;
-    /* compare instruction pointers */
-    for (; i < n_ips1; i++)
+    /* compare instruction pointers, starting from the _second_ */
+    for (Int i = 1; i < n_ips1; i++)
         if (ips1[i] != ips2[i])
             return False;
 
-    return True;
+    return addresses_are_mergeable(ips1[0], ips2[0]);
 }
 
 /**
