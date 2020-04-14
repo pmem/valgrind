@@ -2127,8 +2127,8 @@ pmc_pre_clo_init(void)
     VG_(details_name)("pmemcheck");
     VG_(details_version)("1.0");
     VG_(details_description)("a simple persistent store checker");
-    VG_(details_copyright_author)("Copyright (c) 2014-2016, Intel Corporation");
-    VG_(details_bug_reports_to)("tomasz.kapela@intel.com");
+    VG_(details_copyright_author)("Copyright (c) 2014-2020, Intel Corporation");
+    VG_(details_bug_reports_to)("https://github.com/pmem/valgrind/issues");
 
     VG_(details_avg_translation_sizeB)(275);
 
