@@ -62,5 +62,5 @@ part of the documentation or type:
 ```
 
 For more information on the modifications made to Valgrind
-contact Marcin Slusarz (marcin.slusarz@intel.com) or
+contact Piotr Balcer (piotr.balcer@intel.com) or
 Andy Rudoff (andy.rudoff@intel.com).
