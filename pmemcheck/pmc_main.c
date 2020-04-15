@@ -928,19 +928,19 @@ widen_const(IRAtom *e)
 
     switch (e->Iex.Const.con->tag) {
         case Ico_U1:
-            return mkIRExpr_HWord((UInt)e->Iex.Const.con->Ico.U1);
+            return mkIRExpr_HWord((HWord)e->Iex.Const.con->Ico.U1);
 
         case Ico_U8:
-            return mkIRExpr_HWord((UInt)e->Iex.Const.con->Ico.U8);
+            return mkIRExpr_HWord((HWord)e->Iex.Const.con->Ico.U8);
 
         case Ico_U16:
-            return mkIRExpr_HWord((UInt)e->Iex.Const.con->Ico.U16);
+            return mkIRExpr_HWord((HWord)e->Iex.Const.con->Ico.U16);
 
         case Ico_U32:
-            return mkIRExpr_HWord((UInt)e->Iex.Const.con->Ico.U32);
+            return mkIRExpr_HWord((HWord)e->Iex.Const.con->Ico.U32);
 
         case Ico_U64:
-            return mkIRExpr_HWord((UInt)e->Iex.Const.con->Ico.U64);
+            return mkIRExpr_HWord((HWord)e->Iex.Const.con->Ico.U64);
 
         default:
             tl_assert(False); /* cannot happen */
