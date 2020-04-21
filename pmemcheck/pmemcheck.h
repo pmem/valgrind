@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015, Intel Corporation
+ * Copyright (c) 2014-2020, Intel Corporation
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -82,6 +82,7 @@ typedef
        VG_USERREQ__PMC_ADD_TO_GLOBAL_TX_IGNORE,
        VG_USERREQ__PMC_RESERVED6,  /* Do not use. */
        VG_USERREQ__PMC_EMIT_LOG,
+       VG_USERREQ__PMC_DEEP_SYNC,
    } Vg_PMemCheckClientRequest;
 
 
@@ -210,6 +211,12 @@ typedef
 /** Remove a persistent memory region from the implicit transaction */
 #define VALGRIND_PMC_ADD_TO_GLOBAL_TX_IGNORE(_qzz_addr,_qzz_len)            \
     VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PMC_ADD_TO_GLOBAL_TX_IGNORE,\
+                                    (_qzz_addr), (_qzz_len), 0, 0, 0)
+
+/** Register a deep sync operation */
+#define VALGRIND_PMC_DEEP_SYNC(_qzz_addr,_qzz_len)                          \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* default return */,                 \
+                                    VG_USERREQ__PMC_DEEP_SYNC,              \
                                     (_qzz_addr), (_qzz_len), 0, 0, 0)
 
 #endif
