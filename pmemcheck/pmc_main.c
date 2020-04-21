@@ -1809,6 +1809,7 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             && VG_USERREQ__PMC_RESERVED8 != arg[0]
             && VG_USERREQ__PMC_RESERVED9 != arg[0]
             && VG_USERREQ__PMC_RESERVED10 != arg[0]
+            && VG_USERREQ__PMC_DEEP_SYNC != arg[0]
             )
         return False;
 
@@ -1980,6 +1981,12 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             );
             return False;
         }
+
+        case VG_USERREQ__PMC_DEEP_SYNC:
+            if (pmem.log_stores)
+                VG_(emit)("|DEEP_SYNC;0x%lx;0x%lx", arg[1], arg[2]);
+
+            break;
 
         default:
             VG_(message)(
