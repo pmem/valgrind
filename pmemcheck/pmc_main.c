@@ -59,8 +59,22 @@
 /** Max allowable path length */
 #define MAX_PATH_SIZE 4096
 
+/** Max allowable length of store information array*/
+#define MAX_ARRAY_NUM 100000000UL
+
+/** defining store information array structure*/
+struct pmem_stores_array
+{
+    UWord m_index;//Index of current metadata
+    struct pmem_st *pmem_stores;
+    struct arr_md* m_data; // Address of metadata array
+};
+
 /** Holds parameters and runtime data */
 static struct pmem_ops {
+    /** Array of stores to persistent memory*/
+    struct pmem_stores_array info_array;
+
     /** Set of stores to persistent memory. */
     OSet *pmem_stores;
 
@@ -810,7 +824,6 @@ trace_pmem_store(Addr addr, SizeT size, UWord value)
 {
     if (LIKELY(!is_pmem_access(addr, size)))
         return;
-
     struct pmem_st *store = VG_(OSetGen_AllocNode)(pmem.pmem_stores,
             (SizeT) sizeof (struct pmem_st));
     store->addr = addr;
@@ -2033,6 +2046,15 @@ pmc_process_cmd_line_option(const HChar *arg)
 static void
 pmc_post_clo_init(void)
 {
+    pmem.info_array.pmem_stores = VG_(malloc)("pmc.main.cpci.7",
+                                         MAX_ARRAY_NUM * sizeof(struct pmem_st));
+    pmem.info_array.m_index = 0;
+    pmem.info_array.m_data = VG_(malloc)("pmc.main.cpci.8",
+                                         MAX_ARRAY_NUM * sizeof(struct arr_md));
+    pmem.info_array.m_data[0].min_addr = pmem.info_array.m_data[0].max_addr = -1;
+    pmem.info_array.m_data[0].state = NO_FLUSHED;
+    pmem.info_array.m_data[0].end_index=pmem.info_array.m_data[0].start_index=0;
+
     pmem.pmem_stores = VG_(OSetGen_Create)(/*keyOff*/0, cmp_pmem_st,
             VG_(malloc), "pmc.main.cpci.1", VG_(free));
 

@@ -15,6 +15,20 @@
 
 #ifndef PMC_INCLUDE_H
 #define PMC_INCLUDE_H
+/** Metadata structure for store information array */
+struct arr_md {
+    UWord end_index; //Index of current free metadata
+    Addr min_addr;
+    Addr max_addr;
+    UWord start_index;
+    enum flushed_state
+    {
+        NO_FLUSHED,
+        PART_FLUSHED,
+        ALL_FLUSHED,
+    } state;
+};
+
 
 /** Single store to memory. */
 struct pmem_st {
