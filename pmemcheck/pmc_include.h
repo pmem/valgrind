@@ -32,6 +32,7 @@ struct arr_md {
 
 /** Single store to memory. */
 struct pmem_st {
+    Bool is_delete;
     Addr addr;
     ULong size;
     ULong block_num;

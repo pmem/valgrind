@@ -670,6 +670,16 @@ add_mult_overwrite_warn(struct pmem_st *store,  OSet *set, Bool preallocated)
             store, MAX_MULT_OVERWRITES, print_max_poss_overwrites_error);
 }
 
+static void
+array_add_mult_overwrite_warn(struct pmem_st *store,  OSet *set, Bool preallocated)
+{
+    struct pmem_st *new = VG_(OSetGen_AllocNode)(set,
+                                                 (SizeT)sizeof(struct pmem_st));
+    *new=*store;
+    add_warning_event(pmem.multiple_stores, &pmem.multiple_stores_reg,
+                      new, MAX_MULT_OVERWRITES, print_max_poss_overwrites_error);
+}
+
 /**
  * \brief Splits-adjusts the two given stores so that they do not overlap.
  *
@@ -748,6 +758,74 @@ split_stores(struct pmem_st *old, const struct pmem_st *new, OSet *set,
     tl_assert(False);
 }
 
+static void
+array_split_stores(struct pmem_st *old, const struct pmem_st *new, OSet *set,
+        split_clb clb)
+{
+    Addr new_max = new->addr + new->size;
+    Addr old_max = old->addr + old->size;
+
+    /* new store encapsulates old, it needs to be removed */
+    if (old->addr >= new->addr && old_max <= new_max) {
+        old->is_delete = True;
+        clb(old, set, True);
+        return;
+    }
+
+    struct pmem_st tmp;
+    if (old->addr < new->addr) {
+        /* the new store is within the old store */
+        if (old_max > new_max) {
+            struct pmem_st *after = VG_(OSetGen_AllocNode)(set,
+                    (SizeT) sizeof(struct pmem_st));
+            *after = *old;
+            after->addr = new_max;
+            after->size = old_max - new_max;
+            after->value &= (1 << (after->size * 8 + 1)) - 1;
+            /* adjust the size and value of the old entry */
+            old->value >>= old_max - new->addr;
+            old->size = new->addr - old->addr;
+            /* insert the new store fragment */
+            VG_(OSetGen_Insert)(set, after);
+            /* clb the cut out fragment with the old ExeContext */
+            tmp = *new;
+            tmp.context = old->context;
+            clb(&tmp, set, False);
+        } else {
+            /* old starts before new */
+
+            /* callback for removed part */
+            tmp = *old;
+            tmp.addr = new->addr;
+            tmp.size = old_max - new->addr;
+            /* adjust leftover */
+            clb(&tmp, set, False);
+            old->value >>= old_max - new->addr;
+            old->size = new->addr - old->addr;
+        }
+        return;
+    }
+
+    /* now old->addr >= new->addr */
+
+    /* end of old is behind end of new */
+    if (old_max > new_max) {
+        /* callback for removed part */
+        tmp = *old;
+        tmp.size -= old_max - new_max;
+        clb(&tmp, set, False);
+        /* adjust leftover */
+        old->addr = new_max;
+        old->size = old_max - new_max;
+        old->value &= (1 << (old->size * 8 + 1)) - 1;
+        return;
+    }
+
+    /* you should never end up here */
+    tl_assert(False);
+}
+
+
 /**
  * \brief Add and merges adjacent stores if possible.
  * Should not be used if track_multiple_stores is enabled.
@@ -783,6 +861,67 @@ add_and_merge_store(struct pmem_st *region)
     VG_(OSetGen_Insert)(pmem.pmem_stores, region);
 }
 
+static void update_array_metadata_minandmax(struct pmem_st *store)
+{
+    Addr store_max = store->addr + store->size;
+    struct arr_md* m_data=pmem.info_array.m_data+pmem.info_array.m_index;
+    if (m_data->max_addr == -1 && m_data->min_addr == -1)
+    {
+        m_data->min_addr = store->addr;
+        m_data->max_addr = store_max;
+    }
+    if (m_data->min_addr > store->addr)
+        m_data->min_addr = store->addr;
+    if (m_data->max_addr < store_max)
+        m_data->max_addr = store_max;
+        
+    return;
+}
+
+static int cmp_with_arr_minandmax(struct pmem_st *p_st,int index)
+{
+    Addr p_st_max = p_st->addr + p_st->size;
+    struct arr_md* m_data=pmem.info_array.m_data+index;
+    if ((p_st->addr > m_data->max_addr) || (p_st_max < m_data->min_addr))
+        return -1;
+    else if (m_data->min_addr <= p_st->addr && p_st_max <= m_data->max_addr)
+        return 1;
+    else
+        return 0;
+}
+
+
+/**
+ * Handle multiple overwrites for store information array.
+ */
+static void
+array_handle_with_mult_stores(struct pmem_st *store){
+    struct pmem_st *existing;
+    /* remove any overlapping stores from the collection */
+    for(int s_index=0;s_index<=pmem.info_array.m_index;s_index++){
+    if (cmp_with_arr_minandmax(store,s_index) != -1)
+    {
+        for (int i = pmem.info_array.m_data[s_index].start_index; i < pmem.info_array.m_data[s_index].end_index; i++)
+        {
+            if (LIKELY(pmem.info_array.pmem_stores[i].is_delete != True))
+                existing = pmem.info_array.pmem_stores + i;
+            else
+                continue;
+            if (cmp_pmem_st(existing, store) == 0)
+            {
+
+                if ((store->block_num - existing->block_num) < pmem.store_sb_indiff && existing->addr == store->addr && existing->size == store->size && existing->value == store->value)
+                {
+                    existing->is_delete = True;
+                    continue;
+                }
+                array_split_stores(existing, store, pmem.pmem_stores,
+                             array_add_mult_overwrite_warn);
+            }
+        }
+    }
+    }
+}
 /**
  * \brief Handle a new store checking for multiple overwrites.
  * This should be called when track_multiple_stores is enabled.
@@ -792,6 +931,8 @@ add_and_merge_store(struct pmem_st *region)
 static void
 handle_with_mult_stores(struct pmem_st *store)
 {
+    array_handle_with_mult_stores(store);
+
     struct pmem_st *existing;
     /* remove any overlapping stores from the collection */
     while ((existing = VG_(OSetGen_Lookup)(pmem.pmem_stores, store)) !=
@@ -809,7 +950,7 @@ handle_with_mult_stores(struct pmem_st *store)
                 add_mult_overwrite_warn);
     }
     /* it is now safe to insert the new store */
-    VG_(OSetGen_Insert)(pmem.pmem_stores, store);
+    //VG_(OSetGen_Insert)(pmem.pmem_stores, store);
 }
 
 /**
@@ -824,8 +965,21 @@ trace_pmem_store(Addr addr, SizeT size, UWord value)
 {
     if (LIKELY(!is_pmem_access(addr, size)))
         return;
-    struct pmem_st *store = VG_(OSetGen_AllocNode)(pmem.pmem_stores,
+    struct pmem_st *store;
+    UWord old_index=pmem.info_array.m_data[pmem.info_array.m_index].end_index;
+    if (LIKELY(old_index < MAX_ARRAY_NUM))
+    {
+        store = pmem.info_array.pmem_stores + old_index;
+    }
+    else
+    {
+        store = VG_(OSetGen_AllocNode)(pmem.pmem_stores,
             (SizeT) sizeof (struct pmem_st));
+        //store->index=db_pmem_store_index;
+        //db_pmem_store_index++;
+    }
+    //struct pmem_st *store = VG_(OSetGen_AllocNode)(pmem.pmem_stores,
+      //      (SizeT) sizeof (struct pmem_st));
     store->addr = addr;
     store->size = size;
     store->state = STST_DIRTY;
@@ -839,10 +993,27 @@ trace_pmem_store(Addr addr, SizeT size, UWord value)
         if (pmem.store_traces)
             pp_store_trace(store, pmem.store_traces_depth);
     }
-    if (pmem.track_multiple_stores)
+    if (pmem.track_multiple_stores){
         handle_with_mult_stores(store);
-    else
-        add_and_merge_store(store);
+        if (UNLIKELY(old_index >= MAX_ARRAY_NUM)){
+            VG_(OSetGen_Insert)(pmem.pmem_stores, store);
+        }
+        else
+        {
+            pmem.info_array.m_data[pmem.info_array.m_index].end_index++;
+            update_array_metadata_minandmax(store);
+        }
+    }
+    else{
+        if (UNLIKELY(old_index >= MAX_ARRAY_NUM)){
+            add_and_merge_store(store);
+        }
+        else
+        {
+            pmem.info_array.m_data[pmem.info_array.m_index].end_index++;
+            update_array_metadata_minandmax(store);
+        }
+    }
 
     /* do transaction check */
     handle_tx_store(store);
