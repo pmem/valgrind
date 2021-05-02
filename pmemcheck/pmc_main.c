@@ -1353,6 +1353,157 @@ do_fence(void)
         }
     }
 }
+/* set up a new metadata */
+void init_m_data(void){
+    pmem.info_array.m_index++;
+    struct arr_md* pm_data=pmem.info_array.m_data+pmem.info_array.m_index;
+    pm_data->min_addr = pm_data->max_addr = -1;
+    pm_data->state = NO_FLUSHED;
+    pm_data->end_index=pm_data->start_index=pmem.info_array.m_data[pmem.info_array.m_index-1].end_index;
+    
+}
+
+/**
+* \brief writeback processing for store information array
+*/
+static Bool
+array_process_flush(UWord base, UWord size){
+    struct pmem_st flush_info = {0};
+
+    if (LIKELY(pmem.force_flush_align == False))
+    {
+        flush_info.addr = base;
+        flush_info.size = size;
+    }
+    else
+    {
+        /* align flushed memory */
+        flush_info.addr = base & ~(pmem.flush_align_size - 1);
+        flush_info.size = roundup(size, pmem.flush_align_size);
+    }
+    if (pmem.log_stores)
+        VG_(emit)
+        ("|FLUSH;0x%lx;0x%llx", flush_info.addr, flush_info.size);
+
+    /* unfortunately lookup doesn't work here, the oset is an avl tree */
+
+    Addr flush_max = flush_info.addr + flush_info.size;
+    struct pmem_st *being_flushed;
+    Bool valid_flush = False;
+    /*================================array=============================*/
+    for(int s_index=0;s_index<=pmem.info_array.m_index;s_index++){
+    /* directly mark this writeback interval */
+    if (flush_max >= pmem.info_array.m_data[s_index].max_addr && pmem.info_array.m_data[s_index].min_addr >= flush_info.addr && pmem.info_array.m_data[s_index].state == NO_FLUSHED)
+    {
+        pmem.info_array.m_data[s_index].state = ALL_FLUSHED;
+        valid_flush = True;
+    }
+        /* directly skip this writeback interval */
+    else if (flush_max < pmem.info_array.m_data[s_index].min_addr || pmem.info_array.m_data[s_index].max_addr < flush_info.addr)
+    {
+        continue;
+    }
+        /* go into this writeback interval and traverse store information one by one */
+    else
+    {
+        for (int i = pmem.info_array.m_data[s_index].start_index; i < pmem.info_array.m_data[s_index].end_index; i++)
+        {
+            being_flushed = pmem.info_array.pmem_stores + i;
+            if (being_flushed->is_delete == True)
+            {
+                being_flushed->state = STST_FLUSHED;
+                continue;
+            }
+
+            if (cmp_pmem_st(&flush_info, being_flushed) != 0)
+                continue;
+
+            valid_flush = True;
+            /* check for multiple flushes of stores */
+            if (pmem.info_array.m_data[s_index].state == ALL_FLUSHED || being_flushed->state != STST_DIRTY)
+            {
+                if (pmem.check_flush)
+                {
+                    /* multiple flush of the same store - probably an issue */
+                    struct pmem_st *wrong_flush = VG_(malloc)("pmc.main.cpci.3",
+                                                              sizeof(struct pmem_st));
+                    *wrong_flush = *being_flushed;
+                    wrong_flush->state = STST_FLUSHED;
+                    //   VG_(umsg)("=======pmem_index=%d========\n",wrong_flush->index);
+                    add_warning_event(pmem.redundant_flushes,
+                                      &pmem.redundant_flushes_reg,
+                                      wrong_flush, MAX_FLUSH_ERROR_EVENTS,
+                                      print_redundant_flush_error);
+                }
+                continue;
+            }
+
+            being_flushed->state = STST_FLUSHED;
+            pmem.info_array.m_data[s_index].state = PART_FLUSHED;
+            /* store starts before base flush address */
+            if (being_flushed->addr < flush_info.addr)
+            {
+                /* split and reinsert */
+                struct pmem_st *split;
+                UWord old_index= pmem.info_array.m_data[pmem.info_array.m_index].end_index;
+                if (LIKELY(old_index < MAX_ARRAY_NUM))
+                {
+                    split = pmem.info_array.pmem_stores + old_index;
+                   
+                    pmem.info_array.m_data[pmem.info_array.m_index].end_index++;
+                }
+                else
+                {
+                    split = VG_(OSetGen_AllocNode)(pmem.pmem_stores, sizeof(struct pmem_st));
+                }
+                *split = *being_flushed;
+                split->size = flush_info.addr - being_flushed->addr;
+                split->state = STST_DIRTY;
+
+                /* adjust original */
+                being_flushed->addr = flush_info.addr;
+                being_flushed->size -= split->size;
+                if (old_index >= MAX_ARRAY_NUM){
+                add_and_merge_store(split);
+                }
+                /* reset iter */
+            }
+
+            /* end of store is behind max flush */
+            if (being_flushed->addr + being_flushed->size > flush_max)
+            {
+                /* split and reinsert */
+                UWord old_index= pmem.info_array.m_data[pmem.info_array.m_index].end_index;
+                struct pmem_st *split;
+                if (LIKELY(old_index < MAX_ARRAY_NUM))
+                {
+                    split = pmem.info_array.pmem_stores + old_index;
+                    pmem.info_array.m_data[pmem.info_array.m_index].end_index++;
+                }
+                else
+                {
+                    split = VG_(OSetGen_AllocNode)(pmem.pmem_stores, sizeof(struct pmem_st));
+                }
+                *split = *being_flushed;
+                split->addr = flush_max;
+                split->size = being_flushed->addr + being_flushed->size - flush_max;
+                split->state = STST_DIRTY;
+
+                /* adjust original */
+                being_flushed->size -= split->size;
+                if (old_index >= MAX_ARRAY_NUM){
+                    add_and_merge_store(split);
+                }
+
+            }
+        }
+    }
+}
+    if (pmem.info_array.m_data[pmem.info_array.m_index].state != NO_FLUSHED){
+       init_m_data();
+    }
+ return valid_flush;
+}
 
 /**
 * \brief Register a flush.
@@ -1367,6 +1518,7 @@ do_fence(void)
 static void
 do_flush(UWord base, UWord size)
 {
+    Bool array_valid_flush=array_process_flush(base, size);
     struct pmem_st flush_info = {0};
 
     if (LIKELY(pmem.force_flush_align == False)) {
@@ -1496,7 +1648,7 @@ do_flush(UWord base, UWord size)
     }
 
 end:
-    if (!valid_flush && pmem.check_flush) {
+    if (!valid_flush && pmem.check_flush && !array_valid_flush) {
         /* unnecessary flush event - probably an issue */
         struct pmem_st *wrong_flush = VG_(malloc)("pmc.main.cpci.6",
                        sizeof(struct pmem_st));
@@ -1508,6 +1660,7 @@ end:
                           wrong_flush, MAX_FLUSH_ERROR_EVENTS,
                           print_superfluous_flush_error);
     }
+
 }
 
 /**
