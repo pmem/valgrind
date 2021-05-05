@@ -1327,6 +1327,37 @@ add_event_dw(IRSB *sb, IRAtom *daddr, Int dsize, IRAtom *value)
 }
 
 /**
+* \brief fence processing for store information array
+*/
+static void array_process_fence(void){
+        struct pmem_st *being_fenced = NULL;
+for(int s_index=0;s_index<=pmem.info_array.m_index;s_index++){
+    if (pmem.info_array.m_data[s_index].state != ALL_FLUSHED)
+    {      
+        for (int i = pmem.info_array.m_data[s_index].start_index; i < pmem.info_array.m_data[s_index].end_index; i++)
+        {
+            being_fenced = pmem.info_array.pmem_stores + i;
+
+            if (being_fenced->state == STST_FLUSHED||being_fenced->is_delete==True)
+            {
+                continue;
+            }
+            else
+            {
+                struct pmem_st *new = VG_(OSetGen_AllocNode)(pmem.pmem_stores, sizeof(struct pmem_st));
+                add_and_merge_store(new);
+            }
+        }
+
+    }
+}
+/* reset store information array */
+  pmem.info_array.m_data[0].min_addr = pmem.info_array.m_data[0].max_addr = -1;
+    pmem.info_array.m_data[0].state = NO_FLUSHED;
+    pmem.info_array.m_data[0].end_index=pmem.info_array.m_data[0].start_index=0;
+    pmem.info_array.m_index=0;
+}
+/**
 * \brief Register a fence.
 *
 * Marks flushed stores as persistent.
