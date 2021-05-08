@@ -299,6 +299,7 @@ print_multiple_stores(void)
     }
 }
 
+static void add_and_merge_store(struct pmem_st *region);
 /**
  * \brief Prints registered store statistics.
  *
@@ -308,12 +309,28 @@ print_multiple_stores(void)
 static void
 print_store_stats(void)
 {
+/* print store states of the array*/
+    struct pmem_st *tmp;
+    for(int s_index=0;s_index<=pmem.info_array.m_index;s_index++){
+    for(int i=pmem.info_array.m_data[s_index].start_index;i<pmem.info_array.m_data[s_index].end_index;i++){
+    {
+        tmp = pmem.info_array.pmem_stores + i;
+            if (tmp->is_delete == True)
+                    continue;
+        if (pmem.info_array.m_data[s_index].state == ALL_FLUSHED)
+            tmp->state = STST_FLUSHED;
+        struct pmem_st *new = VG_(OSetGen_AllocNode)(pmem.pmem_stores, sizeof(struct pmem_st));
+        *new=*tmp;
+        add_and_merge_store(new);
+    }
+    }
+    }
+
     VG_(umsg)("Number of stores not made persistent: %u\n", VG_(OSetGen_Size)
             (pmem.pmem_stores));
 
     if (VG_(OSetGen_Size)(pmem.pmem_stores) != 0) {
         VG_(OSetGen_ResetIter)(pmem.pmem_stores);
-        struct pmem_st *tmp;
         UWord total = 0;
         Int i = 0;
         VG_(umsg)("Stores not made persistent properly:\n");
@@ -985,6 +1002,7 @@ trace_pmem_store(Addr addr, SizeT size, UWord value)
     store->state = STST_DIRTY;
     store->block_num = sblocks;
     store->value = value;
+    store->is_delete=False;
     store->context = VG_(record_ExeContext)(VG_(get_running_tid)(), 0);
 
     /* log the store, regardless if it is a double store */
@@ -1345,6 +1363,7 @@ for(int s_index=0;s_index<=pmem.info_array.m_index;s_index++){
             else
             {
                 struct pmem_st *new = VG_(OSetGen_AllocNode)(pmem.pmem_stores, sizeof(struct pmem_st));
+                *new=*being_fenced;
                 add_and_merge_store(new);
             }
         }
@@ -1386,7 +1405,7 @@ do_fence(void)
     array_process_fence();
 }
 /* set up a new metadata */
-void init_m_data(void){
+static void init_m_data(void){
     pmem.info_array.m_index++;
     struct arr_md* pm_data=pmem.info_array.m_data+pmem.info_array.m_index;
     pm_data->min_addr = pm_data->max_addr = -1;
@@ -1413,9 +1432,6 @@ array_process_flush(UWord base, UWord size){
         flush_info.addr = base & ~(pmem.flush_align_size - 1);
         flush_info.size = roundup(size, pmem.flush_align_size);
     }
-    if (pmem.log_stores)
-        VG_(emit)
-        ("|FLUSH;0x%lx;0x%llx", flush_info.addr, flush_info.size);
 
     /* unfortunately lookup doesn't work here, the oset is an avl tree */
 
@@ -2264,6 +2280,83 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             struct pmem_st temp_info = {0};
             temp_info.addr = arg[1];
             temp_info.size = arg[2];
+
+            /* remove regions from store information array*/
+            struct pmem_st *modified_entry = NULL;
+            struct pmem_st *region = &temp_info;
+            UWord old_index;
+            for(int s_index=0;s_index<=pmem.info_array.m_index;s_index++){
+            if (cmp_with_arr_minandmax(&temp_info,s_index) != -1)
+            {
+                for (int i = pmem.info_array.m_data[s_index].start_index; i < pmem.info_array.m_data[s_index].end_index; i++)
+                {
+                    //VG_(umsg)("remove before=%d\n",VG_(OSetGen_Size)(curr_node->pmem_stores));
+                    modified_entry = pmem.info_array.pmem_stores + i;
+                    if (modified_entry->is_delete == True)
+                        continue;
+                    if (cmp_pmem_st(region, modified_entry) == 0)
+                    {
+                        SizeT region_max_addr = region->addr + region->size;
+                        //struct pmem_st tmp;
+                        SizeT mod_entry_max_addr = modified_entry->addr + modified_entry->size;
+                        if ((modified_entry->addr > region->addr) && (mod_entry_max_addr <
+                                                                    region_max_addr))
+                        {
+                            /* modified entry fully within removed region */
+                            modified_entry->is_delete = True;
+                        }
+                        else if ((modified_entry->addr < region->addr) &&
+                                (mod_entry_max_addr > region_max_addr))
+                        {
+                            /* modified entry is larger than the removed region - slice */
+                            modified_entry->size = region->addr - modified_entry->addr;
+
+                            //  VG_(OSetGen_Insert)(region_set, modified_entry);
+                            struct pmem_st *new_region;
+                            old_index = pmem.info_array.m_data[pmem.info_array.m_index].end_index;
+                            if (old_index>= MAX_ARRAY_NUM){
+                                new_region = VG_(OSetGen_AllocNode)(pmem.pmem_stores,
+                                                                    sizeof(struct pmem_st));
+                            }                              
+                            else
+                            {
+                                new_region = pmem.info_array.pmem_stores + old_index; 
+                                pmem.info_array.m_data[pmem.info_array.m_index].end_index++;
+                            }
+                            new_region->addr = region_max_addr;
+                            new_region->size = mod_entry_max_addr - new_region->addr;
+                            if (old_index >= MAX_ARRAY_NUM){
+                                add_and_merge_store(new_region);
+                            }
+                        
+                        }
+                        else if ((modified_entry->addr >= region->addr) &&
+                                (mod_entry_max_addr > region_max_addr))
+                        {
+                            /* head overlaps */
+                            modified_entry->size -= region_max_addr - modified_entry->addr;
+                            modified_entry->addr = region_max_addr;
+                            // VG_(OSetGen_Insert)(region_set, modified_entry);
+                        }
+                        else if ((mod_entry_max_addr <= region_max_addr) &&
+                                (region->addr > modified_entry->addr))
+                        {
+                            /* tail overlaps */
+                            modified_entry->size = region->addr - modified_entry->addr;
+
+                            //  VG_(OSetGen_Insert)(region_set, modified_entry);
+                        }
+                        else
+                        {
+                            /* exact match */
+                            modified_entry->is_delete = True;
+                        }
+                    }
+                }
+            }
+        }
+
+        /* remove regions from pmem_stores Oset*/
 
             remove_region(&temp_info, pmem.pmem_stores);
             break;

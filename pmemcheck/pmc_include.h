@@ -48,7 +48,6 @@ struct pmem_st {
 /*------------------------------------------------------------*/
 /*--- Common functions                                     ---*/
 /*------------------------------------------------------------*/
-
 /* Check if the given region is in the set. */
 UWord is_in_mapping_set(const struct pmem_st *region, OSet *region_set);
 
