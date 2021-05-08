@@ -1383,6 +1383,7 @@ do_fence(void)
             VG_(OSetGen_ResetIterAt)(pmem.pmem_stores, &temp);
         }
     }
+    array_process_fence();
 }
 /* set up a new metadata */
 void init_m_data(void){

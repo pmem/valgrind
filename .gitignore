@@ -1,6 +1,6 @@
 .vscode/
 *.o
-
+.DS_Store
 # /
 /.in_place
 /.vs
