@@ -59,20 +59,20 @@
 /** Max allowable path length */
 #define MAX_PATH_SIZE 4096
 
-/** Max allowable length of store information array*/
-#define MAX_ARRAY_NUM 100000000UL
+/** Max allowable length of memory location information array */
+#define MAX_ARRAY_NUM 1000UL
 
-/** defining store information array structure*/
-struct pmem_stores_array
-{
-    UWord m_index;//Index of current metadata
+/** Defining memory location information array structure */
+struct pmem_stores_array {
+    /** Index of current metadata */
+    UWord m_index;
     struct pmem_st *pmem_stores;
-    struct arr_md* m_data; // Address of metadata array
+    struct arr_md* m_data; 
 };
 
 /** Holds parameters and runtime data */
 static struct pmem_ops {
-    /** Array of stores to persistent memory*/
+    /** Array of stores to persistent memory */
     struct pmem_stores_array info_array;
 
     /** Set of stores to persistent memory. */
@@ -300,6 +300,7 @@ print_multiple_stores(void)
 }
 
 static void add_and_merge_store(struct pmem_st *region);
+
 /**
  * \brief Prints registered store statistics.
  *
@@ -309,21 +310,22 @@ static void add_and_merge_store(struct pmem_st *region);
 static void
 print_store_stats(void)
 {
-/* print store states of the array*/
+/* print store states of the array */
     struct pmem_st *tmp;
-    for(int s_index=0;s_index<=pmem.info_array.m_index;s_index++){
-    for(int i=pmem.info_array.m_data[s_index].start_index;i<pmem.info_array.m_data[s_index].end_index;i++){
-    {
-        tmp = pmem.info_array.pmem_stores + i;
+    for (int s_index=0; s_index<=pmem.info_array.m_index; s_index++) {
+        for (int i=pmem.info_array.m_data[s_index].start_index; i<pmem.info_array.m_data[s_index].end_index; i++) {
+            tmp = pmem.info_array.pmem_stores + i;
+
             if (tmp->is_delete == True)
-                    continue;
-        if (pmem.info_array.m_data[s_index].state == ALL_FLUSHED)
-            tmp->state = STST_FLUSHED;
-        struct pmem_st *new = VG_(OSetGen_AllocNode)(pmem.pmem_stores, sizeof(struct pmem_st));
-        *new=*tmp;
-        add_and_merge_store(new);
-    }
-    }
+                continue;
+
+            if (pmem.info_array.m_data[s_index].state == ALL_FLUSHED)
+                tmp->state = STST_FLUSHED;
+
+            struct pmem_st *new = VG_(OSetGen_AllocNode)(pmem.pmem_stores, sizeof(struct pmem_st));
+            *new = *tmp;
+            add_and_merge_store(new);
+        }
     }
 
     VG_(umsg)("Number of stores not made persistent: %u\n", VG_(OSetGen_Size)
@@ -651,6 +653,7 @@ merge_stores(struct pmem_st *to_merge,
 }
 
 typedef void (*split_clb)(struct pmem_st *store,  OSet *set, Bool preallocated);
+typedef void (*array_split_clb)(struct pmem_st *store,  OSet *set);
 
 /**
  * \brief Free store if it was preallocated.
@@ -687,14 +690,21 @@ add_mult_overwrite_warn(struct pmem_st *store,  OSet *set, Bool preallocated)
             store, MAX_MULT_OVERWRITES, print_max_poss_overwrites_error);
 }
 
+/**
+ * \brief Issues a warning event with the given store as the offender for the array structure.
+ *
+ * \param[in,out] store The store to be registered as a warning.
+ * \param[in,out] set The set that stores memory location information.
+ */
 static void
-array_add_mult_overwrite_warn(struct pmem_st *store,  OSet *set, Bool preallocated)
+array_add_mult_overwrite_warn(struct pmem_st *store, OSet *set)
 {
     struct pmem_st *new = VG_(OSetGen_AllocNode)(set,
-                                                 (SizeT)sizeof(struct pmem_st));
-    *new=*store;
+            (SizeT) sizeof(struct pmem_st));
+    *new = *store;
+
     add_warning_event(pmem.multiple_stores, &pmem.multiple_stores_reg,
-                      new, MAX_MULT_OVERWRITES, print_max_poss_overwrites_error);
+            new, MAX_MULT_OVERWRITES, print_max_poss_overwrites_error);
 }
 
 /**
@@ -775,9 +785,18 @@ split_stores(struct pmem_st *old, const struct pmem_st *new, OSet *set,
     tl_assert(False);
 }
 
+/**
+ * \brief Splits-adjusts the two given stores in memory location information array so that they do not overlap.
+ *
+ * \param[in,out] old The old store that will be modified.
+ * \param[in] new The new store that will not be modified.
+ * \param[in,out] set The set the splitted stores are inserted into.
+ * \param[in,out] clb The callback to be called for the overlapping part of the
+ *  old store.
+ */
 static void
 array_split_stores(struct pmem_st *old, const struct pmem_st *new, OSet *set,
-        split_clb clb)
+        array_split_clb clb)
 {
     Addr new_max = new->addr + new->size;
     Addr old_max = old->addr + old->size;
@@ -785,7 +804,7 @@ array_split_stores(struct pmem_st *old, const struct pmem_st *new, OSet *set,
     /* new store encapsulates old, it needs to be removed */
     if (old->addr >= new->addr && old_max <= new_max) {
         old->is_delete = True;
-        clb(old, set, True);
+        clb(old, set);
         return;
     }
 
@@ -807,16 +826,14 @@ array_split_stores(struct pmem_st *old, const struct pmem_st *new, OSet *set,
             /* clb the cut out fragment with the old ExeContext */
             tmp = *new;
             tmp.context = old->context;
-            clb(&tmp, set, False);
+            clb(&tmp, set);
         } else {
-            /* old starts before new */
-
             /* callback for removed part */
             tmp = *old;
             tmp.addr = new->addr;
             tmp.size = old_max - new->addr;
             /* adjust leftover */
-            clb(&tmp, set, False);
+            clb(&tmp, set);
             old->value >>= old_max - new->addr;
             old->size = new->addr - old->addr;
         }
@@ -830,7 +847,7 @@ array_split_stores(struct pmem_st *old, const struct pmem_st *new, OSet *set,
         /* callback for removed part */
         tmp = *old;
         tmp.size -= old_max - new_max;
-        clb(&tmp, set, False);
+        clb(&tmp, set);
         /* adjust leftover */
         old->addr = new_max;
         old->size = old_max - new_max;
@@ -878,67 +895,86 @@ add_and_merge_store(struct pmem_st *region)
     VG_(OSetGen_Insert)(pmem.pmem_stores, region);
 }
 
-static void update_array_metadata_minandmax(struct pmem_st *store)
+/**
+ * \brief Update minimum and maximum address of current metadata in arr_md structure.
+ *
+ * param[in] store the store used to update minimum and maximum address of current metadata.
+ */
+static void 
+update_array_metadata_minandmax(struct pmem_st *store)
 {
     Addr store_max = store->addr + store->size;
-    struct arr_md* m_data=pmem.info_array.m_data+pmem.info_array.m_index;
-    if (m_data->max_addr == -1 && m_data->min_addr == -1)
-    {
+    struct arr_md* m_data = pmem.info_array.m_data + pmem.info_array.m_index;
+
+    if (m_data->max_addr == -1 && m_data->min_addr == -1) {
         m_data->min_addr = store->addr;
         m_data->max_addr = store_max;
     }
+
     if (m_data->min_addr > store->addr)
         m_data->min_addr = store->addr;
+
     if (m_data->max_addr < store_max)
         m_data->max_addr = store_max;
         
     return;
 }
 
-static int cmp_with_arr_minandmax(struct pmem_st *p_st,int index)
+/**
+* \brief Compare regions with the interval of one metadata (decided by minimum and maximum address) in arr_md structure.
+* \param[in] p_st the store to compare.
+* \param[in] index the index to indicate with which metadata the store compares.
+* \return -1 if the region doesn't overlap with the interval of the metadata, 1 if the interval of one metadata includes the region and 0 if the interval of the metadata overlaps with the region.
+*/
+static int 
+cmp_with_arr_minandmax(struct pmem_st *p_st, int index)
 {
     Addr p_st_max = p_st->addr + p_st->size;
-    struct arr_md* m_data=pmem.info_array.m_data+index;
-    if ((p_st->addr > m_data->max_addr) || (p_st_max < m_data->min_addr))
+    struct arr_md* m_data = pmem.info_array.m_data + index;
+
+    if ((p_st->addr > m_data->max_addr) || (p_st_max < m_data->min_addr)) {
         return -1;
-    else if (m_data->min_addr <= p_st->addr && p_st_max <= m_data->max_addr)
+    } else if (m_data->min_addr <= p_st->addr && p_st_max <= m_data->max_addr) {
         return 1;
-    else
+    } else {
         return 0;
+    }
 }
 
-
 /**
- * Handle multiple overwrites for store information array.
+ * Handle multiple overwrites in memory location information array.
+ * \param[in,out] store the store to be handled.
  */
 static void
-array_handle_with_mult_stores(struct pmem_st *store){
+array_handle_with_mult_stores(struct pmem_st *store) 
+{
     struct pmem_st *existing;
-    /* remove any overlapping stores from the collection */
-    for(int s_index=0;s_index<=pmem.info_array.m_index;s_index++){
-    if (cmp_with_arr_minandmax(store,s_index) != -1)
-    {
-        for (int i = pmem.info_array.m_data[s_index].start_index; i < pmem.info_array.m_data[s_index].end_index; i++)
-        {
-            if (LIKELY(pmem.info_array.pmem_stores[i].is_delete != True))
-                existing = pmem.info_array.pmem_stores + i;
-            else
-                continue;
-            if (cmp_pmem_st(existing, store) == 0)
-            {
 
-                if ((store->block_num - existing->block_num) < pmem.store_sb_indiff && existing->addr == store->addr && existing->size == store->size && existing->value == store->value)
-                {
-                    existing->is_delete = True;
+    /* remove any overlapping stores from the collection */
+    for(int s_index=0; s_index <= pmem.info_array.m_index; s_index++) {
+        if (cmp_with_arr_minandmax(store, s_index) != -1) {
+            for (int i = pmem.info_array.m_data[s_index].start_index; i < pmem.info_array.m_data[s_index].end_index; i++) {
+                if (LIKELY(pmem.info_array.pmem_stores[i].is_delete != True)) {
+                    existing = pmem.info_array.pmem_stores + i;
+                } else {
                     continue;
                 }
-                array_split_stores(existing, store, pmem.pmem_stores,
-                             array_add_mult_overwrite_warn);
+
+                if (cmp_pmem_st(existing, store) == 0) {
+                    if ((store->block_num - existing->block_num) < pmem.store_sb_indiff && existing->addr == store->addr && 
+                            existing->size == store->size && existing->value == store->value) {
+                        existing->is_delete = True;
+                        continue;
+                    }
+
+                    array_split_stores(existing, store, pmem.pmem_stores,
+                                array_add_mult_overwrite_warn);
+                }
             }
         }
     }
-    }
 }
+
 /**
  * \brief Handle a new store checking for multiple overwrites.
  * This should be called when track_multiple_stores is enabled.
@@ -948,6 +984,7 @@ array_handle_with_mult_stores(struct pmem_st *store){
 static void
 handle_with_mult_stores(struct pmem_st *store)
 {
+    /* handle multiple overwrite in the array structure */
     array_handle_with_mult_stores(store);
 
     struct pmem_st *existing;
@@ -982,27 +1019,24 @@ trace_pmem_store(Addr addr, SizeT size, UWord value)
 {
     if (LIKELY(!is_pmem_access(addr, size)))
         return;
+
     struct pmem_st *store;
-    UWord old_index=pmem.info_array.m_data[pmem.info_array.m_index].end_index;
-    if (LIKELY(old_index < MAX_ARRAY_NUM))
-    {
+    UWord old_index = pmem.info_array.m_data[pmem.info_array.m_index].end_index;
+
+    /* Insert information into the array when the array is not full, otherwise, insert information into pmem.pmem_stores */
+    if (LIKELY(old_index < MAX_ARRAY_NUM)) {
         store = pmem.info_array.pmem_stores + old_index;
-    }
-    else
-    {
+    } else {
         store = VG_(OSetGen_AllocNode)(pmem.pmem_stores,
             (SizeT) sizeof (struct pmem_st));
-        //store->index=db_pmem_store_index;
-        //db_pmem_store_index++;
     }
-    //struct pmem_st *store = VG_(OSetGen_AllocNode)(pmem.pmem_stores,
-      //      (SizeT) sizeof (struct pmem_st));
+
     store->addr = addr;
     store->size = size;
     store->state = STST_DIRTY;
     store->block_num = sblocks;
     store->value = value;
-    store->is_delete=False;
+    store->is_delete = False;
     store->context = VG_(record_ExeContext)(VG_(get_running_tid)(), 0);
 
     /* log the store, regardless if it is a double store */
@@ -1011,23 +1045,20 @@ trace_pmem_store(Addr addr, SizeT size, UWord value)
         if (pmem.store_traces)
             pp_store_trace(store, pmem.store_traces_depth);
     }
-    if (pmem.track_multiple_stores){
+
+    if (pmem.track_multiple_stores) {
         handle_with_mult_stores(store);
-        if (UNLIKELY(old_index >= MAX_ARRAY_NUM)){
+        /* Insert information */
+        if (UNLIKELY(old_index >= MAX_ARRAY_NUM)) {
             VG_(OSetGen_Insert)(pmem.pmem_stores, store);
-        }
-        else
-        {
+        } else {
             pmem.info_array.m_data[pmem.info_array.m_index].end_index++;
             update_array_metadata_minandmax(store);
         }
-    }
-    else{
-        if (UNLIKELY(old_index >= MAX_ARRAY_NUM)){
+    } else {
+        if (UNLIKELY(old_index >= MAX_ARRAY_NUM)) {
             add_and_merge_store(store);
-        }
-        else
-        {
+        } else {
             pmem.info_array.m_data[pmem.info_array.m_index].end_index++;
             update_array_metadata_minandmax(store);
         }
@@ -1345,37 +1376,34 @@ add_event_dw(IRSB *sb, IRAtom *daddr, Int dsize, IRAtom *value)
 }
 
 /**
-* \brief fence processing for store information array
+* \brief process fence instructions in memory location information array
 */
-static void array_process_fence(void){
-        struct pmem_st *being_fenced = NULL;
-for(int s_index=0;s_index<=pmem.info_array.m_index;s_index++){
-    if (pmem.info_array.m_data[s_index].state != ALL_FLUSHED)
-    {      
-        for (int i = pmem.info_array.m_data[s_index].start_index; i < pmem.info_array.m_data[s_index].end_index; i++)
-        {
-            being_fenced = pmem.info_array.pmem_stores + i;
+static void 
+array_process_fence(void)
+{
+    struct pmem_st *being_fenced = NULL;
+    for(int s_index=0; s_index <= pmem.info_array.m_index; s_index++) {
+        if (pmem.info_array.m_data[s_index].state != ALL_FLUSHED) {      
+            for (int i = pmem.info_array.m_data[s_index].start_index; i < pmem.info_array.m_data[s_index].end_index; i++) {
+                being_fenced = pmem.info_array.pmem_stores + i;
 
-            if (being_fenced->state == STST_FLUSHED||being_fenced->is_delete==True)
-            {
-                continue;
-            }
-            else
-            {
-                struct pmem_st *new = VG_(OSetGen_AllocNode)(pmem.pmem_stores, sizeof(struct pmem_st));
-                *new=*being_fenced;
-                add_and_merge_store(new);
+                if (being_fenced->state == STST_FLUSHED || being_fenced->is_delete == True) {
+                    continue;
+                } else {
+                    struct pmem_st *new = VG_(OSetGen_AllocNode)(pmem.pmem_stores, sizeof(struct pmem_st));
+                    *new = *being_fenced;
+                    add_and_merge_store(new);
+                }
             }
         }
-
     }
-}
-/* reset store information array */
-  pmem.info_array.m_data[0].min_addr = pmem.info_array.m_data[0].max_addr = -1;
+    /* reset memory location information array */
+    pmem.info_array.m_data[0].min_addr = pmem.info_array.m_data[0].max_addr = -1;
     pmem.info_array.m_data[0].state = NO_FLUSHED;
-    pmem.info_array.m_data[0].end_index=pmem.info_array.m_data[0].start_index=0;
-    pmem.info_array.m_index=0;
+    pmem.info_array.m_data[0].end_index=pmem.info_array.m_data[0].start_index = 0;
+    pmem.info_array.m_index = 0;
 }
+
 /**
 * \brief Register a fence.
 *
@@ -1402,155 +1430,146 @@ do_fence(void)
             VG_(OSetGen_ResetIterAt)(pmem.pmem_stores, &temp);
         }
     }
+
     array_process_fence();
 }
-/* set up a new metadata */
-static void init_m_data(void){
+
+/** 
+* \brief set up a new metadata.
+*/
+static void 
+init_m_data(void)
+{
     pmem.info_array.m_index++;
-    struct arr_md* pm_data=pmem.info_array.m_data+pmem.info_array.m_index;
+    struct arr_md* pm_data = pmem.info_array.m_data + pmem.info_array.m_index;
     pm_data->min_addr = pm_data->max_addr = -1;
     pm_data->state = NO_FLUSHED;
-    pm_data->end_index=pm_data->start_index=pmem.info_array.m_data[pmem.info_array.m_index-1].end_index;
-    
+    pm_data->end_index = pm_data->start_index = pmem.info_array.m_data[pmem.info_array.m_index-1].end_index;
 }
 
 /**
-* \brief writeback processing for store information array
+* \brief processing flush instruction in memory location information array.
+*
+* \param[in] base The base address of the flush.
+* \param[in] size The size of the flush in bytes.
+* \return true if the flush matches any memory location information in the array, otherwise returns false.
 */
 static Bool
-array_process_flush(UWord base, UWord size){
+array_process_flush(UWord base, UWord size)
+{
     struct pmem_st flush_info = {0};
 
     if (LIKELY(pmem.force_flush_align == False))
     {
         flush_info.addr = base;
         flush_info.size = size;
-    }
-    else
-    {
+    } else {
         /* align flushed memory */
         flush_info.addr = base & ~(pmem.flush_align_size - 1);
         flush_info.size = roundup(size, pmem.flush_align_size);
     }
 
-    /* unfortunately lookup doesn't work here, the oset is an avl tree */
-
     Addr flush_max = flush_info.addr + flush_info.size;
     struct pmem_st *being_flushed;
     Bool valid_flush = False;
-    /*================================array=============================*/
-    for(int s_index=0;s_index<=pmem.info_array.m_index;s_index++){
-    /* directly mark this writeback interval */
-    if (flush_max >= pmem.info_array.m_data[s_index].max_addr && pmem.info_array.m_data[s_index].min_addr >= flush_info.addr && pmem.info_array.m_data[s_index].state == NO_FLUSHED)
-    {
-        pmem.info_array.m_data[s_index].state = ALL_FLUSHED;
-        valid_flush = True;
-    }
-        /* directly skip this writeback interval */
-    else if (flush_max < pmem.info_array.m_data[s_index].min_addr || pmem.info_array.m_data[s_index].max_addr < flush_info.addr)
-    {
-        continue;
-    }
-        /* go into this writeback interval and traverse store information one by one */
-    else
-    {
-        for (int i = pmem.info_array.m_data[s_index].start_index; i < pmem.info_array.m_data[s_index].end_index; i++)
-        {
-            being_flushed = pmem.info_array.pmem_stores + i;
-            if (being_flushed->is_delete == True)
-            {
-                being_flushed->state = STST_FLUSHED;
-                continue;
-            }
 
-            if (cmp_pmem_st(&flush_info, being_flushed) != 0)
-                continue;
+    for(int s_index=0; s_index <= pmem.info_array.m_index; s_index++) {
+        if (flush_max >= pmem.info_array.m_data[s_index].max_addr && pmem.info_array.m_data[s_index].min_addr >= flush_info.addr && 
+                pmem.info_array.m_data[s_index].state == NO_FLUSHED) {
 
+            pmem.info_array.m_data[s_index].state = ALL_FLUSHED;
             valid_flush = True;
-            /* check for multiple flushes of stores */
-            if (pmem.info_array.m_data[s_index].state == ALL_FLUSHED || being_flushed->state != STST_DIRTY)
-            {
-                if (pmem.check_flush)
-                {
-                    /* multiple flush of the same store - probably an issue */
-                    struct pmem_st *wrong_flush = VG_(malloc)("pmc.main.cpci.3",
-                                                              sizeof(struct pmem_st));
-                    *wrong_flush = *being_flushed;
-                    wrong_flush->state = STST_FLUSHED;
-                    //   VG_(umsg)("=======pmem_index=%d========\n",wrong_flush->index);
-                    add_warning_event(pmem.redundant_flushes,
-                                      &pmem.redundant_flushes_reg,
-                                      wrong_flush, MAX_FLUSH_ERROR_EVENTS,
-                                      print_redundant_flush_error);
-                }
-                continue;
-            }
+        } else if (flush_max < pmem.info_array.m_data[s_index].min_addr || pmem.info_array.m_data[s_index].max_addr < flush_info.addr) {
+            continue;
+        } else {
+            for (int i = pmem.info_array.m_data[s_index].start_index; i < pmem.info_array.m_data[s_index].end_index; i++) {
+                being_flushed = pmem.info_array.pmem_stores + i;
 
-            being_flushed->state = STST_FLUSHED;
-            pmem.info_array.m_data[s_index].state = PART_FLUSHED;
-            /* store starts before base flush address */
-            if (being_flushed->addr < flush_info.addr)
-            {
-                /* split and reinsert */
-                struct pmem_st *split;
-                UWord old_index= pmem.info_array.m_data[pmem.info_array.m_index].end_index;
-                if (LIKELY(old_index < MAX_ARRAY_NUM))
-                {
-                    split = pmem.info_array.pmem_stores + old_index;
-                   
-                    pmem.info_array.m_data[pmem.info_array.m_index].end_index++;
+                if (being_flushed->is_delete == True) {
+                    being_flushed->state = STST_FLUSHED;
+                    continue;
                 }
-                else
-                {
-                    split = VG_(OSetGen_AllocNode)(pmem.pmem_stores, sizeof(struct pmem_st));
-                }
-                *split = *being_flushed;
-                split->size = flush_info.addr - being_flushed->addr;
-                split->state = STST_DIRTY;
 
-                /* adjust original */
-                being_flushed->addr = flush_info.addr;
-                being_flushed->size -= split->size;
-                if (old_index >= MAX_ARRAY_NUM){
-                add_and_merge_store(split);
-                }
-                /* reset iter */
-            }
+                if (cmp_pmem_st(&flush_info, being_flushed) != 0)
+                    continue;
 
-            /* end of store is behind max flush */
-            if (being_flushed->addr + being_flushed->size > flush_max)
-            {
-                /* split and reinsert */
-                UWord old_index= pmem.info_array.m_data[pmem.info_array.m_index].end_index;
-                struct pmem_st *split;
-                if (LIKELY(old_index < MAX_ARRAY_NUM))
-                {
-                    split = pmem.info_array.pmem_stores + old_index;
-                    pmem.info_array.m_data[pmem.info_array.m_index].end_index++;
+                valid_flush = True;
+                /* check for multiple flushes of stores */
+                if (pmem.info_array.m_data[s_index].state == ALL_FLUSHED || being_flushed->state != STST_DIRTY) {
+                    if (pmem.check_flush) {
+                        /* multiple flush of the same store - probably an issue */
+                        struct pmem_st *wrong_flush = VG_(malloc)("pmc.main.cpci.3",
+                                                                sizeof(struct pmem_st));
+                        *wrong_flush = *being_flushed;
+                        wrong_flush->state = STST_FLUSHED;
+                        add_warning_event(pmem.redundant_flushes,
+                                        &pmem.redundant_flushes_reg,
+                                        wrong_flush, MAX_FLUSH_ERROR_EVENTS,
+                                        print_redundant_flush_error);
+                    }
+                    continue;
                 }
-                else
-                {
-                    split = VG_(OSetGen_AllocNode)(pmem.pmem_stores, sizeof(struct pmem_st));
-                }
-                *split = *being_flushed;
-                split->addr = flush_max;
-                split->size = being_flushed->addr + being_flushed->size - flush_max;
-                split->state = STST_DIRTY;
 
-                /* adjust original */
-                being_flushed->size -= split->size;
-                if (old_index >= MAX_ARRAY_NUM){
+                being_flushed->state = STST_FLUSHED;
+                pmem.info_array.m_data[s_index].state = PART_FLUSHED;
+                /* store starts before base flush address */
+                if (being_flushed->addr < flush_info.addr) {
+                    /* split and reinsert */
+                    struct pmem_st *split;
+                    UWord old_index = pmem.info_array.m_data[pmem.info_array.m_index].end_index;
+
+                    if (LIKELY(old_index < MAX_ARRAY_NUM)) {
+                        split = pmem.info_array.pmem_stores + old_index;
+                        pmem.info_array.m_data[pmem.info_array.m_index].end_index++;
+                    } else {
+                        split = VG_(OSetGen_AllocNode)(pmem.pmem_stores, sizeof(struct pmem_st));
+                    }
+
+                    *split = *being_flushed;
+                    split->size = flush_info.addr - being_flushed->addr;
+                    split->state = STST_DIRTY;
+
+                    /* adjust original */
+                    being_flushed->addr = flush_info.addr;
+                    being_flushed->size -= split->size;
+                    if (old_index >= MAX_ARRAY_NUM) {
                     add_and_merge_store(split);
+                    }
+                    /* reset iter */
                 }
 
+                /* end of store is behind max flush */
+                if (being_flushed->addr + being_flushed->size > flush_max) {
+                    /* split and reinsert */
+                    UWord old_index = pmem.info_array.m_data[pmem.info_array.m_index].end_index;
+                    struct pmem_st *split;
+
+                    if (LIKELY(old_index < MAX_ARRAY_NUM)) {
+                        split = pmem.info_array.pmem_stores + old_index;
+                        pmem.info_array.m_data[pmem.info_array.m_index].end_index++;
+                    } else {
+                        split = VG_(OSetGen_AllocNode)(pmem.pmem_stores, sizeof(struct pmem_st));
+                    }
+
+                    *split = *being_flushed;
+                    split->addr = flush_max;
+                    split->size = being_flushed->addr + being_flushed->size - flush_max;
+                    split->state = STST_DIRTY;
+
+                    /* adjust original */
+                    being_flushed->size -= split->size;
+                    if (old_index >= MAX_ARRAY_NUM) {
+                        add_and_merge_store(split);
+                    }
+
+                }
             }
         }
     }
-}
-    if (pmem.info_array.m_data[pmem.info_array.m_index].state != NO_FLUSHED){
+    if (pmem.info_array.m_data[pmem.info_array.m_index].state != NO_FLUSHED) {
        init_m_data();
     }
- return valid_flush;
+    return valid_flush;
 }
 
 /**
@@ -1566,7 +1585,8 @@ array_process_flush(UWord base, UWord size){
 static void
 do_flush(UWord base, UWord size)
 {
-    Bool array_valid_flush=array_process_flush(base, size);
+    Bool array_valid_flush = array_process_flush(base, size);
+
     struct pmem_st flush_info = {0};
 
     if (LIKELY(pmem.force_flush_align == False)) {
@@ -2281,83 +2301,70 @@ pmc_handle_client_request(ThreadId tid, UWord *arg, UWord *ret )
             temp_info.addr = arg[1];
             temp_info.size = arg[2];
 
-            /* remove regions from store information array*/
+            /* remove regions from memory location information array */
             struct pmem_st *modified_entry = NULL;
             struct pmem_st *region = &temp_info;
             UWord old_index;
-            for(int s_index=0;s_index<=pmem.info_array.m_index;s_index++){
-            if (cmp_with_arr_minandmax(&temp_info,s_index) != -1)
-            {
-                for (int i = pmem.info_array.m_data[s_index].start_index; i < pmem.info_array.m_data[s_index].end_index; i++)
-                {
-                    //VG_(umsg)("remove before=%d\n",VG_(OSetGen_Size)(curr_node->pmem_stores));
-                    modified_entry = pmem.info_array.pmem_stores + i;
-                    if (modified_entry->is_delete == True)
-                        continue;
-                    if (cmp_pmem_st(region, modified_entry) == 0)
-                    {
-                        SizeT region_max_addr = region->addr + region->size;
-                        //struct pmem_st tmp;
-                        SizeT mod_entry_max_addr = modified_entry->addr + modified_entry->size;
-                        if ((modified_entry->addr > region->addr) && (mod_entry_max_addr <
-                                                                    region_max_addr))
-                        {
-                            /* modified entry fully within removed region */
-                            modified_entry->is_delete = True;
-                        }
-                        else if ((modified_entry->addr < region->addr) &&
-                                (mod_entry_max_addr > region_max_addr))
-                        {
-                            /* modified entry is larger than the removed region - slice */
-                            modified_entry->size = region->addr - modified_entry->addr;
+            for (int s_index=0; s_index<=pmem.info_array.m_index; s_index++) {
+                if (cmp_with_arr_minandmax(&temp_info, s_index) != -1) {
+                    for (int i = pmem.info_array.m_data[s_index].start_index; i < pmem.info_array.m_data[s_index].end_index; i++){
+                        //VG_(umsg)("remove before=%d\n",VG_(OSetGen_Size)(curr_node->pmem_stores));
+                        modified_entry = pmem.info_array.pmem_stores + i;
 
-                            //  VG_(OSetGen_Insert)(region_set, modified_entry);
-                            struct pmem_st *new_region;
-                            old_index = pmem.info_array.m_data[pmem.info_array.m_index].end_index;
-                            if (old_index>= MAX_ARRAY_NUM){
-                                new_region = VG_(OSetGen_AllocNode)(pmem.pmem_stores,
-                                                                    sizeof(struct pmem_st));
-                            }                              
-                            else
-                            {
-                                new_region = pmem.info_array.pmem_stores + old_index; 
-                                pmem.info_array.m_data[pmem.info_array.m_index].end_index++;
-                            }
-                            new_region->addr = region_max_addr;
-                            new_region->size = mod_entry_max_addr - new_region->addr;
-                            if (old_index >= MAX_ARRAY_NUM){
-                                add_and_merge_store(new_region);
-                            }
-                        
-                        }
-                        else if ((modified_entry->addr >= region->addr) &&
-                                (mod_entry_max_addr > region_max_addr))
-                        {
-                            /* head overlaps */
-                            modified_entry->size -= region_max_addr - modified_entry->addr;
-                            modified_entry->addr = region_max_addr;
-                            // VG_(OSetGen_Insert)(region_set, modified_entry);
-                        }
-                        else if ((mod_entry_max_addr <= region_max_addr) &&
-                                (region->addr > modified_entry->addr))
-                        {
-                            /* tail overlaps */
-                            modified_entry->size = region->addr - modified_entry->addr;
+                        if (modified_entry->is_delete == True)
+                            continue;
 
-                            //  VG_(OSetGen_Insert)(region_set, modified_entry);
-                        }
-                        else
-                        {
-                            /* exact match */
-                            modified_entry->is_delete = True;
+                        if (cmp_pmem_st(region, modified_entry) == 0) {
+                            SizeT region_max_addr = region->addr + region->size;
+                            //struct pmem_st tmp;
+                            SizeT mod_entry_max_addr = modified_entry->addr + modified_entry->size;
+                            if ((modified_entry->addr > region->addr) && (mod_entry_max_addr <
+                                    region_max_addr)) {
+                                /* modified entry fully within removed region */
+                                modified_entry->is_delete = True;
+                            } else if ((modified_entry->addr < region->addr) &&
+                                    (mod_entry_max_addr > region_max_addr)) {
+                                /* modified entry is larger than the removed region - slice */
+                                modified_entry->size = region->addr - modified_entry->addr;
+
+                                struct pmem_st *new_region;
+                                old_index = pmem.info_array.m_data[pmem.info_array.m_index].end_index;
+
+                                if (old_index >= MAX_ARRAY_NUM) {
+                                    new_region = VG_(OSetGen_AllocNode)(pmem.pmem_stores,
+                                            (SizeT) sizeof(struct pmem_st));
+                                } else {
+                                    new_region = pmem.info_array.pmem_stores + old_index; 
+                                    pmem.info_array.m_data[pmem.info_array.m_index].end_index++;
+                                }
+
+                                new_region->addr = region_max_addr;
+                                new_region->size = mod_entry_max_addr - new_region->addr;
+                                
+                                if (old_index >= MAX_ARRAY_NUM) {
+                                    add_and_merge_store(new_region);
+                                }
+                            
+                            } else if ((modified_entry->addr >= region->addr) &&
+                                    (mod_entry_max_addr > region_max_addr)) {
+                                /* head overlaps */
+                                modified_entry->size -= region_max_addr - modified_entry->addr;
+                                modified_entry->addr = region_max_addr;
+                                // VG_(OSetGen_Insert)(region_set, modified_entry);
+                            } else if ((mod_entry_max_addr <= region_max_addr) &&
+                                    (region->addr > modified_entry->addr)) {
+                                /* tail overlaps */
+                                modified_entry->size = region->addr - modified_entry->addr;
+                            } else {
+                                /* exact match */
+                                modified_entry->is_delete = True;
+                            }
                         }
                     }
                 }
             }
-        }
 
-        /* remove regions from pmem_stores Oset*/
-
+            /* remove regions from pmem_stores Oset*/
             remove_region(&temp_info, pmem.pmem_stores);
             break;
         }
@@ -2496,13 +2503,13 @@ static void
 pmc_post_clo_init(void)
 {
     pmem.info_array.pmem_stores = VG_(malloc)("pmc.main.cpci.7",
-                                         MAX_ARRAY_NUM * sizeof(struct pmem_st));
+            MAX_ARRAY_NUM * sizeof(struct pmem_st));
     pmem.info_array.m_index = 0;
     pmem.info_array.m_data = VG_(malloc)("pmc.main.cpci.8",
-                                         MAX_ARRAY_NUM * sizeof(struct arr_md));
+            MAX_ARRAY_NUM * sizeof(struct arr_md));
     pmem.info_array.m_data[0].min_addr = pmem.info_array.m_data[0].max_addr = -1;
     pmem.info_array.m_data[0].state = NO_FLUSHED;
-    pmem.info_array.m_data[0].end_index=pmem.info_array.m_data[0].start_index=0;
+    pmem.info_array.m_data[0].end_index = pmem.info_array.m_data[0].start_index = 0;
 
     pmem.pmem_stores = VG_(OSetGen_Create)(/*keyOff*/0, cmp_pmem_st,
             VG_(malloc), "pmc.main.cpci.1", VG_(free));

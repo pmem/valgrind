@@ -21,8 +21,7 @@ struct arr_md {
     Addr min_addr;
     Addr max_addr;
     UWord start_index;
-    enum flushed_state
-    {
+    enum flushed_state {
         NO_FLUSHED,
         PART_FLUSHED,
         ALL_FLUSHED,
@@ -32,7 +31,6 @@ struct arr_md {
 
 /** Single store to memory. */
 struct pmem_st {
-    Bool is_delete;
     Addr addr;
     ULong size;
     ULong block_num;
@@ -43,6 +41,7 @@ struct pmem_st {
         STST_DIRTY,
         STST_FLUSHED,
     } state;
+    Bool is_delete;
 };
 
 /*------------------------------------------------------------*/
