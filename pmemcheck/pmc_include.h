@@ -41,7 +41,6 @@ struct pmem_st {
         STST_DIRTY,
         STST_FLUSHED,
     } state;
-    Bool is_delete;
 };
 
 /*------------------------------------------------------------*/
