@@ -341,14 +341,15 @@ print_store_stats(void)
 {
 /* print store states of the array */
     struct pmem_st *tmp;
-    for (int s_index=0; s_index<=pInfo.info_array.m_index; s_index++) {
-        for (int i= pInfo.info_array.m_data[s_index].start_index; i< pInfo.info_array.m_data[s_index].end_index; i++) {
-            tmp = pInfo.info_array.pmem_stores + i;
+    struct pmem_stores_array *info_arr = &pInfo.info_array;
+    for (int s_index=0; s_index <= info_arr->m_index; s_index++) {
+        for (int i= info_arr->m_data[s_index].start_index; i< info_arr->m_data[s_index].end_index; i++) {
+            tmp = info_arr->pmem_stores + i;
 
             if (tmp->size == 0)
                 continue;
 
-            if (pInfo.info_array.m_data[s_index].state == ALL_FLUSHED)
+            if (info_arr->m_data[s_index].state == ALL_FLUSHED)
                 tmp->state = STST_FLUSHED;
 
             struct pmem_st *new = VG_(OSetGen_AllocNode)(pInfo.pmem_stores, sizeof(struct pmem_st));
@@ -1341,7 +1342,6 @@ remove_array_info(struct pmem_st *region)
     for (int s_index=0; s_index<=pInfo.info_array.m_index; s_index++) {
         if (cmp_with_arr_minandmax(region, s_index) != -1) {
             for (int i = pInfo.info_array.m_data[s_index].start_index; i < pInfo.info_array.m_data[s_index].end_index; i++){
-                //VG_(umsg)("remove before=%d\n",VG_(OSetGen_Size)(curr_node->pmem_stores));
                 modified_entry = pInfo.info_array.pmem_stores + i;
 
                 if (modified_entry->size == 0)
@@ -1349,7 +1349,6 @@ remove_array_info(struct pmem_st *region)
 
                 if (cmp_pmem_st(region, modified_entry) == 0) {
                     SizeT region_max_addr = region->addr + region->size;
-                    //struct pmem_st tmp;
                     SizeT mod_entry_max_addr = modified_entry->addr + modified_entry->size;
                     if ((modified_entry->addr > region->addr) && (mod_entry_max_addr <
                             region_max_addr)) {
@@ -1374,7 +1373,6 @@ remove_array_info(struct pmem_st *region)
                         /* head overlaps */
                         modified_entry->size -= region_max_addr - modified_entry->addr;
                         modified_entry->addr = region_max_addr;
-                        // VG_(OSetGen_Insert)(region_set, modified_entry);
                     } else if ((mod_entry_max_addr <= region_max_addr) &&
                             (region->addr > modified_entry->addr)) {
                         /* tail overlaps */
@@ -1463,15 +1461,16 @@ array_process_flush(UWord base, UWord size)
     Bool valid_flush = False;
 
     for(int s_index=0; s_index <= pInfo.info_array.m_index; s_index++) {
-        if (flush_max >= pInfo.info_array.m_data[s_index].max_addr && pInfo.info_array.m_data[s_index].min_addr >= flush_info.addr && 
-                pInfo.info_array.m_data[s_index].state == NO_FLUSHED) {
+        struct arr_md *m_data = pInfo.info_array.m_data;
+        if (flush_max >= m_data[s_index].max_addr && m_data[s_index].min_addr >= flush_info.addr && 
+                m_data[s_index].state == NO_FLUSHED) {
 
-            pInfo.info_array.m_data[s_index].state = ALL_FLUSHED;
+            m_data[s_index].state = ALL_FLUSHED;
             valid_flush = True;
-        } else if (flush_max < pInfo.info_array.m_data[s_index].min_addr || pInfo.info_array.m_data[s_index].max_addr < flush_info.addr) {
+        } else if (flush_max < m_data[s_index].min_addr || m_data[s_index].max_addr < flush_info.addr) {
             continue;
         } else {
-            for (int i = pInfo.info_array.m_data[s_index].start_index; i < pInfo.info_array.m_data[s_index].end_index; i++) {
+            for (int i = m_data[s_index].start_index; i < m_data[s_index].end_index; i++) {
                 being_flushed = pInfo.info_array.pmem_stores + i;
 
                 if (being_flushed->size == 0) {
@@ -1484,7 +1483,7 @@ array_process_flush(UWord base, UWord size)
 
                 valid_flush = True;
                 /* check for multiple flushes of stores */
-                if (pInfo.info_array.m_data[s_index].state == ALL_FLUSHED || being_flushed->state != STST_DIRTY) {
+                if (m_data[s_index].state == ALL_FLUSHED || being_flushed->state != STST_DIRTY) {
                     if (pmem.check_flush) {
                         /* multiple flush of the same store - probably an issue */
                         struct pmem_st *wrong_flush = VG_(malloc)("pmc.main.cpci.3",
@@ -1500,7 +1499,7 @@ array_process_flush(UWord base, UWord size)
                 }
 
                 being_flushed->state = STST_FLUSHED;
-                pInfo.info_array.m_data[s_index].state = PART_FLUSHED;
+                m_data[s_index].state = PART_FLUSHED;
                 /* store starts before base flush address */
                 if (being_flushed->addr < flush_info.addr) {
                     /* split and reinsert */
