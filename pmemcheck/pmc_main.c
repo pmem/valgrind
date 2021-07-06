@@ -898,11 +898,10 @@ array_handle_with_mult_stores(struct pmem_st *store)
     for(int s_index=0; s_index <= pInfo.info_array.m_index; s_index++) {
         if (cmp_with_arr_minandmax(store, s_index) != -1) {
             for (int i = pInfo.info_array.m_data[s_index].start_index; i < pInfo.info_array.m_data[s_index].end_index; i++) {
-                if (LIKELY(pInfo.info_array.pmem_stores[i].size != 0)) {
-                    existing = pInfo.info_array.pmem_stores + i;
-                } else {
+                if (UNLIKELY(pInfo.info_array.pmem_stores[i].size == 0)) {
                     continue;
                 }
+                existing = pInfo.info_array.pmem_stores + i;
 
                 if (cmp_pmem_st(existing, store) == 0) {
                     if ((store->block_num - existing->block_num) < pmem.store_sb_indiff
@@ -1309,8 +1308,9 @@ array_process_fence(void)
 {
     struct pmem_st *being_fenced = NULL;
     for(int s_index=0; s_index <= pInfo.info_array.m_index; s_index++) {
-        if (pInfo.info_array.m_data[s_index].state != ALL_FLUSHED) {      
-            for (int i = pInfo.info_array.m_data[s_index].start_index; i < pInfo.info_array.m_data[s_index].end_index; i++) {
+        struct arr_md *m_data = pInfo.info_array.m_data + s_index;
+        if (m_data->state != ALL_FLUSHED) {      
+            for (int i = m_data->start_index; i < m_data->end_index; i++) {
                 being_fenced = pInfo.info_array.pmem_stores + i;
 
                 if (being_fenced->state == STST_FLUSHED || being_fenced->size == 0) {
