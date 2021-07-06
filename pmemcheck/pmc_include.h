@@ -15,6 +15,24 @@
 
 #ifndef PMC_INCLUDE_H
 #define PMC_INCLUDE_H
+/*
+ * Metadata structure for store information array.
+ * Start index and end index point to elements in pmem_stores.
+ * The metadata stores information (min_addr, max_addr and flushed_state) for 
+ * elements between start index and end index */
+struct arr_md {
+
+    UWord start_index; 
+    UWord end_index; 
+    Addr min_addr;
+    Addr max_addr;
+    enum flushed_state {
+        NO_FLUSHED,
+        PART_FLUSHED,
+        ALL_FLUSHED,
+    } state;
+};
+
 
 /** Single store to memory. */
 struct pmem_st {
@@ -33,7 +51,6 @@ struct pmem_st {
 /*------------------------------------------------------------*/
 /*--- Common functions                                     ---*/
 /*------------------------------------------------------------*/
-
 /* Check if the given region is in the set. */
 UWord is_in_mapping_set(const struct pmem_st *region, OSet *region_set);
 
