@@ -1,13 +1,14 @@
-# on trusty:
-#/usr/bin/ld: cdebug_zlib-cdebug.o(.debug_info+0x53): reloc against `.debug_str': error 2
-#/usr/bin/ld: final link failed: Nonrepresentable section on output
-#clang-5.0: error: linker command failed with exit code 1 (use -v to see invocation)
-dist: precise
+dist: focal
 
 language: c
 sudo: false
 compiler:
   - gcc
   - clang
-script: ./autogen.sh && ./configure && make && make check &&
-        perl tests/vg_regtest pmemcheck
+
+before_install:
+  - sudo apt update && sudo apt install -y libc6-dbg
+
+script:
+  - ./autogen.sh && ./configure && make && make check
+  - perl tests/vg_regtest pmemcheck
