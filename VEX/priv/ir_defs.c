@@ -2784,7 +2784,7 @@ IRStmt* IRStmt_Exit ( IRExpr* guard, IRJumpKind jk, IRConst* dst,
    return s;
 }
 IRStmt* IRStmt_Flush ( IRExpr* addr, IRFlushKind fk ) {
-   IRStmt* s           = LibVEX_Alloc(sizeof(IRStmt));
+   IRStmt* s           = LibVEX_Alloc_inline(sizeof(IRStmt));
    s->tag              = Ist_Flush;
    s->Ist.Flush.addr   = addr;
    s->Ist.Flush.fk     = fk;
