@@ -492,10 +492,7 @@ static void flatten_Stmt ( IRSB* bb, IRStmt* st )
          addStmtToIRSB(bb, IRStmt_Dirty(d2));
          break;
       case Ist_NoOp:
-         break;
       case Ist_MBE:
-         addStmtToIRSB(bb, st);
-         break;
       case Ist_IMark:
          addStmtToIRSB(bb, st);
          break;
