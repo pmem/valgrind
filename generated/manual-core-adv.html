@@ -1,13 +1,13 @@
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>3. Using and understanding the Valgrind core: Advanced Topics</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>3. Using and understanding the Valgrind core: Advanced Topics</title>
 <link rel="stylesheet" type="text/css" href="vg_basic.css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="Valgrind Documentation">
 <link rel="up" href="manual.html" title="Valgrind User Manual">
-<link rel="prev" href="manual-core.html" title="2. Using and understanding the Valgrind core">
-<link rel="next" href="mc-manual.html" title="4. Memcheck: a memory error detector">
+<link rel="prev" href="manual-core.html" title="2. Using and understanding the Valgrind core">
+<link rel="next" href="mc-manual.html" title="4. Memcheck: a memory error detector">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
 <div><table class="nav" width="100%" cellspacing="3" cellpadding="3" border="0" summary="Navigation header"><tr>
@@ -19,7 +19,7 @@
 </tr></table></div>
 <div class="chapter">
 <div class="titlepage"><div><div><h1 class="title">
-<a name="manual-core-adv"></a>3. Using and understanding the Valgrind core: Advanced Topics</h1></div></div></div>
+<a name="manual-core-adv"></a>3. Using and understanding the Valgrind core: Advanced Topics</h1></div></div></div>
 <div class="toc">
 <p><b>Table of Contents</b></p>
 <dl class="toc">
@@ -61,7 +61,7 @@ ways.  The subjects covered are:</p>
 </ul></div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="manual-core-adv.clientreq"></a>3.1. The Client Request mechanism</h2></div></div></div>
+<a name="manual-core-adv.clientreq"></a>3.1. The Client Request mechanism</h2></div></div></div>
 <p>Valgrind has a trapdoor mechanism via which the client
 program can pass all manner of requests and queries to Valgrind
 and the current tool.  Internally, this is used extensively 
@@ -176,7 +176,7 @@ tool-specific macros).</p>
     <code class="computeroutput">VALGRIND_MALLOCLIKE_BLOCK</code> and
     <code class="computeroutput">VALGRIND_FREELIKE_BLOCK</code>
     but are tailored towards code that uses memory pools.  See 
-    <a class="xref" href="mc-manual.html#mc-manual.mempools" title="4.8. Memory Pools: describing and working with custom allocators">Memory Pools</a> for a detailed description.</p></dd>
+    <a class="xref" href="mc-manual.html#mc-manual.mempools" title="4.8. Memory Pools: describing and working with custom allocators">Memory Pools</a> for a detailed description.</p></dd>
 <dt><span class="term"><span class="command"><strong><code class="computeroutput">VALGRIND_NON_SIMD_CALL[0123]</code>:</strong></span></span></dt>
 <dd>
 <p>Executes a function in the client program on the
@@ -217,6 +217,10 @@ tool-specific macros).</p>
     client request to have better compile time verifications of the
     arguments.
     </p></dd>
+<dt><span class="term"><span class="command"><strong><code class="computeroutput">VALGRIND_CLO_CHANGE(option)</code>:</strong></span></span></dt>
+<dd><p>Changes the value of a dynamically changeable option (a string).
+       See <a class="xref" href="manual-core.html#manual-core.dynopts" title="2.7.8. Dynamically Changing Options">Dynamically Change Options</a>.
+    </p></dd>
 <dt><span class="term"><span class="command"><strong><code class="computeroutput">VALGRIND_STACK_REGISTER(start, end)</code>:</strong></span></span></dt>
 <dd>
 <p>Registers a new stack.  Informs Valgrind that the memory range
@@ -254,7 +258,7 @@ tool-specific macros).</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="manual-core-adv.gdbserver"></a>3.2. Debugging your program using Valgrind gdbserver and GDB</h2></div></div></div>
+<a name="manual-core-adv.gdbserver"></a>3.2. Debugging your program using Valgrind gdbserver and GDB</h2></div></div></div>
 <p>A program running under Valgrind is not executed directly by the
 CPU.  Instead it runs on a synthetic CPU provided by Valgrind.  This is
 why a debugger cannot debug your program when it runs on Valgrind.
@@ -268,7 +272,7 @@ under Memcheck and on-demand Massif snapshot production.
 </p>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="manual-core-adv.gdbserver-simple"></a>3.2.1. Quick Start: debugging in 3 steps</h3></div></div></div>
+<a name="manual-core-adv.gdbserver-simple"></a>3.2.1. Quick Start: debugging in 3 steps</h3></div></div></div>
 <p>The simplest way to get started is to run Valgrind with the
 flag <code class="option">--vgdb-error=0</code>.  Then follow the on-screen
 directions, which give you the precise commands needed to start GDB
@@ -302,7 +306,7 @@ as this is the default value.
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="manual-core-adv.gdbserver-concept"></a>3.2.2. Valgrind gdbserver overall organisation</h3></div></div></div>
+<a name="manual-core-adv.gdbserver-concept"></a>3.2.2. Valgrind gdbserver overall organisation</h3></div></div></div>
 <p>The GNU GDB debugger is typically used to debug a process
 running on the same machine.  In this mode, GDB uses system calls to
 control and query the program being debugged.  This works well, but
@@ -328,7 +332,7 @@ and gives the results back to GDB.
 <p>GDB can use various kinds of channels (TCP/IP, serial line, etc)
 to communicate with the gdbserver.  In the case of Valgrind's
 gdbserver, communication is done via a pipe and a small helper program
-called <a class="xref" href="manual-core-adv.html#manual-core-adv.vgdb" title="3.2.9. vgdb command line options">vgdb</a>, which acts as an
+called <a class="xref" href="manual-core-adv.html#manual-core-adv.vgdb" title="3.2.9. vgdb command line options">vgdb</a>, which acts as an
 intermediary.  If no GDB is in use, vgdb can also be
 used to send monitor commands to the Valgrind gdbserver from a shell
 command line.
@@ -336,7 +340,7 @@ command line.
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="manual-core-adv.gdbserver-gdb"></a>3.2.3. Connecting GDB to a Valgrind gdbserver</h3></div></div></div>
+<a name="manual-core-adv.gdbserver-gdb"></a>3.2.3. Connecting GDB to a Valgrind gdbserver</h3></div></div></div>
 <p>To debug a program "<code class="filename">prog</code>" running under
 Valgrind, you must ensure that the Valgrind gdbserver is activated by
 specifying either <code class="option">--vgdb=yes</code>
@@ -355,7 +359,7 @@ and indicates it is waiting for a connection from a GDB:</p>
 <pre class="programlisting">
 ==2418== Memcheck, a memory error detector
 ==2418== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
-==2418== Using Valgrind-3.13.0.SVN and LibVEX; rerun with -h for copyright info
+==2418== Using Valgrind-3.14.0.GIT and LibVEX; rerun with -h for copyright info
 ==2418== Command: ./prog
 ==2418== 
 ==2418== (action at startup) vgdb me ... 
@@ -428,7 +432,7 @@ description of GDB's functionality.
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="manual-core-adv.gdbserver-gdb-android"></a>3.2.4. Connecting to an Android gdbserver</h3></div></div></div>
+<a name="manual-core-adv.gdbserver-gdb-android"></a>3.2.4. Connecting to an Android gdbserver</h3></div></div></div>
 <p> When developping applications for Android, you will typically use
 a development system (on which the Android NDK is installed) to compile your
 application. An Android target system or emulator will be used to run
@@ -501,23 +505,23 @@ works across all devices and scenarios.
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="manual-core-adv.gdbserver-commandhandling"></a>3.2.5. Monitor command handling by the Valgrind gdbserver</h3></div></div></div>
+<a name="manual-core-adv.gdbserver-commandhandling"></a>3.2.5. Monitor command handling by the Valgrind gdbserver</h3></div></div></div>
 <p> The Valgrind gdbserver provides additional Valgrind-specific
 functionality via "monitor commands".  Such monitor commands can be
 sent from the GDB command line or from the shell command line or
 requested by the client program using the VALGRIND_MONITOR_COMMAND
 client request.  See
-<a class="xref" href="manual-core-adv.html#manual-core-adv.valgrind-monitor-commands" title="3.2.10. Valgrind monitor commands">Valgrind monitor commands</a> for the
+<a class="xref" href="manual-core-adv.html#manual-core-adv.valgrind-monitor-commands" title="3.2.10. Valgrind monitor commands">Valgrind monitor commands</a> for the
 list of the Valgrind core monitor commands available regardless of the
 Valgrind tool selected.
 </p>
 <p>The following tools provide tool-specific monitor commands:
   </p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
-<li class="listitem"><p><a class="xref" href="mc-manual.html#mc-manual.monitor-commands" title="4.6. Memcheck Monitor Commands">Memcheck Monitor Commands</a></p></li>
-<li class="listitem"><p><a class="xref" href="cl-manual.html#cl-manual.monitor-commands" title="6.4. Callgrind Monitor Commands">Callgrind Monitor Commands</a></p></li>
-<li class="listitem"><p><a class="xref" href="ms-manual.html#ms-manual.monitor-commands" title="9.4. Massif Monitor Commands">Massif Monitor Commands</a></p></li>
-<li class="listitem"><p><a class="xref" href="hg-manual.html#hg-manual.monitor-commands" title="7.7. Helgrind Monitor Commands">Helgrind Monitor Commands</a></p></li>
+<li class="listitem"><p><a class="xref" href="mc-manual.html#mc-manual.monitor-commands" title="4.6. Memcheck Monitor Commands">Memcheck Monitor Commands</a></p></li>
+<li class="listitem"><p><a class="xref" href="cl-manual.html#cl-manual.monitor-commands" title="6.4. Callgrind Monitor Commands">Callgrind Monitor Commands</a></p></li>
+<li class="listitem"><p><a class="xref" href="ms-manual.html#ms-manual.monitor-commands" title="9.5. Massif Monitor Commands">Massif Monitor Commands</a></p></li>
+<li class="listitem"><p><a class="xref" href="hg-manual.html#hg-manual.monitor-commands" title="7.7. Helgrind Monitor Commands">Helgrind Monitor Commands</a></p></li>
 </ul></div>
 <p>
 </p>
@@ -595,11 +599,22 @@ vgdb --pid=3145 l f r a
 execution of the program after a standalone invocation of
 vgdb.  Monitor commands sent from GDB do not cause the program to
 continue: the program execution is controlled explicitly using GDB
-commands such as "continue" or "next".</p>
+  commands such as "continue" or "next".</p>
+<p>Many monitor commands (e.g. v.info location, memcheck who_points_at, ...) require an address
+  argument and an optional length: <code class="varname">&lt;addr&gt; [&lt;len&gt;]</code>.
+  The arguments can also be provided by using a 'C array like syntax' by providing the address
+  followed by the length between square brackets.</p>
+<p>For example, the following two monitor commands provide the same information:</p>
+<pre class="programlisting">
+(gdb) mo xb 0x804a2f0 10
+...
+(gdb) mo xb 0x804a2f0[10]
+...
+</pre>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="manual-core-adv.gdbserver-threads"></a>3.2.6. Valgrind gdbserver thread information</h3></div></div></div>
+<a name="manual-core-adv.gdbserver-threads"></a>3.2.6. Valgrind gdbserver thread information</h3></div></div></div>
 <p>Valgrind's gdbserver enriches the output of the
 GDB <code class="computeroutput">info threads</code> command
 with Valgrind-specific information.
@@ -617,7 +632,7 @@ the Valgrind scheduler thread state:</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="manual-core-adv.gdbserver-shadowregisters"></a>3.2.7. Examining and modifying Valgrind shadow registers</h3></div></div></div>
+<a name="manual-core-adv.gdbserver-shadowregisters"></a>3.2.7. Examining and modifying Valgrind shadow registers</h3></div></div></div>
 <p> When the option <code class="option">--vgdb-shadow-registers=yes</code> is
 given, the Valgrind gdbserver will let GDB examine and/or modify
 Valgrind's shadow registers.  GDB version 7.1 or later is needed for this
@@ -663,7 +678,7 @@ however know that the shadow half registers have to be shown combined.
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="manual-core-adv.gdbserver-limitations"></a>3.2.8. Limitations of the Valgrind gdbserver</h3></div></div></div>
+<a name="manual-core-adv.gdbserver-limitations"></a>3.2.8. Limitations of the Valgrind gdbserver</h3></div></div></div>
 <p>Debugging with the Valgrind gdbserver is very similar to native
 debugging.  Valgrind's gdbserver implementation is quite
 complete, and so provides most of the GDB debugging functionality.  There
@@ -721,15 +736,15 @@ are however some limitations and peculiarities:</p>
      impact for memcheck is given for each option).
        </p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: circle; ">
-<li class="listitem">
-<code class="option">--vex-iropt-register-updates=allregs-at-mem-access</code> (+10%)
+<li class="listitem"><p>
+           <code class="option">--vex-iropt-register-updates=allregs-at-mem-access</code> (+10%)
            ensures that all registers and flags are up to date at each memory
            access.
-         </li>
-<li class="listitem">
-<code class="option">--vex-iropt-register-updates=allregs-at-each-insn</code> (+25%)
+         </p></li>
+<li class="listitem"><p>
+           <code class="option">--vex-iropt-register-updates=allregs-at-each-insn</code> (+25%)
            ensures that all registers and flags are up to date at each instruction.
-         </li>
+         </p></li>
 </ul></div>
 <p>
        Note that <code class="option">--vgdb=full</code> (+500%, see above
@@ -980,7 +995,7 @@ $5 = 36
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="manual-core-adv.vgdb"></a>3.2.9. vgdb command line options</h3></div></div></div>
+<a name="manual-core-adv.vgdb"></a>3.2.9. vgdb command line options</h3></div></div></div>
 <p> Usage: <code class="computeroutput">vgdb [OPTION]... [[-c] COMMAND]...</code></p>
 <p> vgdb ("Valgrind to GDB") is a small program that is used as an
 intermediary between Valgrind and GDB or a shell.
@@ -1097,6 +1112,10 @@ vgdb v.set log_output -c leak_check any
 <dd><p>Instructs a standalone vgdb to report
     the list of the Valgrind gdbserver processes running and then
     exit.</p></dd>
+<dt><span class="term"><code class="option">-T</code></span></dt>
+<dd><p>Instructs vgdb to add timestamps to vgdb
+    information messages.
+    </p></dd>
 <dt><span class="term"><code class="option">-D</code></span></dt>
 <dd><p>Instructs a standalone vgdb to show the
     state of the shared memory used by the Valgrind gdbserver.  vgdb
@@ -1113,16 +1132,16 @@ vgdb v.set log_output -c leak_check any
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="manual-core-adv.valgrind-monitor-commands"></a>3.2.10. Valgrind monitor commands</h3></div></div></div>
+<a name="manual-core-adv.valgrind-monitor-commands"></a>3.2.10. Valgrind monitor commands</h3></div></div></div>
 <p>This section describes the Valgrind monitor commands, available
 regardless of the Valgrind tool selected. For the tool specific
-commands, refer to <a class="xref" href="mc-manual.html#mc-manual.monitor-commands" title="4.6. Memcheck Monitor Commands">Memcheck Monitor Commands</a>,
-<a class="xref" href="hg-manual.html#hg-manual.monitor-commands" title="7.7. Helgrind Monitor Commands">Helgrind Monitor Commands</a>,
-<a class="xref" href="cl-manual.html#cl-manual.monitor-commands" title="6.4. Callgrind Monitor Commands">Callgrind Monitor Commands</a> and
-<a class="xref" href="ms-manual.html#ms-manual.monitor-commands" title="9.4. Massif Monitor Commands">Massif Monitor Commands</a>. </p>
+commands, refer to <a class="xref" href="mc-manual.html#mc-manual.monitor-commands" title="4.6. Memcheck Monitor Commands">Memcheck Monitor Commands</a>,
+<a class="xref" href="hg-manual.html#hg-manual.monitor-commands" title="7.7. Helgrind Monitor Commands">Helgrind Monitor Commands</a>,
+<a class="xref" href="cl-manual.html#cl-manual.monitor-commands" title="6.4. Callgrind Monitor Commands">Callgrind Monitor Commands</a> and
+<a class="xref" href="ms-manual.html#ms-manual.monitor-commands" title="9.5. Massif Monitor Commands">Massif Monitor Commands</a>. </p>
 <p> The monitor commands can be sent either from a shell command line, by using a
 standalone vgdb, or from GDB, by using GDB's "monitor"
-command (see <a class="xref" href="manual-core-adv.html#manual-core-adv.gdbserver-commandhandling" title="3.2.5. Monitor command handling by the Valgrind gdbserver">Monitor command handling by the Valgrind gdbserver</a>).
+command (see <a class="xref" href="manual-core-adv.html#manual-core-adv.gdbserver-commandhandling" title="3.2.5. Monitor command handling by the Valgrind gdbserver">Monitor command handling by the Valgrind gdbserver</a>).
 They can also be launched by the client program, using the VALGRIND_MONITOR_COMMAND
 client request.
 </p>
@@ -1172,8 +1191,17 @@ client request.
     </p></li>
 <li class="listitem"><p><code class="varname">v.info open_fds</code> shows the list of open file
     descriptors and details related to the file descriptor.
-    This only works if <code class="option">--track-fds=yes</code>
-    was given at Valgrind startup.</p></li>
+    This only works if <code class="option">--track-fds=yes</code> or
+    <code class="option">--track-fds=all</code> (to include
+    <code class="computeroutput">stdin</code>,
+    <code class="computeroutput">stdout</code> and
+    <code class="computeroutput">stderr</code>) was given at Valgrindr
+    startup.</p></li>
+<li class="listitem"><p><code class="varname">v.clo &lt;clo_option&gt;...</code> changes one or more
+        dynamic command line options. If no clo_option is given, lists the
+        dynamically changeable options. See
+        <a class="xref" href="manual-core.html#manual-core.dynopts" title="2.7.8. Dynamically Changing Options">Dynamically Change Options</a>.
+      </p></li>
 <li class="listitem">
 <p><code class="varname">v.set {gdb_output | log_output |
     mixed_output}</code> allows redirection of the Valgrind output
@@ -1211,8 +1239,8 @@ client request.
     command line, then set a few breakpoints, set the vgdb-error value
     to a huge value and continue execution.</p></li>
 <li class="listitem"><p><code class="varname">xtmemory [&lt;filename&gt; default xtmemory.kcg.%p.%n]</code>
-      requests the tool to produce an xtree heap memory report.
-      See <a class="xref" href="manual-core.html#manual-core.xtree" title="2.9. Execution Trees">Execution Trees</a> for
+      requests the tool (Memcheck, Massif, Helgrind) to produce an xtree heap memory report. 
+      See <a class="xref" href="manual-core.html#manual-core.xtree" title="2.10. Execution Trees">Execution Trees</a> for
       a detailed explanation about execution trees. </p></li>
 </ul></div>
 <p>The following Valgrind monitor commands are useful for
@@ -1317,8 +1345,7 @@ $3 = {lwpid = 0x4688, threadgroup = 0x4688, parent = 0x0,
 (gdb) p vex_control
 $5 = {iropt_verbosity = 0, iropt_level = 2, 
   iropt_register_updates = VexRegUpdUnwindregsAtMemAccess, 
-  iropt_unroll_thresh = 120, guest_max_insns = 60, guest_chase_thresh = 10, 
-  guest_chase_cond = 0 '\000'}
+  iropt_unroll_thresh = 120, guest_max_insns = 60, guest_chase_thresh = 10}
 (gdb) 
 </pre>
 </li>
@@ -1349,7 +1376,7 @@ $5 = {iropt_verbosity = 0, iropt_level = 2,
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="manual-core-adv.wrapping"></a>3.3. Function wrapping</h2></div></div></div>
+<a name="manual-core-adv.wrapping"></a>3.3. Function wrapping</h2></div></div></div>
 <p>
 Valgrind allows calls to some specified functions to be intercepted and
 rerouted to a different, user-supplied function.  This can do whatever it
@@ -1367,7 +1394,7 @@ requests in the wrapper functions, although the exact mechanism may vary.
 </p>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="manual-core-adv.wrapping.example"></a>3.3.1. A Simple Example</h3></div></div></div>
+<a name="manual-core-adv.wrapping.example"></a>3.3.1. A Simple Example</h3></div></div></div>
 <p>Supposing we want to wrap some function</p>
 <pre class="programlisting">
 int foo ( int x, int y ) { return x + y; }</pre>
@@ -1432,7 +1459,7 @@ wrapper.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="manual-core-adv.wrapping.specs"></a>3.3.2. Wrapping Specifications</h3></div></div></div>
+<a name="manual-core-adv.wrapping.specs"></a>3.3.2. Wrapping Specifications</h3></div></div></div>
 <p>This scheme has the advantage of being self-contained.  A library of
 wrappers can be compiled to object code in the normal way, and does
 not rely on an external script telling Valgrind which wrappers pertain
@@ -1505,7 +1532,7 @@ an object <code class="computeroutput">libfoo.so</code> using the command
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="manual-core-adv.wrapping.semantics"></a>3.3.3. Wrapping Semantics</h3></div></div></div>
+<a name="manual-core-adv.wrapping.semantics"></a>3.3.3. Wrapping Semantics</h3></div></div></div>
 <p>The ability for a wrapper to replace an infinite family of functions
 is powerful but brings complications in situations where ELF objects
 appear and disappear (are dlopen'd and dlclose'd) on the fly.
@@ -1540,7 +1567,7 @@ will honour only the first one.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="manual-core-adv.wrapping.debugging"></a>3.3.4. Debugging</h3></div></div></div>
+<a name="manual-core-adv.wrapping.debugging"></a>3.3.4. Debugging</h3></div></div></div>
 <p>Figuring out what's going on given the dynamic nature of wrapping
 can be difficult.  The 
 <code class="option">--trace-redir=yes</code> option makes 
@@ -1593,7 +1620,7 @@ wraps are printed using <code class="computeroutput">W-&gt;</code>.
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="manual-core-adv.wrapping.limitations-cf"></a>3.3.5. Limitations - control flow</h3></div></div></div>
+<a name="manual-core-adv.wrapping.limitations-cf"></a>3.3.5. Limitations - control flow</h3></div></div></div>
 <p>For the most part, the function wrapping implementation is robust.
 The only important caveat is: in a wrapper, get hold of
 the <code class="computeroutput">OrigFn</code> information using 
@@ -1626,7 +1653,7 @@ cooperation.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="manual-core-adv.wrapping.limitations-sigs"></a>3.3.6. Limitations - original function signatures</h3></div></div></div>
+<a name="manual-core-adv.wrapping.limitations-sigs"></a>3.3.6. Limitations - original function signatures</h3></div></div></div>
 <p>As shown in the above example, to call the original you must use a
 macro of the form <code class="computeroutput">CALL_FN_*</code>.  
 For technical reasons it is impossible
@@ -1674,7 +1701,7 @@ process.</p>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
-<a name="manual-core-adv.wrapping.examples"></a>3.3.7. Examples</h3></div></div></div>
+<a name="manual-core-adv.wrapping.examples"></a>3.3.7. Examples</h3></div></div></div>
 <p>In the source tree, 
 <code class="filename">memcheck/tests/wrap[1-8].c</code> provide a series of
 examples, ranging from very simple to quite advanced.</p>
@@ -1688,9 +1715,9 @@ almost 300 different wrappers.</p>
 <br><table class="nav" width="100%" cellspacing="3" cellpadding="2" border="0" summary="Navigation footer">
 <tr>
 <td rowspan="2" width="40%" align="left">
-<a accesskey="p" href="manual-core.html">&lt;&lt; 2. Using and understanding the Valgrind core</a> </td>
+<a accesskey="p" href="manual-core.html">&lt;&lt; 2. Using and understanding the Valgrind core</a> </td>
 <td width="20%" align="center"><a accesskey="u" href="manual.html">Up</a></td>
-<td rowspan="2" width="40%" align="right"> <a accesskey="n" href="mc-manual.html">4. Memcheck: a memory error detector &gt;&gt;</a>
+<td rowspan="2" width="40%" align="right"> <a accesskey="n" href="mc-manual.html">4. Memcheck: a memory error detector &gt;&gt;</a>
 </td>
 </tr>
 <tr><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td></tr>

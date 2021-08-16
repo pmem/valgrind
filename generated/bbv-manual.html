@@ -1,36 +1,36 @@
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>12. BBV: an experimental basic block vector generation tool</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>14. BBV: an experimental basic block vector generation tool</title>
 <link rel="stylesheet" type="text/css" href="vg_basic.css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="Valgrind Documentation">
 <link rel="up" href="manual.html" title="Valgrind User Manual">
-<link rel="prev" href="sg-manual.html" title="11. SGCheck: an experimental stack and global array overrun detector">
-<link rel="next" href="lk-manual.html" title="13. Lackey: an example tool">
+<link rel="prev" href="nl-manual.html" title="13. Nulgrind: the minimal Valgrind tool">
+<link rel="next" href="FAQ.html" title="Valgrind FAQ">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
 <div><table class="nav" width="100%" cellspacing="3" cellpadding="3" border="0" summary="Navigation header"><tr>
-<td width="22px" align="center" valign="middle"><a accesskey="p" href="sg-manual.html"><img src="images/prev.png" width="18" height="21" border="0" alt="Prev"></a></td>
+<td width="22px" align="center" valign="middle"><a accesskey="p" href="nl-manual.html"><img src="images/prev.png" width="18" height="21" border="0" alt="Prev"></a></td>
 <td width="25px" align="center" valign="middle"><a accesskey="u" href="manual.html"><img src="images/up.png" width="21" height="18" border="0" alt="Up"></a></td>
 <td width="31px" align="center" valign="middle"><a accesskey="h" href="index.html"><img src="images/home.png" width="27" height="20" border="0" alt="Up"></a></td>
 <th align="center" valign="middle">Valgrind User Manual</th>
-<td width="22px" align="center" valign="middle"><a accesskey="n" href="lk-manual.html"><img src="images/next.png" width="18" height="21" border="0" alt="Next"></a></td>
+<td width="22px" align="center" valign="middle"><a accesskey="n" href="FAQ.html"><img src="images/next.png" width="18" height="21" border="0" alt="Next"></a></td>
 </tr></table></div>
 <div class="chapter">
 <div class="titlepage"><div><div><h1 class="title">
-<a name="bbv-manual"></a>12. BBV: an experimental basic block vector generation tool</h1></div></div></div>
+<a name="bbv-manual"></a>14. BBV: an experimental basic block vector generation tool</h1></div></div></div>
 <div class="toc">
 <p><b>Table of Contents</b></p>
 <dl class="toc">
-<dt><span class="sect1"><a href="bbv-manual.html#bbv-manual.overview">12.1. Overview</a></span></dt>
-<dt><span class="sect1"><a href="bbv-manual.html#bbv-manual.quickstart">12.2. Using Basic Block Vectors to create SimPoints</a></span></dt>
-<dt><span class="sect1"><a href="bbv-manual.html#bbv-manual.usage">12.3. BBV Command-line Options</a></span></dt>
-<dt><span class="sect1"><a href="bbv-manual.html#bbv-manual.fileformat">12.4. Basic Block Vector File Format</a></span></dt>
-<dt><span class="sect1"><a href="bbv-manual.html#bbv-manual.implementation">12.5. Implementation</a></span></dt>
-<dt><span class="sect1"><a href="bbv-manual.html#bbv-manual.threadsupport">12.6. Threaded Executable Support</a></span></dt>
-<dt><span class="sect1"><a href="bbv-manual.html#bbv-manual.validation">12.7. Validation</a></span></dt>
-<dt><span class="sect1"><a href="bbv-manual.html#bbv-manual.performance">12.8. Performance</a></span></dt>
+<dt><span class="sect1"><a href="bbv-manual.html#bbv-manual.overview">14.1. Overview</a></span></dt>
+<dt><span class="sect1"><a href="bbv-manual.html#bbv-manual.quickstart">14.2. Using Basic Block Vectors to create SimPoints</a></span></dt>
+<dt><span class="sect1"><a href="bbv-manual.html#bbv-manual.usage">14.3. BBV Command-line Options</a></span></dt>
+<dt><span class="sect1"><a href="bbv-manual.html#bbv-manual.fileformat">14.4. Basic Block Vector File Format</a></span></dt>
+<dt><span class="sect1"><a href="bbv-manual.html#bbv-manual.implementation">14.5. Implementation</a></span></dt>
+<dt><span class="sect1"><a href="bbv-manual.html#bbv-manual.threadsupport">14.6. Threaded Executable Support</a></span></dt>
+<dt><span class="sect1"><a href="bbv-manual.html#bbv-manual.validation">14.7. Validation</a></span></dt>
+<dt><span class="sect1"><a href="bbv-manual.html#bbv-manual.performance">14.8. Performance</a></span></dt>
 </dl>
 </div>
 <p>To use this tool, you must specify
@@ -38,7 +38,7 @@
 command line.</p>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="bbv-manual.overview"></a>12.1. Overview</h2></div></div></div>
+<a name="bbv-manual.overview"></a>14.1. Overview</h2></div></div></div>
 <p>
    A basic block is a linear section of code with one entry point and one exit
    point.  A <span class="emphasis"><em>basic block vector</em></span> (BBV) is a list of all
@@ -76,7 +76,7 @@ command line.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="bbv-manual.quickstart"></a>12.2. Using Basic Block Vectors to create SimPoints</h2></div></div></div>
+<a name="bbv-manual.quickstart"></a>14.2. Using Basic Block Vectors to create SimPoints</h2></div></div></div>
 <p>
    To quickly create a basic block vector file, you will call Valgrind
    like this:
@@ -133,7 +133,7 @@ command line.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="bbv-manual.usage"></a>12.3. BBV Command-line Options</h2></div></div></div>
+<a name="bbv-manual.usage"></a>14.3. BBV Command-line Options</h2></div></div></div>
 <p> BBV-specific command-line options are:</p>
 <div class="variablelist">
 <a name="bbv.opts.list"></a><dl class="variablelist">
@@ -147,7 +147,7 @@ command line.</p>
            <code class="option">%p</code> and <code class="option">%q</code> format specifiers can be
            used to embed the process ID and/or the contents of an environment
            variable in the name, as is the case for the core option
-           <code class="option"><a class="xref" href="manual-core.html#opt.log-file">--log-file</a></code>.
+           <code class="option"><a class="link" href="manual-core.html#opt.log-file">--log-file</a></code>.
         </p></dd>
 <dt>
 <a name="opt.pc-out-file"></a><span class="term">
@@ -164,7 +164,7 @@ command line.</p>
            <code class="option">%p</code> and <code class="option">%q</code> format specifiers can be
            used to embed the process ID and/or the contents of an environment
            variable in the name, as is the case for the core option
-           <code class="option"><a class="xref" href="manual-core.html#opt.log-file">--log-file</a></code>.
+           <code class="option"><a class="link" href="manual-core.html#opt.log-file">--log-file</a></code>.
         </p></dd>
 <dt>
 <a name="opt.interval-size"></a><span class="term">
@@ -200,7 +200,7 @@ command line.</p>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="bbv-manual.fileformat"></a>12.4. Basic Block Vector File Format</h2></div></div></div>
+<a name="bbv-manual.fileformat"></a>14.4. Basic Block Vector File Format</h2></div></div></div>
 <p>  
   The Basic Block Vector is dumped at fixed intervals.  This
   is commonly done every 100 million instructions; the 
@@ -241,7 +241,7 @@ T:18:45 :12:135353 :56:78 314:4324263</pre>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="bbv-manual.implementation"></a>12.5. Implementation</h2></div></div></div>
+<a name="bbv-manual.implementation"></a>14.5. Implementation</h2></div></div></div>
 <p>
    Valgrind provides all of the information necessary to create
    BBV files.  In the current implementation, all instructions
@@ -259,7 +259,7 @@ T:18:45 :12:135353 :56:78 314:4324263</pre>
    BBV vectors will be different than those generated by other tools.
    In practice this does not seem to affect the accuracy of the
    SimPoint results.  We do internally force the
-   <code class="option">--vex-guest-chase-thresh=0</code>
+   <code class="option">--vex-guest-chase=no</code>
    option to Valgrind which forces a more basic-block-like
    behavior.
 </p>
@@ -310,7 +310,7 @@ T:18:45 :12:135353 :56:78 314:4324263</pre>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="bbv-manual.threadsupport"></a>12.6. Threaded Executable Support</h2></div></div></div>
+<a name="bbv-manual.threadsupport"></a>14.6. Threaded Executable Support</h2></div></div></div>
 <p>
    BBV supports threaded programs.  When a program has multiple threads,
    an additional basic block vector file is created for each thread (each
@@ -328,7 +328,7 @@ T:18:45 :12:135353 :56:78 314:4324263</pre>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="bbv-manual.validation"></a>12.7. Validation</h2></div></div></div>
+<a name="bbv-manual.validation"></a>14.7. Validation</h2></div></div></div>
 <p>
    BBV has been tested on x86, amd64, and ppc32 platforms.
    An earlier version of BBV was tested in detail using
@@ -340,7 +340,7 @@ T:18:45 :12:135353 :56:78 314:4324263</pre>
 </div>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="bbv-manual.performance"></a>12.8. Performance</h2></div></div></div>
+<a name="bbv-manual.performance"></a>14.8. Performance</h2></div></div></div>
 <p>
   Using this program slows down execution by roughly a factor of 40
   over native execution.  This varies depending on the machine
@@ -354,9 +354,9 @@ T:18:45 :12:135353 :56:78 314:4324263</pre>
 <br><table class="nav" width="100%" cellspacing="3" cellpadding="2" border="0" summary="Navigation footer">
 <tr>
 <td rowspan="2" width="40%" align="left">
-<a accesskey="p" href="sg-manual.html">&lt;&lt; 11. SGCheck: an experimental stack and global array overrun detector</a> </td>
+<a accesskey="p" href="nl-manual.html">&lt;&lt; 13. Nulgrind: the minimal Valgrind tool</a> </td>
 <td width="20%" align="center"><a accesskey="u" href="manual.html">Up</a></td>
-<td rowspan="2" width="40%" align="right"> <a accesskey="n" href="lk-manual.html">13. Lackey: an example tool &gt;&gt;</a>
+<td rowspan="2" width="40%" align="right"> <a accesskey="n" href="FAQ.html">Valgrind FAQ &gt;&gt;</a>
 </td>
 </tr>
 <tr><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td></tr>
