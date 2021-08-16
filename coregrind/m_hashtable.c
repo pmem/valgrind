@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -298,7 +296,7 @@ void VG_(HT_print_stats) ( const VgHashTable *table, HT_Cmp_t cmp )
    }
 
    VG_(message)(Vg_DebugMsg, 
-                "nr occurences of"
+                "nr occurrences of"
                 " chains of len N,"
                 " N-plicated keys,"
                 " N-plicated elts\n");

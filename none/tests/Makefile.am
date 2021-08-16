@@ -32,6 +32,10 @@ endif
 if VGCONF_ARCHS_INCLUDE_MIPS64
 SUBDIRS += mips64
 endif
+if VGCONF_ARCHS_INCLUDE_NANOMIPS
+SUBDIRS += nanomips
+endif
+
 
 # OS-specific tests
 if VGCONF_OS_IS_LINUX
@@ -64,7 +68,7 @@ if VGCONF_PLATFORMS_INCLUDE_X86_SOLARIS
 SUBDIRS += x86-solaris
 endif
 
-DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm arm64 s390x mips32 mips64 \
+DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm arm64 s390x mips32 mips64 nanomips \
                linux darwin solaris amd64-linux x86-linux amd64-darwin \
                x86-darwin amd64-solaris x86-solaris scripts .
 
@@ -163,6 +167,8 @@ EXTRA_DIST = \
 	pth_mutexspeed.stdout.exp pth_mutexspeed.vgtest \
 	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \
 	pth_rwlock.stderr.exp pth_rwlock.vgtest \
+	pth_self_kill_9.stderr.exp pth_self_kill_9.vgtest \
+	pth_self_kill_15_other.stderr.exp pth_self_kill_15_other.vgtest \
 	pth_stackalign.stderr.exp \
 	pth_stackalign.stdout.exp pth_stackalign.vgtest \
 	pth_2sig.stderr.exp-linux pth_2sig.stderr.exp-solaris pth_2sig.vgtest \
@@ -201,7 +207,9 @@ EXTRA_DIST = \
 	unit_debuglog.stderr.exp unit_debuglog.vgtest \
 	vgprintf.stderr.exp vgprintf.vgtest \
 	vgprintf_nvalgrind.stderr.exp vgprintf_nvalgrind.vgtest \
-	process_vm_readv_writev.stderr.exp process_vm_readv_writev.vgtest
+	process_vm_readv_writev.stderr.exp process_vm_readv_writev.vgtest \
+	sigprocmask.stderr.exp sigprocmask.vgtest
+
 
 check_PROGRAMS = \
 	args \
@@ -227,7 +235,7 @@ check_PROGRAMS = \
 	pselect_sigmask_null \
 	pth_atfork1 pth_blockedsig pth_cancel1 pth_cancel2 pth_cvsimple \
 	pth_empty pth_exit pth_exit2 pth_mutexspeed pth_once pth_rwlock \
-	pth_stackalign pth_2sig pth_term_signal\
+	pth_self_kill pth_stackalign pth_2sig pth_term_signal\
 	rcrl readline1 \
 	require-text-symbol \
 	res_search resolv \
@@ -249,7 +257,8 @@ check_PROGRAMS = \
 	vgprintf_nvalgrind \
 	coolo_sigaction \
 	gxx304 \
-	process_vm_readv_writev
+	process_vm_readv_writev \
+	sigprocmask
 
 if HAVE_NESTED_FUNCTIONS
    check_PROGRAMS += nestedfns
@@ -315,6 +324,7 @@ pth_mutexspeed_LDADD	= -lpthread
 pth_once_LDADD		= -lpthread
 pth_rwlock_LDADD	= -lpthread
 pth_rwlock_CFLAGS	= $(AM_CFLAGS)
+pth_self_kill_LDADD	= -lpthread
 pth_stackalign_LDADD	= -lpthread
 pth_2sig_LDADD		= -lpthread
 pth_term_signal_LDADD	= -lpthread

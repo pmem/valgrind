@@ -1,7 +1,7 @@
 /*
   This file is part of drd, a thread error detector.
 
-  Copyright (C) 2006-2017 Bart Van Assche <bvanassche@acm.org>.
+  Copyright (C) 2006-2020 Bart Van Assche <bvanassche@acm.org>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -14,9 +14,7 @@
   General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-  02111-1307, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 
   The GNU General Public License is contained in the file COPYING.
 */
@@ -137,7 +135,8 @@ Addr make_address(const UWord a1, const UWord a0)
 
 /** Log2 of BITS_PER_UWORD. */
 #if defined(VGA_x86) || defined(VGA_ppc32) || defined(VGA_arm) \
-    || defined(VGA_mips32) || (defined(VGA_mips64) && defined(VGABI_N32))
+    || defined(VGA_mips32) || defined(VGA_nanomips) \
+    || (defined(VGA_mips64) && defined(VGABI_N32))
 #define BITS_PER_BITS_PER_UWORD 5
 #elif defined(VGA_amd64) || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
       || defined(VGA_s390x) || (defined(VGA_mips64) && !defined(VGABI_N32)) \

@@ -17,9 +17,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -48,7 +46,7 @@ typedef struct {
 } vbits_t;
 
 
-/* A type large enough to hold any IRtype'd value. At this point
+/* A type large enough to hold any IRType'd value. At this point
    we do not expect to test with specific floating point values.
    So we don't need to represent them. */
 typedef union {

@@ -11,8 +11,10 @@ Limitations
 -----------
 - 31-bit client programs are not supported.
 - Hexadecimal floating point is not supported.
-- Transactional memory is not supported.
-- Instructions operating on vector registers are not supported.
+- Transactional memory is not supported. The transactional-execution
+  facility is masked off from HWCAP.
+- FP signalling is not accurate. E.g., the "compare and signal"
+  instructions behave like their non-signalling counterparts.
 - memcheck, cachegrind, drd, helgrind, massif, lackey, and none are
   supported. 
 - On machine models predating z10, cachegrind will assume a z10 cache
@@ -22,8 +24,6 @@ Limitations
 - Some gcc versions use mvc to copy 4/8 byte values. This will affect
   certain debug messages. For example, memcheck will complain about
   4 one-byte reads/writes instead of just a single read/write.
-- The transactional-execution facility is not supported; it is masked
-  off from HWCAP.
 
 
 Hardware facilities
@@ -46,9 +46,9 @@ false positives due to builtin string operations when running memcheck.
 
 Reading Material
 ----------------
-(1) Linux for zSeries ELF ABI Supplement
-    http://refspecs.linuxfoundation.org/ELF/zSeries/index.html
+(1) ELF ABI s390x Supplement
+    https://github.com/IBM/s390x-abi/releases
 (2) z/Architecture Principles of Operation
-    http://publibfi.boulder.ibm.com/epubs/pdf/dz9zr010.pdf
+    http://publibfp.dhe.ibm.com/epubs/pdf/a227832c.pdf
 (3) z/Architecture Reference Summary
-    http://publibfi.boulder.ibm.com/epubs/pdf/dz9zs008.pdf
+    https://www.ibm.com/support/pages/system/files/2020-07/SA22-7871-10.pdf

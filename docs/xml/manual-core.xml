@@ -1,6 +1,6 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
 [ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
 
@@ -419,6 +419,10 @@ existing suppressions file whilst reading the following documentation.
 The file <filename>glibc-2.3.supp</filename>, in the source
 distribution, provides some good examples.</para>
 
+<para>Blank and comment lines in a suppression file are ignored.  Comment lines
+  are made of 0 or more blanks followed by a # character followed by some
+  text.</para>
+
 <para>Each suppression has the following components:</para>
 
 <itemizedlist>
@@ -578,13 +582,37 @@ lines in a suppression.</para>
    fun:main
 }
 ]]></programlisting>
-This suppresses Memcheck memory-leak errors, in the case where
+<para>This suppresses Memcheck memory-leak errors, in the case where
 the allocation was done by <computeroutput>main</computeroutput>
 calling (though any number of intermediaries, including zero)
 <computeroutput>ccc</computeroutput>,
 calling onwards via
 <computeroutput>ddd</computeroutput> and eventually
-to <computeroutput>malloc.</computeroutput>.
+to <computeroutput>malloc.</computeroutput>.</para>
+</sect1>
+
+
+<sect1 id="manual-core.debuginfod"
+       xreflabel="Debuginfod">
+<title>Debuginfod</title>
+
+<para id="debuginfod.para.1">Valgrind supports the downloading of debuginfo
+files via debuginfod, an HTTP server for distributing ELF/DWARF debugging
+information. When a debuginfo file cannot be found locally, Valgrind is able
+to query debuginfod servers for the file using its build-id.</para>
+
+<para id="debuginfod.para.2">In order to use this feature
+<computeroutput>debuginfod-find</computeroutput> must be installed and
+<computeroutput>$DEBUGINFOD_URLS</computeroutput> must contain URLs of
+debuginfod servers. Valgrind does not support
+<computeroutput>debuginfod-find</computeroutput> verbose output that is
+normally enabled with <computeroutput>$DEBUGINFOD_PROGRESS</computeroutput>
+and <computeroutput>$DEBUGINFOD_VERBOSE</computeroutput>. These environment
+variables will be ignored.</para>
+
+<para id="debuginfod.para.3">For more information regarding debuginfod, see
+https://sourceware.org/elfutils/Debuginfod.html</para>
+
 </sect1>
 
 
@@ -613,7 +641,7 @@ in most cases.  We group the available options by rough categories.</para>
     <listitem>
       <para>Run the Valgrind tool called <varname>toolname</varname>,
       e.g. memcheck, cachegrind, callgrind, helgrind, drd, massif,
-      dhat, lackey, none, exp-sgcheck, exp-bbv, etc.</para>
+      dhat, lackey, none, exp-bbv, etc.</para>
     </listitem>
   </varlistentry>
 
@@ -848,7 +876,7 @@ in most cases.  We group the available options by rough categories.</para>
 
   <varlistentry id="opt.track-fds" xreflabel="--track-fds">
     <term>
-      <option><![CDATA[--track-fds=<yes|no> [default: no] ]]></option>
+      <option><![CDATA[--track-fds=<yes|no|all> [default: no] ]]></option>
     </term>
     <listitem>
       <para>When enabled, Valgrind will print out a list of open file
@@ -856,7 +884,10 @@ in most cases.  We group the available options by rough categories.</para>
       command <varname>v.info open_fds</varname>.  Along with each
       file descriptor is printed a stack backtrace of where the file
       was opened and any details relating to the file descriptor such
-      as the file name or socket details.</para>
+      as the file name or socket details. Use <option>all</option> to
+      include reporting on <computeroutput>stdin</computeroutput>,
+      <computeroutput>stdout</computeroutput> and
+      <computeroutput>stderr</computeroutput>.</para>
     </listitem>
   </varlistentry>
 
@@ -995,8 +1026,8 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
 
       <para>This option is aimed at making life easier for tools that consume
       Valgrind's output as input, such as GUI front ends.  Currently this
-      option works with Memcheck, Helgrind, DRD and SGcheck.  The output
-      format is specified in the file
+      option works with Memcheck, Helgrind and DRD.  The output format is
+      specified in the file
       <computeroutput>docs/internals/xml-output-protocol4.txt</computeroutput>
       in the source tree for Valgrind 3.5.0 or later.</para>
 
@@ -1455,6 +1486,10 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       you want to use it, you will have to recompile it by hand using
       the command shown at the top
       of <computeroutput>auxprogs/valgrind-di-server.c</computeroutput>.</para>
+
+      <para>Valgrind can also download debuginfo via debuginfod. See the
+      DEBUGINFOD section for more information.</para>
+
     </listitem>
   </varlistentry>
 
@@ -1783,7 +1818,7 @@ Massif, Helgrind, DRD), the following options apply.</para>
       <para> Tools replacing Valgrind's <function>malloc,
       realloc,</function> etc, can optionally produce an execution
       tree detailing which piece of code is responsible for heap
-      memory usage. See <xref linkend="manual-core.xtree"/>
+      memory usage. See <xref linkend="&vg-xtree-id;"/>
       for a detailed explanation about execution trees. </para>
       
       <para> When set to <varname>none</varname>, no memory execution
@@ -1838,7 +1873,7 @@ Massif, Helgrind, DRD), the following options apply.</para>
         If the filename contains the extension  <option>.kcg</option>
         or no extension is provided or recognised,
         then the produced file format will be a callgrind output format.</para>
-      <para>See <xref linkend="manual-core.xtree"/>
+      <para>See <xref linkend="&vg-xtree-id;"/>
       for a detailed explanation about execution trees formats. </para>
     </listitem>
   </varlistentry>
@@ -2562,7 +2597,7 @@ need to use them.</para>
       malloc related functions, using the
       synonym <varname>somalloc</varname>.  This synonym is usable for
       all tools doing standard replacement of malloc related functions
-      (e.g. memcheck, helgrind, drd, massif, dhat, exp-sgcheck).
+      (e.g. memcheck, helgrind, drd, massif, dhat).
       </para>
 
       <itemizedlist>
@@ -2646,35 +2681,35 @@ PROGRESS: U 130s, W 134s, 97.0% CPU, EvC 574.90M, TIn 657.5k, TOut 3.0k, #thr 63
 ]]></programlisting>
         Each line shows:
       <itemizedlist>
-        <listitem><varname>U</varname>: total user time</listitem>
-        <listitem><varname>W</varname>: total wallclock time</listitem>
-        <listitem><varname>CPU</varname>: overall average cpu use</listitem>
-        <listitem><varname>EvC</varname>: number of event checks.  An event
+        <listitem><para><varname>U</varname>: total user time</para></listitem>
+        <listitem><para><varname>W</varname>: total wallclock time</para></listitem>
+        <listitem><para><varname>CPU</varname>: overall average cpu use</para></listitem>
+        <listitem><para><varname>EvC</varname>: number of event checks.  An event
          check is a backwards branch in the simulated program, so this is a
-         measure of forward progress of the program</listitem>
-        <listitem><varname>TIn</varname>: number of code blocks instrumented
-          by the JIT</listitem>
-        <listitem><varname>TOut</varname>: number of instrumented code
-          blocks that have been thrown away</listitem>
-        <listitem><varname>#thr</varname>: number of threads in the
-        program</listitem>
+         measure of forward progress of the program</para></listitem>
+        <listitem><para><varname>TIn</varname>: number of code blocks instrumented
+          by the JIT</para></listitem>
+        <listitem><para><varname>TOut</varname>: number of instrumented code
+          blocks that have been thrown away</para></listitem>
+        <listitem><para><varname>#thr</varname>: number of threads in the
+        program</para></listitem>
       </itemizedlist>
       From the progress of these, it is possible to observe:
       <itemizedlist>
-        <listitem>when the program is compute bound (<varname>TIn</varname>
-          rises slowly, <varname>EvC</varname> rises rapidly)</listitem>
-        <listitem>when the program is in a spinloop
+        <listitem><para>when the program is compute bound (<varname>TIn</varname>
+          rises slowly, <varname>EvC</varname> rises rapidly)</para></listitem>
+        <listitem><para>when the program is in a spinloop
           (<varname>TIn</varname>/<varname>TOut</varname>
-          fixed, <varname>EvC</varname> rises rapidly)</listitem>
-        <listitem>when the program is JIT-bound (<varname>TIn</varname>
-          rises rapidly)</listitem>
-        <listitem>when the program is rapidly discarding code
-          (<varname>TOut</varname> rises rapidly)</listitem>
-        <listitem>when the program is about to achieve some expected state
+          fixed, <varname>EvC</varname> rises rapidly)</para></listitem>
+        <listitem><para>when the program is JIT-bound (<varname>TIn</varname>
+          rises rapidly)</para></listitem>
+        <listitem><para>when the program is rapidly discarding code
+          (<varname>TOut</varname> rises rapidly)</para></listitem>
+        <listitem><para>when the program is about to achieve some expected state
           (<varname>EvC</varname> arrives at some value you
-          expect)</listitem>
-        <listitem> when the program is idling (<varname>U</varname> rises
-          more slowly than <varname>W</varname>)</listitem>
+          expect)</para></listitem>
+        <listitem><para> when the program is idling (<varname>U</varname> rises
+          more slowly than <varname>W</varname>)</para></listitem>
       </itemizedlist>
       </para>
    </listitem>
@@ -2756,6 +2791,74 @@ run.  Without the <computeroutput>memcheck:</computeroutput>
 part, this will cause problems if you select other tools that
 don't understand
 <option>--leak-check=yes</option>.</para>
+
+</sect2>
+
+<sect2 id="manual-core.dynopts" xreflabel="Dynamically Change Options">
+<title>Dynamically Changing Options</title>
+
+<para>The value of some command line options can be changed dynamically
+  while your program is running under Valgrind.</para>
+
+<para>The dynamically changeable options of the valgrind core and a given
+  tool can be listed using option
+  <computeroutput>--help-dyn-options</computeroutput>, for example:</para>
+<screen><![CDATA[
+$ valgrind --tool=memcheck --help-dyn-options
+  dynamically changeable options:
+    -v -q -d --stats --vgdb=no --vgdb=yes --vgdb=full --vgdb-poll --vgdb-error
+    --vgdb-stop-at --error-markers --show-error-list -s --show-below-main
+    --time-stamp --trace-children --child-silent-after-fork --trace-sched
+    --trace-signals --trace-symtab --trace-cfi --debug-dump=syms
+    --debug-dump=line --debug-dump=frames --trace-redir --trace-syscalls
+    --sym-offsets --progress-interval --merge-recursive-frames
+    --vex-iropt-verbosity --suppressions --trace-flags --trace-notbelow
+    --trace-notabove --profile-flags --gen-suppressions=no
+    --gen-suppressions=yes --gen-suppressions=all --errors-for-leak-kinds
+    --show-leak-kinds --leak-check-heuristics --show-reachable
+    --show-possibly-lost --freelist-vol --freelist-big-blocks --leak-check=no
+    --leak-check=summary --leak-check=yes --leak-check=full --ignore-ranges
+    --ignore-range-below-sp --show-mismatched-frees
+valgrind: Use --help for more information.
+$]]></screen>
+
+<para>The dynamic options can be changed the following ways:</para>
+
+  <orderedlist>
+   <listitem>
+     <para>From the shell, using vgdb and the monitor command
+     <computeroutput>v.clo</computeroutput>:</para>
+<screen><![CDATA[
+$ vgdb "v.clo --trace-children=yes --child-silent-after-fork=no"
+sending command v.clo --trace-children=yes --child-silent-after-fork=no to pid 4404
+$]]></screen>
+
+<para>Note: you must use double quotes around the monitor command to avoid
+  vgdb interpreting the valgrind options as its own options.</para>
+   </listitem>
+
+   <listitem>
+    <para>From gdb, using the the monitor command
+     <computeroutput>v.clo</computeroutput>:</para>
+<screen><![CDATA[
+(gdb) monitor v.clo --trace-children=yes --child-silent-after-fork=no
+(gdb) ]]></screen>
+   </listitem>
+
+   <listitem>
+     <para>From your program, using the client request
+       <computeroutput>VALGRIND_CLO_CHANGE(option)</computeroutput>:</para>
+<screen><![CDATA[
+      VALGRIND_CLO_CHANGE ("--trace-children=yes");
+      VALGRIND_CLO_CHANGE ("--child-silent-after-fork=no");]]></screen>
+   </listitem>
+  </orderedlist>
+
+  <para>Dynamically changeable options can be used in various circumstances,
+    such as changing the valgrind behaviour during execution, loading
+    suppression files as part of shared library initialisation, change or
+    set valgrind options in child processes, ...
+  </para>
 
 </sect2>
 
@@ -2918,7 +3021,7 @@ will create a core dump in the usual way.</para>
 </sect1>
 
 
-<sect1 id="manual-core.xtree" xreflabel="Execution Trees">
+<sect1 id="&vg-xtree-id;" xreflabel="&vg-xtree-label;">
 <title>Execution Trees</title>
 
 <para>An execution tree (xtree) is made of a set of stack traces, each

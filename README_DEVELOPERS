@@ -1,3 +1,7 @@
+Building and installing it
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+To build/install from the GIT repository or from a distribution
+tarball, refer to the section with the same name in README.
 
 Building and not installing it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -95,16 +99,20 @@ without too much problem by following these steps:
 
 (2) Run gdb on the tool executable.  Eg:
 
-      gdb /usr/local/lib/valgrind/ppc32-linux/lackey
+      gdb /usr/local/lib/valgrind/lackey-ppc32-linux
 
     or
 
-      gdb $DIR/.in_place/x86-linux/memcheck
+      gdb $DIR/.in_place/memcheck-x86-linux
 
 (3) Do "handle SIGSEGV SIGILL nostop noprint" in GDB to prevent GDB from
     stopping on a SIGSEGV or SIGILL:
 
     (gdb) handle SIGILL SIGSEGV nostop noprint
+
+    If you are using lldb, then the equivalent command is
+
+    (lldb) pro hand -p true -s false -n false SIGILL SIGSEGV
 
 (4) Set any breakpoints you want and proceed as normal for gdb. The
     macro VG_(FUNC) is expanded to vgPlain_FUNC, so If you want to set
@@ -323,7 +331,7 @@ Printing out problematic blocks
 If you want to print out a disassembly of a particular block that
 causes a crash, do the following.
 
-Try running with "--vex-guest-chase-thresh=0 --trace-flags=10000000
+Try running with "--vex-guest-chase=no --trace-flags=10000000
 --trace-notbelow=999999".  This should print one line for each block
 translated, and that includes the address.
 

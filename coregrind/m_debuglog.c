@@ -22,9 +22,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -452,7 +450,13 @@ static UInt local_sys_write_stderr ( const HChar* buf, Int n )
    __asm__ volatile (
       "syscall            \n\t"
       "addiu   $4, $0, -1 \n\t"
+      #if ((defined(__mips_isa_rev) && __mips_isa_rev >= 6))
+      "selnez  $4, $4, $7 \n\t"
+      "seleqz  $2, $2, $7 \n\t"
+      "or      $2, $2, $4 \n\t"
+      #else
       "movn    $2, $4, $7 \n\t"
+      #endif
      : "+d" (v0), "+d" (a0), "+d" (a1), "+d" (a2)
      :
      : "$1", "$3", "$7", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15",
@@ -473,6 +477,45 @@ static UInt local_sys_getpid ( void )
        "$13", "$14", "$15", "$24", "$25", "$31"
    );
    return v0;
+}
+
+#elif defined(VGP_nanomips_linux)
+
+__attribute__((noinline))
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
+{
+   register RegWord t4 asm("2");
+   register RegWord a0 asm("4");
+   register RegWord a1 asm("5");
+   register RegWord a2 asm("6");
+   t4 = __NR_write;
+   a2 = n;
+   a1 = (RegWord)(Addr)buf;
+   a0 = 2; // stderr
+   __asm__ volatile (
+      "syscall[32] \n\t"
+     : "+d" (t4), "+d" (a0), "+d" (a1), "+d" (a2)
+     :
+     : "$at", "$t5", "$a3", "$a4", "$a5", "$a6", "$a7", "$t0", "$t1", "$t2",
+       "$t3", "$t8", "$t9"
+   );
+   return a0;
+}
+
+__attribute__((noinline))
+static UInt local_sys_getpid ( void )
+{
+   register RegWord t4 asm("2");
+   register RegWord a0 asm("4");
+   t4 = __NR_getpid;
+   __asm__ volatile (
+      "syscall[32] \n\t"
+     : "+d" (t4), "=d" (a0)
+     :
+     : "$at", "$t5", "$a1", "$a2", "$a3", "$a4", "$a5", "$a6", "$a7", "$t0",
+       "$t1", "$t2", "$t3", "$t8", "$t9"
+   );
+   return a0;
 }
 
 #elif defined(VGP_x86_solaris)

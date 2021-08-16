@@ -26,9 +26,7 @@
 #  General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-#  02111-1307, USA.
+#  along with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #  The GNU General Public License is contained in the file COPYING.
 
@@ -141,11 +139,11 @@ my $default_threshold = 99;
 my $single_threshold  = $default_threshold;
 
 # If on, show a percentage for each non-zero count.
-my $show_percs = 0;
+my $show_percs = 1;
 
 # If on, automatically annotates all files that are involved in getting over
 # all the threshold counts.
-my $auto_annotate = 0;
+my $auto_annotate = 1;
 
 # Number of lines to show around each annotated line.
 my $context = 8;
@@ -213,9 +211,9 @@ usage: callgrind_annotate [options] [callgrind-out-file [source-files...]]
                           Each event can optionally be followed by a :
                           and a threshold percentage. If some event specific
                           threshold are given, --threshold value is ignored.
-    --show-percs=yes|no   show a percentage for each non-zero count
+    --show-percs=yes|no   show a percentage for each non-zero count [yes]
     --auto=yes|no         annotate all source files containing functions
-                          that helped reach the event count threshold [no]
+                          that helped reach the event count threshold [yes]
     --context=N           print N lines of context before and after
                           annotated lines [8]
     --inclusive=yes|no    add subroutine costs to functions calls [no]
@@ -422,10 +420,8 @@ sub read_input_file()
     # Read header
     while(<INPUTFILE>) {
 
-      # remove comments
-      s/#.*$//;
-
-      if (/^$/) { ; }
+      # Skip comments and empty lines.
+      if (/^\s*$/ || /^\#/) { ; }
 
       elsif (/^version:\s*(\d+)/) {
 	# Can't read format with major version > 1
@@ -542,9 +538,11 @@ sub read_input_file()
 
     # Read body of input file.
     while (<INPUTFILE>) {
+        # Skip comments and empty lines.
+        next if /^\s*$/ || /^\#/;
+
 	$prev_line_num = $curr_line_num;
 
-        s/#.*$//;   # remove comments
         s/^\+(\d+)/$prev_line_num+$1/e;
         s/^\-(\d+)/$prev_line_num-$1/e;
         s/^\*/$prev_line_num/e;
@@ -647,9 +645,6 @@ sub read_input_file()
             $curr_file_ind_CCs = {} unless (defined $curr_file_ind_CCs);
             $curr_fn_CC = $fn_totals{$curr_name};
             $curr_fn_CC = [] unless (defined $curr_fn_CC);
-
-        } elsif (s/^\s*$//) {
-            # blank, do nothing
 
         } elsif (s/^cob=(.*)$//) {
 	  $curr_cobj = uncompressed_name("ob",$1);

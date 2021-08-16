@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -602,24 +600,60 @@ Int VG_(sysctl)(Int *name, UInt namelen, void *oldp, SizeT *oldlenp, void *newp,
 /* Support for getrlimit. */
 Int VG_(getrlimit) (Int resource, struct vki_rlimit *rlim)
 {
-   SysRes res = VG_(mk_SysRes_Error)(VKI_ENOSYS);
+   SysRes res;
    /* res = getrlimit( resource, rlim ); */
+
+#  if defined(__NR_prlimit64) && defined(VKI_RLIM_INFINITY) && defined(VKI_RLIM64_INFINITY)
+   struct vki_rlimit64 new_rlimit;
+   res = VG_(do_syscall4)(__NR_prlimit64, 0, resource, 0, (UWord)&new_rlimit);
+   if (!sr_isError(res)) {
+      if (new_rlimit.rlim_cur == VKI_RLIM_INFINITY)
+         new_rlimit.rlim_cur = VKI_RLIM64_INFINITY;
+      if (new_rlimit.rlim_max == VKI_RLIM_INFINITY)
+         new_rlimit.rlim_max = VKI_RLIM64_INFINITY;
+      rlim->rlim_cur = new_rlimit.rlim_cur;
+      rlim->rlim_max = new_rlimit.rlim_max;
+      return sr_Res(res);
+   }
+   if (sr_Err(res) != VKI_ENOSYS) return -1;
+#  endif
+
 #  ifdef __NR_ugetrlimit
    res = VG_(do_syscall2)(__NR_ugetrlimit, resource, (UWord)rlim);
+   if (!sr_isError(res)) return sr_Res(res);
+   if (sr_Err(res) != VKI_ENOSYS) return -1;
 #  endif
-   if (sr_isError(res) && sr_Err(res) == VKI_ENOSYS)
-      res = VG_(do_syscall2)(__NR_getrlimit, resource, (UWord)rlim);
-   return sr_isError(res) ? -1 : sr_Res(res);
-}
 
+#  ifdef __NR_getrlimit
+   res = VG_(do_syscall2)(__NR_getrlimit, resource, (UWord)rlim);
+   if (!sr_isError(res)) return sr_Res(res);
+#  endif
+
+   return -1;
+}
 
 /* Support for setrlimit. */
 Int VG_(setrlimit) (Int resource, const struct vki_rlimit *rlim)
 {
    SysRes res;
    /* res = setrlimit( resource, rlim ); */
+
+#  ifdef __NR_prlimit64
+   struct vki_rlimit64 new_rlimit;
+   new_rlimit.rlim_cur = rlim->rlim_cur;
+   new_rlimit.rlim_max = rlim->rlim_max;
+   res = VG_(do_syscall4)(__NR_prlimit64, 0, resource, (UWord)&new_rlimit, 0);
+   if (!sr_isError(res)) return sr_Res(res);
+   if (sr_Err(res) != VKI_ENOSYS) return -1;
+#  endif
+
+#  ifdef __NR_setrlimit
    res = VG_(do_syscall2)(__NR_setrlimit, resource, (UWord)rlim);
-   return sr_isError(res) ? -1 : sr_Res(res);
+   if (!sr_isError(res)) return sr_Res(res);
+   if (sr_Err(res) != VKI_ENOSYS) return -1;
+#  endif
+
+   return -1;
 }
 
 /* Support for prctl. */
@@ -662,7 +696,7 @@ Int VG_(gettid)(void)
        * the /proc/self link is pointing...
        */
 
-#     if defined(VGP_arm64_linux)
+#     if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
       res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD,
                              (UWord)"/proc/self",
                              (UWord)pid, sizeof(pid));
@@ -708,7 +742,7 @@ Int VG_(getpid) ( void )
 Int VG_(getpgrp) ( void )
 {
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-#  if defined(VGP_arm64_linux)
+#  if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
    return sr_Res( VG_(do_syscall1)(__NR_getpgid, 0) );
 #  elif defined(VGO_linux) || defined(VGO_darwin)
    return sr_Res( VG_(do_syscall0)(__NR_getpgrp) );
@@ -804,7 +838,7 @@ Int VG_(getgroups)( Int size, UInt* list )
         || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)  \
         || defined(VGO_darwin) || defined(VGP_s390x_linux)    \
         || defined(VGP_mips32_linux) || defined(VGP_arm64_linux) \
-        || defined(VGO_solaris)
+        || defined(VGO_solaris) || defined(VGP_nanomips_linux)
    SysRes sres;
    sres = VG_(do_syscall2)(__NR_getgroups, size, (Addr)list);
    if (sr_isError(sres))
@@ -845,7 +879,7 @@ Int VG_(ptrace) ( Int request, Int pid, void *addr, void *data )
 
 Int VG_(fork) ( void )
 {
-#  if defined(VGP_arm64_linux)
+#  if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
    SysRes res;
    res = VG_(do_syscall5)(__NR_clone, VKI_SIGCHLD,
                           (UWord)NULL, (UWord)NULL, (UWord)NULL, (UWord)NULL);
@@ -943,6 +977,20 @@ UInt VG_(read_millisecond_timer) ( void )
 
    return (now - base) / 1000;
 }
+
+#  if defined(VGO_linux) || defined(VGO_solaris)
+void VG_(clock_gettime) ( struct vki_timespec *ts, vki_clockid_t clk_id )
+{
+    SysRes res;
+    res = VG_(do_syscall2)(__NR_clock_gettime, clk_id,
+                           (UWord)ts);
+    vg_assert (sr_isError(res) == 0);
+}
+#  elif defined(VGO_darwin)
+  /* See pub_tool_libcproc.h */
+#  else
+#    error "Unknown OS"
+#  endif
 
 Int VG_(gettimeofday)(struct vki_timeval *tv, struct vki_timezone *tz)
 {
@@ -1219,6 +1267,10 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    SysRes sres = VG_(do_syscall3)(__NR_cacheflush, (UWord) ptr,
                                  (UWord) nbytes, (UWord) 3);
    vg_assert( !sr_isError(sres) );
+
+# elif defined(VGA_nanomips)
+
+   __builtin___clear_cache(ptr, (char*)ptr + nbytes);
 
 #  endif
 }

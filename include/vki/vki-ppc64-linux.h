@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -336,6 +334,14 @@ struct vki_sigcontext {
   vki_elf_vrreg_t  __user *v_regs;
   long             vmx_reserve[VKI_ELF_NVRREG+VKI_ELF_NVRREG+1];
 };
+
+//----------------------------------------------------------------------
+// From linux-5.0.0/arch/powerpc/include/uapi/asm/siginfo.h
+//----------------------------------------------------------------------
+
+#ifdef __powerpc64__
+# define __VKI_ARCH_SI_PREAMBLE_SIZE     (4 * sizeof(int))
+#endif
 
 //----------------------------------------------------------------------
 // From linux-2.6.13/include/asm-ppc64/mman.h

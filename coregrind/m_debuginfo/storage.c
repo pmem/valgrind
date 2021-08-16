@@ -23,9 +23,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -250,7 +248,7 @@ void ML_(ppDiCfSI) ( const XArray* /* of CfiExpr */ exprs,
    SHOW_HOW(si_m->f6_how, si_m->f6_off);
    VG_(printf)(" F7=");
    SHOW_HOW(si_m->f7_how, si_m->f7_off);
-#  elif defined(VGA_mips32) || defined(VGA_mips64)
+#  elif defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
    VG_(printf)(" SP=");
    SHOW_HOW(si_m->sp_how, si_m->sp_off);
    VG_(printf)(" FP=");
@@ -529,18 +527,22 @@ static void shrinkLocTab ( struct _DebugInfo* di )
    di->loctab_size = new_sz;
 }
 
-#define COMPLAIN_ONCE(what, limit, limit_op)                   \
+// Complain once, unless VG_(debugLog_getLevel)() > 3
+// showinfo is called if VG_(debugLog_getLevel)() >= 1
+#define COMPLAIN_ONCE(what, limit, limit_op, showinfo)         \
    {                                                           \
    static Bool complained = False;                             \
    if (!complained) {                                          \
-      complained = True;                                       \
+      complained = VG_(debugLog_getLevel)() <= 3;              \
       VG_(message)(Vg_UserMsg,                                 \
                    "warning: Can't handle " what " with "      \
                    "line number %d " limit_op " than %d\n",    \
                    lineno, limit);                             \
-      VG_(message)(Vg_UserMsg,                                 \
-                   "(Nb: this message is only shown once)\n"); \
-   } \
+      if (VG_(debugLog_getLevel)() >= 1) showinfo;             \
+      if (complained)                                          \
+         VG_(message)(Vg_UserMsg,                              \
+                      "(Nb: this message is only shown once)\n");       \
+   }                                                                    \
 }
 
 
@@ -557,6 +559,11 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
    static const Bool debug = False;
    DiLoc loc;
    UWord size = next - this;
+
+#  define SHOWLINEINFO                                                  \
+   VG_(message)(Vg_DebugMsg,                                            \
+                "addLoc: addr %#lx, size %lu, line %d, fndn_ix %u\n",   \
+                this,size,lineno,fndn_ix)
 
    /* Ignore zero-sized locs */
    if (this == next) return;
@@ -617,11 +624,14 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
    }
 
    if (lineno < 0) {
-      COMPLAIN_ONCE("line info entry", 0, "smaller");
+      COMPLAIN_ONCE("line info entry", 0, "smaller", SHOWLINEINFO);
       return;
    }
    if (lineno > MAX_LINENO) {
-      COMPLAIN_ONCE("line info entry", MAX_LINENO, "greater");
+      /* With --enable-lto, gcc 9 creates huge line numbers e.g. in the tool
+         => only complain with some debug level. */
+      if (VG_(debugLog_getLevel)() >= 1)
+         COMPLAIN_ONCE("line info entry", MAX_LINENO, "greater", SHOWLINEINFO);
       return;
    }
 
@@ -629,11 +639,10 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
    loc.size      = (UShort)size;
    loc.lineno    = lineno;
 
-   if (0) VG_(message)(Vg_DebugMsg, 
-		       "addLoc: addr %#lx, size %lu, line %d, fndn_ix %u\n",
-		       this,size,lineno,fndn_ix);
+   if (0) SHOWLINEINFO;
 
    addLoc ( di, &loc, fndn_ix );
+#  undef SHOWLINEINFO
 }
 
 /* Add an inlined call info to the inlined call table. 
@@ -689,22 +698,34 @@ void ML_(addInlInfo) ( struct _DebugInfo* di,
 {
    DiInlLoc inl;
 
+#  define SHOWLINEINFO                                                  \
+   VG_(message) (Vg_DebugMsg,                                           \
+                 "addInlInfo: fn %s inlined as addr_lo %#lx,addr_hi %#lx," \
+                 "caller fndn_ix %u %s:%d\n",                           \
+                 inlinedfn, addr_lo, addr_hi, fndn_ix,                  \
+                 ML_(fndn_ix2filename) (di, fndn_ix), lineno)
+
    /* Similar paranoia as in ML_(addLineInfo). Unclear if needed. */
    if (addr_lo >= addr_hi) {
        if (VG_(clo_verbosity) > 2) {
            VG_(message)(Vg_DebugMsg, 
                         "warning: inlined info addresses out of order "
                         "at: 0x%lx 0x%lx\n", addr_lo, addr_hi);
+           SHOWLINEINFO;
        }
        addr_hi = addr_lo + 1;
    }
 
    if (lineno < 0) {
-      COMPLAIN_ONCE ("inlined call info entry", 0, "smaller");
+      COMPLAIN_ONCE ("inlined call info entry", 0, "smaller", SHOWLINEINFO);
       return;
    }
    if (lineno > MAX_LINENO) {
-      COMPLAIN_ONCE ("inlined call info entry", MAX_LINENO, "greater");
+      /* With --enable-lto, gcc 9 creates huge line numbers e.g. in the tool
+         => only complain with some debug level. */
+      if (VG_(debugLog_getLevel)() >= 1)
+         COMPLAIN_ONCE ("inlined call info entry", MAX_LINENO, "greater",
+                        SHOWLINEINFO);
       return;
    }
 
@@ -717,14 +738,10 @@ void ML_(addInlInfo) ( struct _DebugInfo* di,
    inl.lineno    = lineno;
    inl.level     = level;
 
-   if (0) VG_(message)
-             (Vg_DebugMsg, 
-              "addInlInfo: fn %s inlined as addr_lo %#lx,addr_hi %#lx,"
-              "caller fndn_ix %u %s:%d\n",
-              inlinedfn, addr_lo, addr_hi, fndn_ix,
-              ML_(fndn_ix2filename) (di, fndn_ix), lineno);
+   if (0) SHOWLINEINFO;
 
    addInl ( di, &inl );
+#  undef SHOWLINEINFO
 }
 
 DiCfSI_m* ML_(get_cfsi_m) (const DebugInfo* di, UInt pos)
@@ -985,7 +1002,9 @@ static void ppCfiReg ( CfiReg reg )
       case Creg_ARM_R15:   VG_(printf)("R15"); break;
       case Creg_ARM_R14:   VG_(printf)("R14"); break;
       case Creg_ARM_R7:    VG_(printf)("R7");  break;
+      case Creg_ARM64_SP:  VG_(printf)("SP"); break;
       case Creg_ARM64_X30: VG_(printf)("X30"); break;
+      case Creg_ARM64_X29: VG_(printf)("X29"); break;
       case Creg_MIPS_RA:   VG_(printf)("RA"); break;
       case Creg_S390_IA:   VG_(printf)("IA"); break;
       case Creg_S390_SP:   VG_(printf)("SP"); break;
@@ -1282,7 +1301,7 @@ void ML_(addVar)( struct _DebugInfo* di,
       ML_(read_elf_debug_info). */
    vg_assert(di->fsm.have_rx_map && di->fsm.have_rw_map);
    if (level > 0 && ML_(find_rx_mapping)(di, aMin, aMax) == NULL) {
-      if (VG_(clo_verbosity) >= 0) {
+      if (VG_(clo_verbosity) > 1) {
          VG_(message)(Vg_DebugMsg, 
             "warning: addVar: in range %#lx .. %#lx outside "
             "all rx mapped areas (%s)\n",

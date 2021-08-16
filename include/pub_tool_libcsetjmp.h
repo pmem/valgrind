@@ -20,9 +20,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -112,7 +110,7 @@ __attribute__((noreturn))
 __attribute__((regparm(1))) // ditto
 void  VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env));
 
-#elif defined(VGP_mips32_linux)
+#elif defined(VGP_mips32_linux) || defined(VGP_nanomips_linux)
 
 #define VG_MINIMAL_JMP_BUF(_name)        ULong _name [104 / sizeof(ULong)]
 __attribute__((returns_twice))

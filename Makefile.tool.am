@@ -17,7 +17,8 @@ TOOL_DEPENDENCIES_@VGCONF_PLATFORM_SEC_CAPS@ = \
 endif
 
 
-TOOL_LDADD_COMMON = -lgcc
+TOOL_LDADD_COMMON = -lgcc \
+	$(top_builddir)/coregrind/libgcc-sup-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
 TOOL_LDADD_@VGCONF_PLATFORM_PRI_CAPS@ = \
 	$(TOOL_DEPENDENCIES_@VGCONF_PLATFORM_PRI_CAPS@) $(TOOL_LDADD_COMMON)
 if VGCONF_HAVE_PLATFORM_SEC
@@ -74,6 +75,10 @@ TOOL_LDFLAGS_AMD64_DARWIN = \
 TOOL_LDFLAGS_MIPS32_LINUX = \
 	-static -nodefaultlibs -nostartfiles -u __start @FLAG_NO_BUILD_ID@ \
 	@FLAG_M32@
+
+TOOL_LDFLAGS_NANOMIPS_LINUX = \
+	-static -nodefaultlibs -nostartfiles -u __start @FLAG_NO_BUILD_ID@ \
+	@FLAG_M32@ -Wl,-no-relax
 
 TOOL_LDFLAGS_MIPS64_LINUX = \
 	-static -nodefaultlibs -nostartfiles -u __start @FLAG_NO_BUILD_ID@ \

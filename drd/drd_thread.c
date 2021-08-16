@@ -1,7 +1,7 @@
 /*
   This file is part of drd, a thread error detector.
 
-  Copyright (C) 2006-2017 Bart Van Assche <bvanassche@acm.org>.
+  Copyright (C) 2006-2020 Bart Van Assche <bvanassche@acm.org>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -14,9 +14,7 @@
   General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-  02111-1307, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 
   The GNU General Public License is contained in the file COPYING.
 */
@@ -431,6 +429,17 @@ void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
    }
    DRD_(clientobj_delete_thread)(drd_joinee);
    DRD_(thread_delayed_delete)(drd_joinee);
+}
+
+void DRD_(thread_register_stack)(DrdThreadId tid, Addr addr1, Addr addr2)
+{
+   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+             && tid != DRD_INVALID_THREADID);
+   tl_assert(addr1 < addr2);
+   DRD_(g_threadinfo)[tid].stack_min     = addr2;
+   DRD_(g_threadinfo)[tid].stack_min_min = addr2;
+   DRD_(g_threadinfo)[tid].stack_startup = addr2;
+   DRD_(g_threadinfo)[tid].stack_max     = addr2;
 }
 
 /**

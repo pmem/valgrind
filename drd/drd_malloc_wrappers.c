@@ -1,7 +1,7 @@
 /*
   This file is part of drd, a thread error detector.
 
-  Copyright (C) 2006-2017 Bart Van Assche <bvanassche@acm.org>.
+  Copyright (C) 2006-2020 Bart Van Assche <bvanassche@acm.org>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -14,9 +14,7 @@
   General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-  02111-1307, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 
   The GNU General Public License is contained in the file COPYING.
 */
@@ -255,8 +253,20 @@ static void* drd___builtin_new(ThreadId tid, SizeT n)
    return new_block(tid, n, VG_(clo_alignment), /*is_zeroed*/False);
 }
 
+/** Wrapper for __builtin_new_aligned(). */
+static void* drd___builtin_new_aligned(ThreadId tid, SizeT n, SizeT align)
+{
+   return new_block(tid, n, align, /*is_zeroed*/False);
+}
+
 /** Wrapper for __builtin_delete(). */
 static void drd___builtin_delete(ThreadId tid, void* p)
+{
+   handle_free(tid, p);
+}
+
+/** Wrapper for __builtin_delete_aligned(). */
+static void drd___builtin_delete_aligned(ThreadId tid, void* p, SizeT align)
 {
    handle_free(tid, p);
 }
@@ -267,8 +277,20 @@ static void* drd___builtin_vec_new(ThreadId tid, SizeT n)
    return new_block(tid, n, VG_(clo_alignment), /*is_zeroed*/False);
 }
 
+/** Wrapper for __builtin_vec_new_aligned(). */
+static void* drd___builtin_vec_new_aligned(ThreadId tid, SizeT n, SizeT align)
+{
+   return new_block(tid, n, align, /*is_zeroed*/False);
+}
+
 /** Wrapper for __builtin_vec_delete(). */
 static void drd___builtin_vec_delete(ThreadId tid, void* p)
+{
+   handle_free(tid, p);
+}
+
+/** Wrapper for __builtin_vec_delete_aligned(). */
+static void drd___builtin_vec_delete_aligned(ThreadId tid, void* p, SizeT align)
 {
    handle_free(tid, p);
 }
@@ -301,12 +323,16 @@ void DRD_(register_malloc_wrappers)(const StartUsingMem start_callback,
 
    VG_(needs_malloc_replacement)(drd_malloc,
                                  drd___builtin_new,
+                                 drd___builtin_new_aligned,
                                  drd___builtin_vec_new,
+                                 drd___builtin_vec_new_aligned,
                                  drd_memalign,
                                  drd_calloc,
                                  drd_free,
                                  drd___builtin_delete,
+                                 drd___builtin_delete_aligned,
                                  drd___builtin_vec_delete,
+                                 drd___builtin_vec_delete_aligned,
                                  drd_realloc,
                                  drd_malloc_usable_size,
                                  0);

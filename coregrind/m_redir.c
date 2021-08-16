@@ -23,9 +23,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -1213,6 +1211,7 @@ Bool VG_(is_soname_ld_so) (const HChar *soname)
    if (VG_STREQ(soname, VG_U_LD_SO_1))               return True;
    if (VG_STREQ(soname, VG_U_LD_LINUX_AARCH64_SO_1)) return True;
    if (VG_STREQ(soname, VG_U_LD_LINUX_ARMHF_SO_3))   return True;
+   if (VG_STREQ(soname, VG_U_LD_LINUX_MIPSN8_S0_1))  return True;
 #  elif defined(VGO_darwin)
    if (VG_STREQ(soname, VG_U_DYLD)) return True;
 #  elif defined(VGO_solaris)
@@ -1630,6 +1629,21 @@ void VG_(redir_initialise) ( void )
 #     else
 #     error unknown mips64 ABI
 #     endif
+   }
+
+# elif defined(VGP_nanomips_linux)
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+
+      add_hardwired_spec(
+         "ld.so.1", "strlen",
+         (Addr)&VG_(nanomips_linux_REDIR_FOR_strlen),
+         complain_about_stripped_glibc_ldso
+      );
+      add_hardwired_spec(
+         "ld.so.1", "index",
+         (Addr)&VG_(nanomips_linux_REDIR_FOR_index),
+         complain_about_stripped_glibc_ldso
+      );
    }
 
 #  elif defined(VGP_x86_solaris)

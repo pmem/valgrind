@@ -22,9 +22,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -574,6 +572,22 @@ typedef struct SigQueue {
         (srP)->misc.MIPS64.r28 = (uc)->uc_mcontext.sc_regs[28]; \
       }
 
+#elif defined(VGP_nanomips_linux)
+#  define VG_UCONTEXT_INSTR_PTR(uc)   ((UWord)(((uc)->uc_mcontext.sc_pc)))
+#  define VG_UCONTEXT_STACK_PTR(uc)   ((UWord)((uc)->uc_mcontext.sc_regs[29]))
+#  define VG_UCONTEXT_FRAME_PTR(uc)   ((uc)->uc_mcontext.sc_regs[30])
+#  define VG_UCONTEXT_SYSCALL_NUM(uc) ((uc)->uc_mcontext.sc_regs[2])
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                               \
+      VG_(mk_SysRes_nanomips_linux)((uc)->uc_mcontext.sc_regs[4])
+
+#  define VG_UCONTEXT_TO_UnwindStartRegs(srP, uc)               \
+      { (srP)->r_pc = (uc)->uc_mcontext.sc_pc;                  \
+        (srP)->r_sp = (uc)->uc_mcontext.sc_regs[29];            \
+        (srP)->misc.MIPS32.r30 = (uc)->uc_mcontext.sc_regs[30]; \
+        (srP)->misc.MIPS32.r31 = (uc)->uc_mcontext.sc_regs[31]; \
+        (srP)->misc.MIPS32.r28 = (uc)->uc_mcontext.sc_regs[28]; \
+      }
+
 #elif defined(VGP_x86_solaris)
 #  define VG_UCONTEXT_INSTR_PTR(uc)       ((Addr)(uc)->uc_mcontext.gregs[VKI_EIP])
 #  define VG_UCONTEXT_STACK_PTR(uc)       ((Addr)(uc)->uc_mcontext.gregs[VKI_UESP])
@@ -987,6 +1001,13 @@ extern void my_sigreturn(void);
    "   syscall\n" \
    ".previous\n"
 
+#elif defined(VGP_nanomips_linux)
+#  define _MY_SIGRETURN(name) \
+    ".text\n" \
+   "my_sigreturn:\n" \
+   "   li $t4, " #name "\n" \
+   "   syscall[32]\n" \
+   ".previous\n"
 #elif defined(VGP_x86_solaris) || defined(VGP_amd64_solaris)
 /* Not used on Solaris. */
 #  define _MY_SIGRETURN(name) \
@@ -1086,7 +1107,7 @@ static void handle_SCSS_change ( Bool force_update )
 #        if !defined(VGP_ppc32_linux) && \
             !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
             !defined(VGP_mips32_linux) && !defined(VGP_mips64_linux) && \
-            !defined(VGO_solaris)
+            !defined(VGP_nanomips_linux) && !defined(VGO_solaris)
          vg_assert(ksa_old.sa_restorer == my_sigreturn);
 #        endif
          VG_(sigaddset)( &ksa_old.sa_mask, VKI_SIGKILL );
@@ -1352,18 +1373,29 @@ SysRes VG_(do_sys_sigprocmask) ( ThreadId tid,
                                  vki_sigset_t* set,
                                  vki_sigset_t* oldset )
 {
-   switch(how) {
-      case VKI_SIG_BLOCK:
-      case VKI_SIG_UNBLOCK:
-      case VKI_SIG_SETMASK:
-         vg_assert(VG_(is_valid_tid)(tid));
-         do_setmask ( tid, how, set, oldset );
-         return VG_(mk_SysRes_Success)( 0 );
+   /* Fix for case when ,,set,, is NULL.
+      In this case ,,how,, flag should be ignored
+      because we are only requesting from kernel
+      to put current mask into ,,oldset,,.
+      Taken from linux man pages (sigprocmask).
+      The same is specified for POSIX.
+   */
+   if (set != NULL) {
+      switch(how) {
+         case VKI_SIG_BLOCK:
+         case VKI_SIG_UNBLOCK:
+         case VKI_SIG_SETMASK:
+            break;
 
-      default:
-         VG_(dmsg)("sigprocmask: unknown 'how' field %d\n", how);
-         return VG_(mk_SysRes_Error)( VKI_EINVAL );
+         default:
+            VG_(dmsg)("sigprocmask: unknown 'how' field %d\n", how);
+            return VG_(mk_SysRes_Error)( VKI_EINVAL );
+      }
    }
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   do_setmask(tid, how, set, oldset);
+   return VG_(mk_SysRes_Success)( 0 );
 }
 
 
@@ -1910,7 +1942,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
    }
 
    if (VG_(clo_vgdb) != Vg_VgdbNo
-       && VG_(dyn_vgdb_error) <= VG_(get_n_errs_shown)() + 1) {
+       && VG_(clo_vgdb_error) <= VG_(get_n_errs_shown)() + 1) {
       /* Note: we add + 1 to n_errs_shown as the fatal signal was not
          reported through error msg, and so was not counted. */
       VG_(gdbserver_report_fatal_signal) (info, tid);
@@ -2165,8 +2197,8 @@ void VG_(synth_sigtrap)(ThreadId tid)
 // Synthesise a SIGFPE.
 void VG_(synth_sigfpe)(ThreadId tid, UInt code)
 {
-// Only tested on mips32, mips64, and s390x
-#if !defined(VGA_mips32) && !defined(VGA_mips64) && !defined(VGA_s390x)
+// Only tested on mips32, mips64, s390x and nanomips.
+#if !defined(VGA_mips32) && !defined(VGA_mips64) && !defined(VGA_s390x) && !defined(VGA_nanomips)
    vg_assert(0);
 #else
    vki_siginfo_t info;
@@ -2428,8 +2460,8 @@ void async_signalhandler ( Int sigNo,
                 sigNo, tid, info->si_code,
                 VG_(name_of_VgSchedReturnCode)(tst->exitreason));
 
-   /* */
-   if (tst->exitreason == VgSrc_FatalSig)
+   /* See similar logic in VG_(poll_signals). */
+   if (tst->exitreason != VgSrc_None)
       resume_scheduler(tid);
 
    /* Update thread state properly.  The signal can only have been
@@ -2953,10 +2985,11 @@ void VG_(poll_signals)(ThreadId tid)
    ThreadState *tst = VG_(get_ThreadState)(tid);
    vki_sigset_t saved_mask;
 
-   if (tst->exitreason == VgSrc_FatalSig) {
-      /* This task has been requested to die due to a fatal signal
-         received by the process. So, we cannot poll new signals,
-         as we are supposed to die asap. If we would poll and deliver
+   if (tst->exitreason != VgSrc_None ) {
+      /* This task has been requested to die (e.g. due to a fatal signal
+         received by the process, or because of a call to exit syscall).
+         So, we cannot poll new signals, as we are supposed to die asap.
+         If we would poll and deliver
          a new (maybe fatal) signal, this could cause a deadlock, as
          this thread would believe it has to terminate the other threads
          and wait for them to die, while we already have a thread doing
@@ -3036,7 +3069,8 @@ void VG_(sigstartup_actions) ( void )
       /* Get the old host action */
       ret = VG_(sigaction)(i, NULL, &sa);
 
-#     if defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
+#     if defined(VGP_x86_darwin) || defined(VGP_amd64_darwin) \
+      || defined(VGP_nanomips_linux)
       /* apparently we may not even ask about the disposition of these
          signals, let alone change them */
       if (ret != 0 && (i == VKI_SIGKILL || i == VKI_SIGSTOP))

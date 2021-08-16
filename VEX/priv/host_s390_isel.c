@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2017
+   Copyright IBM Corp. 2010-2020
    Copyright (C) 2012-2017  Florian Krohm   (britzel@acm.org)
 
    This program is free software; you can redistribute it and/or
@@ -22,9 +22,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -129,6 +127,7 @@ static HReg          s390_isel_int_expr(ISelEnv *, IRExpr *);
 static s390_amode   *s390_isel_amode(ISelEnv *, IRExpr *);
 static s390_amode   *s390_isel_amode_b12_b20(ISelEnv *, IRExpr *);
 static s390_cc_t     s390_isel_cc(ISelEnv *, IRExpr *);
+static HReg          s390_isel_int1_expr(ISelEnv *env, IRExpr *expr);
 static s390_opnd_RMI s390_isel_int_expr_RMI(ISelEnv *, IRExpr *);
 static void          s390_isel_int128_expr(HReg *, HReg *, ISelEnv *, IRExpr *);
 static HReg          s390_isel_float_expr(ISelEnv *, IRExpr *);
@@ -304,12 +303,14 @@ ulong_fits_signed_8bit(ULong val)
    return val == v;
 }
 
-/* EXPR is an expression that is used as an address. Return an s390_amode
-   for it. If select_b12_b20_only is true the returned amode must be either
-   S390_AMODE_B12 or S390_AMODE_B20. */
+/* EXPR is an expression that is used as an address. Return an s390_amode for
+   it. If no_index is true the returned amode must be either S390_AMODE_B12 or
+   S390_AMODE_B20. If short_displacement is true it must be either
+   S390_AMODE_B12 or S390_AMODE_BX12. */
 static s390_amode *
 s390_isel_amode_wrk(ISelEnv *env, IRExpr *expr,
-                    Bool select_b12_b20_only __attribute__((unused)))
+                    Bool no_index __attribute__((unused)),
+                    Bool short_displacement)
 {
    if (expr->tag == Iex_Binop && expr->Iex.Binop.op == Iop_Add64) {
       IRExpr *arg1 = expr->Iex.Binop.arg1;
@@ -330,7 +331,7 @@ s390_isel_amode_wrk(ISelEnv *env, IRExpr *expr,
          if (ulong_fits_unsigned_12bit(value)) {
             return s390_amode_b12((Int)value, s390_isel_int_expr(env, arg1));
          }
-         if (ulong_fits_signed_20bit(value)) {
+         if (!short_displacement && ulong_fits_signed_20bit(value)) {
             return s390_amode_b20((Int)value, s390_isel_int_expr(env, arg1));
          }
       }
@@ -350,7 +351,25 @@ s390_isel_amode(ISelEnv *env, IRExpr *expr)
    /* Address computation should yield a 64-bit value */
    vassert(typeOfIRExpr(env->type_env, expr) == Ity_I64);
 
-   am = s390_isel_amode_wrk(env, expr, /* B12, B20 only */ False);
+   am = s390_isel_amode_wrk(env, expr, False, False);
+
+   /* Check post-condition */
+   vassert(s390_amode_is_sane(am));
+
+   return am;
+}
+
+/* Sometimes we need an amode with short (12-bit) displacement. An example is
+   the vector-store opcode. */
+static s390_amode *
+s390_isel_amode_short(ISelEnv *env, IRExpr *expr)
+{
+   s390_amode *am;
+
+   /* Address computation should yield a 64-bit value */
+   vassert(typeOfIRExpr(env->type_env, expr) == Ity_I64);
+
+   am = s390_isel_amode_wrk(env, expr, False, True);
 
    /* Check post-condition */
    vassert(s390_amode_is_sane(am));
@@ -381,7 +400,7 @@ s390_isel_amode_b12_b20(ISelEnv *env, IRExpr *expr)
    /* Address computation should yield a 64-bit value */
    vassert(typeOfIRExpr(env->type_env, expr) == Ity_I64);
 
-   am = s390_isel_amode_wrk(env, expr, /* B12, B20 only */ True);
+   am = s390_isel_amode_wrk(env, expr, True, False);
 
    /* Check post-condition */
    vassert(s390_amode_is_sane(am) &&
@@ -495,7 +514,7 @@ get_const_value_as_ulong(const IRConst *con)
 }
 
 
-/*  Substract n from stack pointer. Assumes 0 <= n <= 256 && n % 8 == 0. */
+/*  Subtract n from stack pointer. Assumes 0 <= n <= 256 && n % 8 == 0. */
 static void
 sub_from_SP ( ISelEnv* env, UInt n )
 {
@@ -506,7 +525,7 @@ sub_from_SP ( ISelEnv* env, UInt n )
 }
 
 
-/*  Substract n from stack pointer. Assumes 0 <= n <= 256 && n % 8 == 0. */
+/*  Add n to stack pointer. Assumes 0 <= n <= 256 && n % 8 == 0. */
 static void
 add_to_SP ( ISelEnv* env, UInt n )
 {
@@ -1020,6 +1039,8 @@ s390_isel_int128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          goto do_multiply64;
 
       case Iop_MullS64:
+         if (!(env->hwcaps & VEX_HWCAPS_S390X_MI2))
+            goto irreducible;
          is_signed_multiply = True;
          goto do_multiply64;
 
@@ -1127,7 +1148,10 @@ s390_isel_int128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       }
    }
 
-   vpanic("s390_isel_int128_expr");
+   /* We get here if no pattern matched. */
+ irreducible:
+   ppIRExpr(expr);
+   vpanic("s390_isel_int128_expr: cannot reduce tree");
 }
 
 
@@ -1399,13 +1423,9 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          h1   = s390_isel_int_expr(env, arg1);   /* Process 1st operand */
          h2   = s390_isel_int_expr(env, arg2);   /* Process 2nd operand */
 
-         addInstr(env, s390_insn_move(arg_size, res, h1));
-         value = s390_opnd_imm(arg_size * 8);
-         addInstr(env, s390_insn_alu(size, S390_ALU_LSH, res, value));
-         value = s390_opnd_imm((((ULong)1) << arg_size * 8) - 1);
-         addInstr(env, s390_insn_alu(size, S390_ALU_AND, h2, value));
-         opnd = s390_opnd_reg(h2);
-         addInstr(env, s390_insn_alu(size, S390_ALU_OR,  res, opnd));
+         addInstr(env, s390_insn_move(arg_size, res, h2));
+         opnd = s390_opnd_reg(h1);
+         addInstr(env, s390_insn_alu(size, S390_ALU_ILIH, res, opnd));
          return res;
       }
 
@@ -1740,9 +1760,9 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
 
       /* Expressions whose argument is 1-bit wide */
       if (typeOfIRExpr(env->type_env, arg) == Ity_I1) {
-         s390_cc_t cond = s390_isel_cc(env, arg);
-         dst = newVRegI(env);     /* Result goes into a new register */
-         addInstr(env, s390_insn_cc2bool(dst, cond));
+         h1 = s390_isel_int1_expr(env, arg);
+         dst = newVRegI(env);
+         addInstr(env, s390_insn_move(8, dst, h1));
 
          switch (unop) {
          case Iop_1Uto8:
@@ -1761,16 +1781,9 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          case Iop_1Sto8:
          case Iop_1Sto16:
          case Iop_1Sto32:
-            shift.variant.imm = 31;
-            addInstr(env, s390_insn_alu(4, S390_ALU_LSH,  dst, shift));
-            addInstr(env, s390_insn_alu(4, S390_ALU_RSHA, dst, shift));
-            break;
-
          case Iop_1Sto64:
-            shift.variant.imm = 63;
-            addInstr(env, s390_insn_alu(8, S390_ALU_LSH,  dst, shift));
-            addInstr(env, s390_insn_alu(8, S390_ALU_RSHA, dst, shift));
-            break;
+            /* Int1 values are already sign-extended to 64 bits. */
+            return dst;
 
          default:
             goto irreducible;
@@ -1799,31 +1812,24 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          dst = newVRegI(env);
          HReg vec = s390_isel_vec_expr(env, arg);
          /* This is big-endian machine */
-         Int off;
+         Int idx;
          switch (unop) {
             case Iop_V128HIto64:
-               off = 0;
+               idx = 0;
                break;
             case Iop_V128to64:
-               off = 8;
+               idx = 1;
                break;
             case Iop_V128to32:
-               off = 12;
+               idx = 3;
                break;
             default:
                ppIROp(unop);
                vpanic("s390_isel_int_expr: unhandled V128toSMTH operation");
          }
-         s390_amode* m16_sp = s390_amode_for_stack_pointer(0);
-         s390_amode* off_sp = s390_amode_for_stack_pointer(off);
-
-         /* We could use negative displacement but vector instructions
-            require 12bit unsigned ones. So we have to allocate space on
-            stack just for one load and free it after. */
-         sub_from_SP(env, 16);
-         addInstr(env, s390_insn_store(sizeof(V128), m16_sp, vec));
-         addInstr(env, s390_insn_load(sizeof(ULong), dst, off_sp));
-         add_to_SP(env, 16);
+         s390_amode* am = s390_amode_b12(idx, s390_hreg_gpr(0));
+         addInstr(env, s390_insn_vec_amodeop(size, S390_VEC_GET_ELEM,
+                                             dst, vec, am));
          return dst;
       }
 
@@ -1870,7 +1876,8 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          /* Down-casts are no-ops. Upstream operations will only look at
             the bytes that make up the result of the down-cast. So there
             is no point setting the other bytes to 0. */
-         insn = s390_opnd_copy(8, dst, opnd);
+         size = sizeofIRType(typeOfIRExpr(env->type_env, arg));
+         insn = s390_opnd_copy(size, dst, opnd);
          break;
 
       case Iop_64HIto32:
@@ -1920,7 +1927,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          return dst;
       }
 
-      case Iop_Clz64: {
+      case Iop_ClzNat64: {
          HReg r10, r11;
 
          /* This will be implemented using FLOGR, if possible. So we need to
@@ -2123,7 +2130,7 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       *dst_hi = newVRegF(env);
       *dst_lo = newVRegF(env);
       addInstr(env, s390_insn_load(8, *dst_hi, am_hi));
-      addInstr(env, s390_insn_load(8, *dst_hi, am_lo));
+      addInstr(env, s390_insn_load(8, *dst_lo, am_lo));
       return;
    }
 
@@ -2348,9 +2355,10 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       case Iop_NegF128:
          if (left->tag == Iex_Unop &&
              (left->Iex.Unop.op == Iop_AbsF32 ||
-              left->Iex.Unop.op == Iop_AbsF64))
+              left->Iex.Unop.op == Iop_AbsF64)) {
             bfpop = S390_BFP_NABS;
-         else
+            left = left->Iex.Unop.arg;
+         } else
             bfpop = S390_BFP_NEG;
          goto float128_opnd;
       case Iop_AbsF128:     bfpop = S390_BFP_ABS;         goto float128_opnd;
@@ -2712,9 +2720,10 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       case Iop_NegF64:
          if (left->tag == Iex_Unop &&
              (left->Iex.Unop.op == Iop_AbsF32 ||
-              left->Iex.Unop.op == Iop_AbsF64))
+              left->Iex.Unop.op == Iop_AbsF64)) {
             bfpop = S390_BFP_NABS;
-         else
+            left = left->Iex.Unop.arg;
+         } else
             bfpop = S390_BFP_NEG;
          break;
 
@@ -2751,6 +2760,25 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       h1  = s390_isel_float_expr(env, left);
       dst = newVRegF(env);
       addInstr(env, s390_insn_bfp_unop(size, bfpop, dst, h1));
+      return dst;
+   }
+
+      /* --------- MULTIPLEX --------- */
+   case Iex_ITE: {
+      IRExpr *cond_expr = expr->Iex.ITE.cond;
+      HReg dst, r0, r1;
+
+      vassert(typeOfIRExpr(env->type_env, cond_expr) == Ity_I1);
+
+      dst  = newVRegF(env);
+      r0   = s390_isel_float_expr(env, expr->Iex.ITE.iffalse);
+      r1   = s390_isel_float_expr(env, expr->Iex.ITE.iftrue);
+      size = sizeofIRType(typeOfIRExpr(env->type_env, expr->Iex.ITE.iftrue));
+
+      s390_cc_t cc = s390_isel_cc(env, cond_expr);
+
+      addInstr(env, s390_insn_move(size, dst, r0));
+      addInstr(env, s390_insn_cond_move(size, cc, dst, s390_opnd_reg(r1)));
       return dst;
    }
 
@@ -2812,7 +2840,7 @@ s390_isel_dfp128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       *dst_hi = newVRegF(env);
       *dst_lo = newVRegF(env);
       addInstr(env, s390_insn_load(8, *dst_hi, am_hi));
-      addInstr(env, s390_insn_load(8, *dst_hi, am_lo));
+      addInstr(env, s390_insn_load(8, *dst_lo, am_lo));
       return;
    }
 
@@ -3442,7 +3470,8 @@ s390_isel_dfp_expr(ISelEnv *env, IRExpr *expr)
 /*--- ISEL: Condition Code                              ---*/
 /*---------------------------------------------------------*/
 
-/* This function handles all operators that produce a 1-bit result */
+/* Handle all operators that produce a 1-bit result.  This function is mutually
+   recursive with s390_isel_int1_expr. */
 static s390_cc_t
 s390_isel_cc(ISelEnv *env, IRExpr *cond)
 {
@@ -3497,20 +3526,7 @@ s390_isel_cc(ISelEnv *env, IRExpr *cond)
       }
 
       case Iop_CmpNEZ8:
-      case Iop_CmpNEZ16: {
-         s390_opnd_RMI src;
-         s390_unop_t   op;
-         HReg dst;
-
-         op  = (cond->Iex.Unop.op == Iop_CmpNEZ8) ? S390_ZERO_EXTEND_8
-            : S390_ZERO_EXTEND_16;
-         dst = newVRegI(env);
-         src = s390_isel_int_expr_RMI(env, arg);
-         addInstr(env, s390_insn_unop(4, op, dst, src));
-         addInstr(env, s390_insn_test(4, s390_opnd_reg(dst)));
-         return S390_CC_NE;
-      }
-
+      case Iop_CmpNEZ16:
       case Iop_CmpNEZ32:
       case Iop_CmpNEZ64: {
          s390_opnd_RMI src;
@@ -3530,8 +3546,17 @@ s390_isel_cc(ISelEnv *env, IRExpr *cond)
    if (cond->tag == Iex_Binop) {
       IRExpr *arg1 = cond->Iex.Binop.arg1;
       IRExpr *arg2 = cond->Iex.Binop.arg2;
-      HReg reg1, reg2;
 
+      /* And1 / Or1 */
+      if (cond->Iex.Binop.op == Iop_And1 || cond->Iex.Binop.op == Iop_Or1) {
+         /* Perform the calculation in registers, but ignore the resulting
+            value.  Instead, assume that the condition code is set. */
+         (void) s390_isel_int1_expr(env, cond);
+         return S390_CC_NE;
+      }
+
+      // |sizeofIRType| asserts on Ity_I1, so we can't do it until after we're
+      // sure that Iop_And1 and Iop_Or1 can't make it this far.
       size = sizeofIRType(typeOfIRExpr(env->type_env, arg1));
 
       switch (cond->Iex.Binop.op) {
@@ -3563,14 +3588,12 @@ s390_isel_cc(ISelEnv *env, IRExpr *cond)
          goto do_compare_ze;
 
       do_compare_ze: {
-            s390_opnd_RMI op1, op2;
-
-            op1  = s390_isel_int_expr_RMI(env, arg1);
-            reg1 = newVRegI(env);
+            s390_opnd_RMI op1 = s390_isel_int_expr_RMI(env, arg1);
+            HReg reg1 = newVRegI(env);
             addInstr(env, s390_insn_unop(4, op, reg1, op1));
 
-            op2  = s390_isel_int_expr_RMI(env, arg2);
-            reg2 = newVRegI(env);
+            s390_opnd_RMI op2 = s390_isel_int_expr_RMI(env, arg2);
+            HReg reg2 = newVRegI(env);
             addInstr(env, s390_insn_unop(4, op, reg2, op2));  /* zero extend */
 
             op2 = s390_opnd_reg(reg2);
@@ -3649,6 +3672,47 @@ s390_isel_cc(ISelEnv *env, IRExpr *cond)
    vpanic("s390_isel_cc: unexpected operator");
 }
 
+/*---------------------------------------------------------*/
+/*--- ISEL: Bit-typed expression                        ---*/
+/*---------------------------------------------------------*/
+
+/* Handle Int1-typed expressions that are supposed to end up in a register.
+   Place the result into the given target register 'dst', or, if INVALID_HREG is
+   specified, create a new virtual integer register if necessary.  Keep Int1
+   values in registers always sign-extended to 64 bits.  This function is
+   mutually recursive with s390_isel_cc. */
+static HReg
+s390_isel_int1_expr(ISelEnv *env, IRExpr *expr)
+{
+   vassert(expr);
+   vassert(typeOfIRExpr(env->type_env, expr) == Ity_I1);
+
+   /* Variable. */
+   if (expr->tag == Iex_RdTmp)
+      return lookupIRTemp(env, expr->Iex.RdTmp.tmp);
+
+   HReg res = newVRegI(env);
+
+   /* And1 / Or1 */
+   if (expr->tag == Iex_Binop
+       && (expr->Iex.Binop.op == Iop_And1 || expr->Iex.Binop.op == Iop_Or1)) {
+      HReg reg1 = s390_isel_int1_expr(env, expr->Iex.Binop.arg1);
+      HReg reg2 = s390_isel_int1_expr(env, expr->Iex.Binop.arg2);
+      s390_alu_t opkind
+         = expr->Iex.Binop.op == Iop_And1 ? S390_ALU_AND : S390_ALU_OR;
+
+      addInstr(env, s390_insn_move(8, res, reg1));
+
+      /* Ensure that the condition code is set; s390_isel_cc relies on it. */
+      addInstr(env, s390_insn_alu(8, opkind, res, s390_opnd_reg(reg2)));
+      return res;
+   }
+
+   /* Else, call s390_isel_cc and force the value into a register. */
+   addInstr(env, s390_insn_cc2bool(res, s390_isel_cc(env, expr)));
+   return res;
+}
+
 
 /*---------------------------------------------------------*/
 /*--- ISEL: Vector expressions (128 bit)                ---*/
@@ -3672,7 +3736,7 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
    /* --------- LOAD --------- */
    case Iex_Load: {
       HReg        dst = newVRegV(env);
-      s390_amode *am  = s390_isel_amode(env, expr->Iex.Load.addr);
+      s390_amode *am  = s390_isel_amode_short(env, expr->Iex.Load.addr);
 
       if (expr->Iex.Load.end != Iend_BE)
          goto irreducible;
@@ -3875,11 +3939,27 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
          vec_unop = S390_VEC_COUNT_ONES;
          goto Iop_V_wrk;
 
+      case Iop_Neg32Fx4:
+         size = 4;
+         vec_unop = S390_VEC_FLOAT_NEG;
+         if (arg->tag == Iex_Unop && arg->Iex.Unop.op == Iop_Abs32Fx4) {
+            vec_unop = S390_VEC_FLOAT_NABS;
+            arg = arg->Iex.Unop.arg;
+         }
+         goto Iop_V_wrk;
       case Iop_Neg64Fx2:
          size = 8;
          vec_unop = S390_VEC_FLOAT_NEG;
+         if (arg->tag == Iex_Unop && arg->Iex.Unop.op == Iop_Abs64Fx2) {
+            vec_unop = S390_VEC_FLOAT_NABS;
+            arg = arg->Iex.Unop.arg;
+         }
          goto Iop_V_wrk;
 
+      case Iop_Abs32Fx4:
+         size = 4;
+         vec_unop = S390_VEC_FLOAT_ABS;
+         goto Iop_V_wrk;
       case Iop_Abs64Fx2:
          size = 8;
          vec_unop = S390_VEC_FLOAT_ABS;
@@ -4405,17 +4485,29 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
          vec_binop = S390_VEC_ELEM_ROLL_V;
          goto Iop_VV_wrk;
 
+      case Iop_CmpEQ32Fx4:
+         size = 4;
+         vec_binop = S390_VEC_FLOAT_COMPARE_EQUAL;
+         goto Iop_VV_wrk;
       case Iop_CmpEQ64Fx2:
          size = 8;
          vec_binop = S390_VEC_FLOAT_COMPARE_EQUAL;
          goto Iop_VV_wrk;
 
+      case Iop_CmpLE32Fx4:
+         size = 4;
+         vec_binop = S390_VEC_FLOAT_COMPARE_LESS_OR_EQUAL;
+         goto Iop_VV_wrk;
       case Iop_CmpLE64Fx2: {
          size = 8;
          vec_binop = S390_VEC_FLOAT_COMPARE_LESS_OR_EQUAL;
          goto Iop_VV_wrk;
       }
 
+      case Iop_CmpLT32Fx4:
+         size = 4;
+         vec_binop = S390_VEC_FLOAT_COMPARE_LESS;
+         goto Iop_VV_wrk;
       case Iop_CmpLT64Fx2: {
          size = 8;
          vec_binop = S390_VEC_FLOAT_COMPARE_LESS;
@@ -4602,9 +4694,19 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
                                            dst, reg1, reg2, reg3));
          return dst;
 
+      case Iop_Add32Fx4:
+         size = 4;
+         vec_binop = S390_VEC_FLOAT_ADD;
+         goto Iop_irrm_VV_wrk;
+
       case Iop_Add64Fx2:
          size = 8;
          vec_binop = S390_VEC_FLOAT_ADD;
+         goto Iop_irrm_VV_wrk;
+
+      case Iop_Sub32Fx4:
+         size = 4;
+         vec_binop = S390_VEC_FLOAT_SUB;
          goto Iop_irrm_VV_wrk;
 
       case Iop_Sub64Fx2:
@@ -4612,10 +4714,21 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
          vec_binop = S390_VEC_FLOAT_SUB;
          goto Iop_irrm_VV_wrk;
 
+      case Iop_Mul32Fx4:
+         size = 4;
+         vec_binop = S390_VEC_FLOAT_MUL;
+         goto Iop_irrm_VV_wrk;
+
       case Iop_Mul64Fx2:
          size = 8;
          vec_binop = S390_VEC_FLOAT_MUL;
          goto Iop_irrm_VV_wrk;
+
+      case Iop_Div32Fx4:
+         size = 4;
+         vec_binop = S390_VEC_FLOAT_DIV;
+         goto Iop_irrm_VV_wrk;
+
       case Iop_Div64Fx2:
          size = 8;
          vec_binop = S390_VEC_FLOAT_DIV;
@@ -4636,6 +4749,25 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
       default:
          goto irreducible;
       }
+   }
+
+   /* --------- MULTIPLEX --------- */
+   case Iex_ITE: {
+      IRExpr *cond_expr = expr->Iex.ITE.cond;
+      HReg dst, r0, r1;
+
+      vassert(typeOfIRExpr(env->type_env, cond_expr) == Ity_I1);
+
+      dst  = newVRegV(env);
+      r0   = s390_isel_vec_expr(env, expr->Iex.ITE.iffalse);
+      r1   = s390_isel_vec_expr(env, expr->Iex.ITE.iftrue);
+      size = sizeofIRType(typeOfIRExpr(env->type_env, expr->Iex.ITE.iftrue));
+
+      s390_cc_t cc = s390_isel_cc(env, cond_expr);
+
+      addInstr(env, s390_insn_move(size, dst, r0));
+      addInstr(env, s390_insn_cond_move(size, cc, dst, s390_opnd_reg(r1)));
+      return dst;
    }
 
    default:
@@ -4684,7 +4816,26 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
 
       if (stmt->Ist.Store.end != Iend_BE) goto stmt_fail;
 
-      am = s390_isel_amode(env, stmt->Ist.Store.addr);
+      if (tyd == Ity_V128) {
+         am = s390_isel_amode_short(env, stmt->Ist.Store.addr);
+      } else {
+         am = s390_isel_amode(env, stmt->Ist.Store.addr);
+      }
+
+      /* Check whether we can use a memcpy. Currently, the restriction
+         is that both amodes need to be B12, so MVC can be emitted.
+         We do not consider a store whose data expression is a load because
+         we don't want to deal with overlapping locations. */
+      /* store(get) never overlaps*/
+      if (am->tag == S390_AMODE_B12 &&
+          stmt->Ist.Store.data->tag == Iex_Get) {
+         UInt offset = stmt->Ist.Store.data->Iex.Get.offset;
+         s390_amode *from = s390_amode_for_guest_state(offset);
+         if (from->tag == S390_AMODE_B12) {
+            addInstr(env, s390_insn_memcpy(sizeofIRType(tyd), am, from));
+            return;
+         }
+      }
 
       switch (tyd) {
       case Ity_I8:
@@ -4697,18 +4848,6 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
             ULong value =
                get_const_value_as_ulong(stmt->Ist.Store.data->Iex.Const.con);
             addInstr(env, s390_insn_mimm(sizeofIRType(tyd), am, value));
-            return;
-         }
-         /* Check whether we can use a memcpy here. Currently, the restriction
-            is that both amodes need to be B12, so MVC can be emitted.
-            We do not consider a store whose data expression is a load because
-            we don't want to deal with overlapping locations. */
-         /* store(get) never overlaps*/
-         if (am->tag == S390_AMODE_B12 &&
-             stmt->Ist.Store.data->tag == Iex_Get) {
-            UInt offset = stmt->Ist.Store.data->Iex.Get.offset;
-            s390_amode *from = s390_amode_for_guest_state(offset);
-            addInstr(env, s390_insn_memcpy(sizeofIRType(tyd), am, from));
             return;
          }
          /* General case: compile data into a register */
@@ -4917,9 +5056,9 @@ no_memcpy_put:
          break;
 
       case Ity_I1: {
-         s390_cc_t cond = s390_isel_cc(env, stmt->Ist.WrTmp.data);
+         src = s390_isel_int1_expr(env, stmt->Ist.WrTmp.data);
          dst = lookupIRTemp(env, tmp);
-         addInstr(env, s390_insn_cc2bool(dst, cond));
+         addInstr(env, s390_insn_move(8, dst, src));
          return;
       }
 
@@ -5090,10 +5229,6 @@ no_memcpy_put:
             addInstr(env, s390_insn_cdas(8, r8, r9, op2, r10, r11,
                                          old_high, old_low, r1));
          }
-         addInstr(env, s390_insn_move(8, op1_high, r8));
-         addInstr(env, s390_insn_move(8, op1_low,  r9));
-         addInstr(env, s390_insn_move(8, op3_high, r10));
-         addInstr(env, s390_insn_move(8, op3_low,  r11));
          return;
       }
       break;

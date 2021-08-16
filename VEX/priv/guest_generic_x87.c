@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 
@@ -455,7 +453,7 @@ ULong x86amd64g_calculate_FXTRACT ( ULong arg, HWord getExp )
 
    /* Mimic Core i5 behaviour for special cases. */
    if (arg == posInf)
-      return getExp ? posInf : posInf;
+      return posInf; /* Both significand and exponent are posInf. */
    if (arg == negInf)
       return getExp ? posInf : negInf;
    if ((arg & nanMask) == nanMask)

@@ -1,3 +1,388 @@
+Release 3.17.0 (19 Mar 2021)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+3.17.0 fixes a number of bugs and adds some functional changes: support for
+GCC 11, Clang 11, DWARF5 debuginfo, the 'debuginfod' debuginfo server, and
+some new instructions for Arm64, S390 and POWER.  There are also some tool
+updates.
+
+This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
+PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
+MIPS64/Linux, ARM/Android, ARM64/Android, MIPS32/Android, X86/Android,
+X86/Solaris, AMD64/Solaris and AMD64/MacOSX 10.12.  There is also preliminary
+support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
+
+* ==================== CORE CHANGES ===================
+
+* DWARF version 5 support.  Valgrind can now read DWARF version 5 debuginfo as
+  produced by GCC 11.
+
+* Valgrind now supports debuginfod, an HTTP server for distributing ELF/DWARF
+  debugging information. When a debuginfo file cannot be found locally,
+  Valgrind is able to query debuginfod servers for the file using its
+  build-id. See the user manual for more information about debuginfod support.
+
+* ================== PLATFORM CHANGES =================
+
+* arm64:
+
+  - Inaccuracies resulting from double-rounding in the simulation of
+    floating-point multiply-add/subtract instructions have been fixed.  These
+    should now behave exactly as the hardware does.
+
+  - Partial support for the ARM v8.2 instruction set.  v8.2 support work is
+    ongoing.  Support for the half-word variants of at least the following
+    instructions has been added:
+       FABS <Hd>, <Hn>
+       FABS <Vd>.<T>, <Vn>.<T>
+       FNEG <Hd>, <Hn>
+       FNEG <Vd>.<T>, <Vn>.<T>
+       FSQRT <Hd>, <Hn>
+       FSQRT <Vd>.<T>, <Vn>.<T>
+       FADDP
+
+* s390:
+
+  - Implement the new instructions/features that were added to z/Architecture
+    with the vector-enhancements facility 1.  Also cover the instructions from
+    the vector-packed-decimal facility that are defined outside the chapter
+    "Vector Decimal Instructions", but not the ones from that chapter itself.
+
+    For a detailed list of newly supported instructions see the updates to
+    `docs/internals/s390-opcodes.csv'.
+
+    Since the miscellaneous instruction extensions facility 2 was already
+    added in Valgrind 3.16.0, this completes the support necessary to run
+    general programs built with `--march=z14' under Valgrind.  The
+    vector-packed-decimal facility is currently not exploited by the standard
+    toolchain and libraries.
+
+* ppc64:
+
+  - Various bug fixes.  Fix for the sync field to limit setting just two of
+    the two bits in the L-field. Fix the write size for the stxsibx and
+    stxsihx instructions.  Fix the modsw and modsd instructions.
+
+  - Partial support for ISA 3.1 has been added.  Support for the VSX PCV mask
+    instructions, bfloat16 GER instructions, and bfloat16 to/from float 32-bit
+    conversion instructions are still missing.
+
+* ==================== TOOL CHANGES ====================
+
+* General tool changes
+
+  - All the tools and their vgpreload libraries are now installed under
+    libexec because they cannot be executed directly and should be run through
+    the valgrind executable. This should be an internal, not user visible,
+    change, but might impact valgrind packagers.
+
+  - The --track-fds option now respects -q, --quiet and won't output anything
+    if no file descriptors are leaked. It also won't report the standard stdin
+    (0), stdout (1) or stderr (2) descriptors as being leaked with
+    --trace-fds=yes anymore. To track whether the standard file descriptors
+    are still open at the end of the program run use --trace-fds=all.
+
+* DHAT:
+
+  - DHAT has been extended, with two new modes of operation. The new
+    --mode=copy flag triggers copy profiling, which records calls to memcpy,
+    strcpy, and similar functions. The new --mode=ad-hoc flag triggers ad hoc
+    profiling, which records calls to the DHAT_AD_HOC_EVENT client request in
+    the new dhat/dhat.h file. This is useful for learning more about hot code
+    paths. See the user manual for more information about the new modes.
+
+  - Because of these changes, DHAT's file format has changed. DHAT output
+    files produced with earlier versions of DHAT will not work with this
+    version of DHAT's viewer, and DHAT output files produced with this version
+    of DHAT will not work with earlier versions of DHAT's viewer.
+
+* ==================== FIXED BUGS ====================
+
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
+than mailing the developers (or mailing lists) directly -- bugs that
+are not entered into bugzilla tend to get forgotten about or ignored.
+
+To see details of a given bug, visit
+  https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed below.
+
+140178  open("/proc/self/exe", ...); doesn't quite work
+140939 --track-fds reports leakage of stdout/in/err and doesn't respect -q
+217695  malloc/calloc/realloc/memalign failure doesn't set errno to ENOMEM
+338633  gdbserver_tests/nlcontrolc.vgtest hangs on arm64
+345077  linux syscall execveat support (linux 3.19)
+361770  Missing F_ADD_SEALS
+369029  handle linux syscalls sched_getattr and sched_setattr
+384729  __libc_freeres inhibits cross-platform valgrind
+388787  Support for C++17 new/delete
+391853  Makefile.all.am:L247 and @SOLARIS_UNDEF_LARGESOURCE@ being empty
+396656  Warnings while reading debug info
+397605  ioctl FICLONE mishandled
+401416  Compile failure with openmpi 4.0
+408663  Suppression file for musl libc
+404076  s390x: z14 vector instructions not implemented
+410743  shmat() calls for 32-bit programs fail when running in 64-bit valgrind
+        (actually affected all x86 and nanomips regardless of host bitness)
+413547  regression test does not check for Arm 64 features.
+414268  Enable AArch64 feature detection and decoding for v8.x instructions
+415293  Incorrect call-graph tracking due to new _dl_runtime_resolve_xsave*
+422174  unhandled instruction bytes: 0x48 0xE9 (REX prefixed JMP instruction)
+422261  platform selection fails for unqualified client name
+422623  epoll_ctl warns for uninitialized padding on non-amd64 64bit arches
+423021  PPC:  Add missing ISA 3.0 documentation link and HWCAPS test.
+423195  PPC ISA 3.1 support is missing, part 1
+423361  Adds io_uring support on arm64/aarch64 (and all other arches)
+424012  crash with readv/writev having invalid but not NULL arg2 iovec
+424298  amd64: Implement RDSEED
+425232  PPC ISA 3.1 support is missing, part 2
+425820  Failure to recognize vpcmpeqq as a dependency breaking idiom.
+426014  arm64: implement fmadd and fmsub as Iop_MAdd/Sub
+426123  PPC ISA 3.1 support is missing, part 3
+426144  Fix "condition variable has not been initialized" on Fedora 33.
+427400  PPC ISA 3.1 support is missing, part 4
+427401  PPC ISA 3.1 support is missing, part 5
+427404  PPC ISA 3.1 support is missing, part 6
+427870  lmw, lswi and related PowerPC insns aren't allowed on ppc64le
+427787  Support new faccessat2 linux syscall (439)
+427969  debuginfo section duplicates a section in the main ELF file
+428035  drd: Unbreak the musl build
+428648  s390_emit_load_mem panics due to 20-bit offset for vector load
+428716  cppcheck detects potential leak in VEX/useful/smchash.c
+428909  helgrind: need to intercept duplicate libc definitions for Fedora 33
+429352  PPC ISA 3.1 support is missing, part 7
+429354  PPC ISA 3.1 support is missing, part 8
+429692  unhandled ppc64le-linux syscall: 147 (getsid)
+429864  s390x: C++ atomic test_and_set yields false-positive memcheck
+        diagnostics
+429952  Errors when building regtest with clang
+430354  ppc stxsibx and stxsihx instructions write too much data
+430429  valgrind.h doesn't compile on s390x with clang
+430485  expr_is_guardable doesn't handle Iex_Qop
+431556  Complete arm64 FADDP v8.2 instruction support
+432102  Add support for DWARF5 as produced by GCC11
+432161  Addition of arm64 v8.2 FADDP, FNEG and FSQRT
+432381  drd: Process STACK_REGISTER client requests
+432552  [AArch64] invalid error emitted for pre-decremented byte/hword addresses
+432672  vg_regtest: test-specific environment variables not reset between tests
+432809  VEX should support REX.W + POPF
+432861  PPC modsw and modsd give incorrect results for 1 mod 12
+432870  gdbserver_tests:nlcontrolc hangs with newest glibc2.33 x86-64
+432215  Add debuginfod functionality
+433323  Use pkglibexecdir as vglibdir
+433500  DRD regtest faulures when libstdc++ and libgcc debuginfo are installed
+433629  valgrind/README has type "abd" instead of "and"
+433641  Rust std::sys::unix::fs::try_statx Syscall param fstatat(file_name)
+433898  arm64: Handle sp, lr, fp as DwReg in CfiExpr
+434193  GCC 9+ inlined strcmp causes "Conditional jump or move [..] value" report
+n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
+n-i-bz  arm64 front end: avoid Memcheck false positives relating to CPUID
+
+(3.17.0.RC1: 13 Mar 2021)
+(3.17.0.RC2: 17 Mar 2021)
+(3.17.0:     19 Mar 2021)
+
+
+
+Release 3.16.1 (22 June 2020)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+3.16.1 fixes two critical bugs discovered after 3.16.0 was frozen.  It also
+fixes character encoding problems in the documentation HTML.
+
+422677  PPC sync instruction L field should only be 2 bits in ISA 3.0
+422715  32-bit x86: vex: the `impossible' happened: expr_is_guardable: unhandled expr
+
+(3.16.1, 22 June 2020, 36d6727e1d768333a536f274491e5879cab2c2f7)
+
+
+
+Release 3.16.0 (27 May 2020)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+3.16.0 is a feature release with many improvements and the usual collection of
+bug fixes.
+
+This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
+PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
+MIPS64/Linux, ARM/Android, ARM64/Android, MIPS32/Android, X86/Android,
+X86/Solaris, AMD64/Solaris and AMD64/MacOSX 10.12.  There is also preliminary
+support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
+
+* ==================== CORE CHANGES ===================
+
+* It is now possible to dynamically change the value of many command line
+  options while your program (or its children) are running under Valgrind.
+
+  To see the list of dynamically changeable options, run
+     "valgrind --help-dyn-options".
+
+  You can change the options from the shell by using vgdb to launch
+  the monitor command "v.clo <clo option>...".
+  The same monitor command can be used from a gdb connected
+  to the valgrind gdbserver.
+  Your program can also change the dynamically changeable options using
+  the client request VALGRIND_CLO_CHANGE(option).
+
+* ================== PLATFORM CHANGES =================
+
+* MIPS: preliminary support for nanoMIPS instruction set has been added.
+
+* ==================== TOOL CHANGES ====================
+
+* DHAT:
+
+  - The implicit memcpy done by each call to realloc now counts towards the
+    read and write counts of resized heap blocks, making those counts higher
+    and more accurate.
+
+* Cachegrind:
+
+  - cg_annotate's --auto and --show-percs options now default to 'yes', because
+    they are usually wanted.
+
+* Callgrind:
+
+  - callgrind_annotate's --auto and --show-percs options now default to 'yes',
+    because they are usually wanted.
+
+  - The command option --collect-systime has been enhanced to specify
+    the unit used to record the elapsed time spent during system calls.
+    The command option now accepts the values no|yes|msec|usec|nsec,
+    where yes is a synonym of msec.  When giving the value nsec, the
+    system cpu time of system calls is also recorded.
+
+* Memcheck:
+
+  - Several memcheck options are now dynamically changeable.
+    Use  valgrind --help-dyn-options  to list them.
+
+  - The release 3.15 introduced a backward incompatible change for
+    some suppression entries related to preadv and pwritev syscalls.
+    When reading a suppression entry using the unsupported 3.14 format,
+    valgrind will now produce a warning to say the suppression entry will not
+    work, and suggest the needed change.
+
+  - Significantly fewer false positive errors on optimised code generated by
+    Clang and GCC.  In particular, Memcheck now deals better with the
+    situation where the compiler will transform C-level "A && B" into "B && A"
+    under certain circumstances (in which the transformation is valid).
+    Handling of integer equality/non-equality checks on partially defined
+    values is also improved on some architectures.
+
+* exp-sgcheck:
+
+  - The exprimental Stack and Global Array Checking tool has been removed.
+    It only ever worked on x86 and amd64, and even on those it had a
+    high false positive rate and was slow.  An alternative for detecting
+    stack and global array overruns is using the AddressSanitizer (ASAN)
+    facility of the GCC and Clang compilers, which require you to rebuild
+    your code with -fsanitize=address.
+
+* ==================== OTHER CHANGES ====================
+
+* New and modified GDB server monitor features:
+
+  - Option -T tells vgdb to output a timestamp in the vgdb information messages.
+
+  - The gdbserver monitor commands that require an address and an optional
+    length argument now accepts the alternate 'C like' syntax "address[length]".
+    For example, the memcheck command "monitor who_points_at 0x12345678 120"
+    can now also be given as "monitor who_points_at 0x12345678[120]".
+
+* ==================== FIXED BUGS ====================
+
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
+than mailing the developers (or mailing lists) directly -- bugs that
+are not entered into bugzilla tend to get forgotten about or ignored.
+
+To see details of a given bug, visit
+  https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed below.
+
+343099  Linux setns syscall wrapper missing, unhandled syscall: 308
+        == 368923 WARNING: unhandled arm64-linux syscall: 268 (setns)
+        == 369031 WARNING: unhandled amd64-linux syscall: 308 (setns)
+385386  Assertion failed "szB >= CACHE_ENTRY_SIZE" at m_debuginfo/image.c:517
+400162  Patch: Guard against __GLIBC_PREREQ for musl libc
+400593  In Coregrind, use statx for some internal syscalls if [f]stat[64] fail
+400872  Add nanoMIPS support to Valgrind
+403212  drd/tests/trylock hangs on FreeBSD
+404406  s390x: z14 miscellaneous instructions not implemented
+405201  Incorrect size of struct vki_siginfo on 64-bit Linux architectures
+406561  mcinfcallWSRU gdbserver_test fails on ppc64
+406824  Unsupported baseline
+407218  Add support for the copy_file_range syscall
+407307  Intercept stpcpy also in ld.so for arm64
+407376  Update Xen support to 4.12 (4.13, actually) and add more coverage
+        == 390553
+407764  drd cond_post_wait gets wrong (?) condition on s390x z13 system
+408009  Expose rdrand and f16c even on avx if host cpu supports them
+408091  Missing pkey syscalls
+408414  Add support for missing for preadv2 and pwritev2 syscalls
+409141  Valgrind hangs when SIGKILLed
+409206  Support for Linux PPS and PTP ioctls
+409367  exit_group() after signal to thread waiting in futex() causes hangs
+409429  amd64: recognize 'cmpeq' variants as a dependency breaking idiom
+409780  References to non-existent configure.in
+410556  Add support for BLKIO{MIN,OPT} and BLKALIGNOFF ioctls
+410599  Non-deterministic behaviour of pth_self_kill_15_other test
+410757  discrepancy for preadv2/pwritev2 syscalls across different versions
+411134  Allow the user to change a set of command line options during execution
+411451  amd64->IR of bt/btc/bts/btr with immediate clears zero flag
+412344  Problem setting mips flags with specific paths
+412408  unhandled arm-linux syscall: 124 - adjtime - on arm-linux
+413119  Ioctl wrapper for DRM_IOCTL_I915_GEM_MMAP
+413330  avx-1 test fails on AMD EPYC 7401P 24-Core Processor
+413603  callgrind_annotate/cg_annotate truncate function names at '#'
+414565  Specific use case bug found in SysRes VG_(do_sys_sigprocmask)
+415136  ARMv8.1 Compare-and-Swap instructions are not supported
+415757  vex x86->IR: 0x66 0xF 0xCE 0x4F (bswapw)
+416239  valgrind crashes when handling clock_adjtime
+416285  Use prlimit64 in VG_(getrlimit) and VG_(setrlimit)
+416286  DRD reports "conflicting load" error on std::mutex::lock()
+416301  s390x: "compare and signal" not supported
+416387  finit_module and bpf syscalls are unhandled on arm64
+416464  Fix false reports for uninitialized memory for PR_CAPBSET_READ/DROP
+416667  gcc10 ppc64le impossible constraint in 'asm' in test_isa.
+416753  new 32bit time syscalls for 2038+
+417075  pwritev(vector[...]) suppression ignored
+        417075 is not fixed, but incompatible supp entries are detected
+        and a warning is produced for these.
+417187  [MIPS] Conditional branch problem since 'grail' changes
+417238  Test memcheck/tests/vbit-test fails on mips64 BE
+417266  Make memcheck/tests/linux/sigqueue usable with musl
+417281  s390x: /bin/true segfaults with "grail" enabled
+417427  commit to fix vki_siginfo_t definition created numerous regression
+        errors on ppc64
+417452  s390_insn_store_emit: dst->tag for HRcVec128
+417578  Add suppressions for glibc DTV leaks
+417906  clone with CLONE_VFORK and no CLONE_VM fails
+418004  Grail code additions break ppc64.
+418435  s390x: spurious "Conditional jump or move depends on uninitialised [..]"
+418997  s390x: Support Iex_ITE for float and vector types
+419503  s390x: Avoid modifying registers returned from isel functions
+421321  gcc10 arm64 build needs __getauxval for linking with libgcc
+421570  std_mutex fails on Arm v8.1 h/w
+434035  vgdb might crash if valgrind is killed
+n-i-bz  Fix minor one time leaks in dhat.
+n-i-bz  Add --run-cxx-freeres=no in outer args to avoid inner crashes.
+n-i-bz  Add support for the Linux io_uring system calls
+n-i-bz  sys_statx: don't complain if both |filename| and |buf| are NULL.
+n-i-bz  Fix non-glibc build of test suite with s390x_features
+n-i-bz  MinGW, include/valgrind.h: Fix detection of 64-bit mode
+423195  PPC ISA 3.1 support is missing, part 1
+
+(3.16.0.RC1:  18 May 2020, git 6052ee66a0cf5234e8e2a2b49a8760226bc13b92)
+(3.16.0.RC2:  19 May 2020, git 940ec1ca69a09f7fdae3e800b7359f85c13c4b37)
+(3.16.0:      27 May 2020, git bf5e647edb9e96cbd5c57cc944984402eeee296d)
+
+
 
 Release 3.15.0 (12 April 2019)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -68,7 +453,7 @@ support for X86/macOS 10.13 and AMD64/macOS 10.13.
 
 * The new option --show-error-list=no|yes displays, at the end of the run, the
   list of detected errors and the used suppressions.  Prior to this change,
-  showing this information could only be done by specifying "-v -v", which is
+  showing this information could only be done by specifying "-v -v", but that
   also produced a lot of other possibly-non-useful messages.  The option -s is
   equivalent to --show-error-list=yes.
 
@@ -147,12 +532,16 @@ where XXXXXX is the bug number as listed below.
 405782  "VEX temporary storage exhausted" when attempting to debug slic3r-pe
 406198  none/tests/ppc64/test_isa_3_0_other test sporadically including CA
         bit in output.
+406256  PPC64, vector floating point instructions don't handle subnormal
+        according to VSCR[NJ] bit setting.
 406352  cachegrind/callgrind fails ann tests because of missing a.c
 406354  dhat is broken on x86 (32bit)
 406355  mcsignopass, mcsigpass, mcbreak fail due to difference in gdb output
 406357  gdbserver_tests fails because of gdb output change
 406360  memcheck/tests/libstdc++.supp needs more supression variants
 406422  none/tests/amd64-linux/map_32bits.vgtest fails too easily
+406465  arm64 insn selector fails on "t0 = <expr>" where <expr> has type Ity_F16
+407340  PPC64, does not support the vlogefp, vexptefp instructions.
 n-i-bz  add syswrap for PTRACE_GET|SET_THREAD_AREA on amd64.
 n-i-bz  Fix callgrind_annotate non deterministic order for equal total
 n-i-bz  callgrind_annotate --threshold=100 does not print all functions.
@@ -161,7 +550,7 @@ n-i-bz  amd64 (x86_64): RDRAND and F16C insn set extensions are supported
 
 (3.15.0.RC1:  8 April 2019, git ce94d674de5b99df173aad4c3ee48fc2a92e5d9c)
 (3.15.0.RC2: 11 April 2019, git 0c8be9bbede189ec580ec270521811766429595f)
-(3.15.0:     12 April 2019, git 535d2ff4f2f755faa8b1a9e467833eca455bd2d7)
+(3.15.0:     14 April 2019, git 270037da8b508954f0f7d703a0bebf5364eec548)
 
 
 

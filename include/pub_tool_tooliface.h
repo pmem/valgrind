@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -476,12 +474,16 @@ extern void VG_(needs_var_info) ( void );
 extern void VG_(needs_malloc_replacement)(
    void* (*pmalloc)               ( ThreadId tid, SizeT n ),
    void* (*p__builtin_new)        ( ThreadId tid, SizeT n ),
+   void* (*p__builtin_new_aligned)( ThreadId tid, SizeT n, SizeT align ),
    void* (*p__builtin_vec_new)    ( ThreadId tid, SizeT n ),
+   void* (*p__builtin_vec_new_aligned)( ThreadId tid, SizeT n, SizeT align ),
    void* (*pmemalign)             ( ThreadId tid, SizeT align, SizeT n ),
    void* (*pcalloc)               ( ThreadId tid, SizeT nmemb, SizeT size1 ),
    void  (*pfree)                 ( ThreadId tid, void* p ),
    void  (*p__builtin_delete)     ( ThreadId tid, void* p ),
+   void  (*p__builtin_delete_aligned)     ( ThreadId tid, void* p, SizeT align ),
    void  (*p__builtin_vec_delete) ( ThreadId tid, void* p ),
+   void  (*p__builtin_vec_delete_aligned) ( ThreadId tid, void* p, SizeT align ),
    void* (*prealloc)              ( ThreadId tid, void* p, SizeT new_size ),
    SizeT (*pmalloc_usable_size)   ( ThreadId tid, void* p), 
    SizeT client_malloc_redzone_szB
@@ -610,6 +612,9 @@ void VG_(track_die_mem_stack)                  (void(*f)(Addr a, SizeT len));
 
 /* Used for redzone at end of thread stacks */
 void VG_(track_ban_mem_stack)      (void(*f)(Addr a, SizeT len));
+
+/* Used to report VG_USERREQ__STACK_REGISTER client requests */
+void VG_(track_register_stack)     (void(*f)(Addr start, Addr end));
 
 /* These ones occur around syscalls, signal handling, etc */
 void VG_(track_pre_mem_read)       (void(*f)(CorePart part, ThreadId tid,

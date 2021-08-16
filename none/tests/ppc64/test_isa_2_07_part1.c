@@ -29,8 +29,7 @@
  *   GNU General Public License for more details.
  *
  *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *   along with this program; if not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -385,27 +384,27 @@ static void test_fmrgow (void)
 // VSX move instructions
 static void test_mfvsrd (void)
 {
-   __asm__ __volatile__ ("mfvsrd %0,%x1" : "=r" (r14) : "ws" (vec_inA));
+   __asm__ __volatile__ ("mfvsrd %0,%x1" : "=r" (r14) : "wa" (vec_inA));
 };
 
 static void test_mfvsrwz (void)
 {
-   __asm__ __volatile__ ("mfvsrwz %0,%x1" : "=r" (r14) : "ws" (vec_inA));
+   __asm__ __volatile__ ("mfvsrwz %0,%x1" : "=r" (r14) : "wa" (vec_inA));
 };
 
 static void test_mtvsrd (void)
 {
-   __asm__ __volatile__ ("mtvsrd %x0,%1" : "=ws" (vec_out) : "r" (r14));
+   __asm__ __volatile__ ("mtvsrd %x0,%1" : "=wa" (vec_out) : "r" (r14));
 };
 
 static void test_mtvsrwz (void)
 {
-   __asm__ __volatile__ ("mtvsrwz %x0,%1" : "=ws" (vec_out) : "r" (r14));
+   __asm__ __volatile__ ("mtvsrwz %x0,%1" : "=wa" (vec_out) : "r" (r14));
 };
 
 static void test_mtvsrwa (void)
 {
-   __asm__ __volatile__ ("mtvsrwa %x0,%1" : "=ws" (vec_out) : "r" (r14));
+   __asm__ __volatile__ ("mtvsrwa %x0,%1" : "=wa" (vec_out) : "r" (r14));
 };
 
 static void test_mtfprwa (void)

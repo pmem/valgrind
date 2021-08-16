@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -68,7 +66,7 @@ static HChar* read_dot_valgrindrc ( const HChar* dir )
    if ( !sr_isError(fd) ) {
       Int res = VG_(fstat)( sr_Res(fd), &stat_buf );
       /* Ignore if not owned by the current user, or is not a regular file,
-         or is world writeable (CVE-2008-4865). */
+         or is world writable (CVE-2008-4865). */
       if (res == 0
           && stat_buf.uid == VG_(geteuid)()
           && VKI_S_ISREG(stat_buf.mode)

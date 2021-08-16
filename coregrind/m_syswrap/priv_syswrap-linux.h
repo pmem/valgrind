@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -48,7 +46,9 @@ DECL_TEMPLATE(linux, sys_oldumount);
 DECL_TEMPLATE(linux, sys_umount);
 DECL_TEMPLATE(linux, sys_perf_event_open);
 DECL_TEMPLATE(linux, sys_preadv);
+DECL_TEMPLATE(linux, sys_preadv2);
 DECL_TEMPLATE(linux, sys_pwritev);
+DECL_TEMPLATE(linux, sys_pwritev2);
 DECL_TEMPLATE(linux, sys_sendmmsg);
 DECL_TEMPLATE(linux, sys_recvmmsg);
 DECL_TEMPLATE(linux, sys_dup3);
@@ -180,6 +180,7 @@ DECL_TEMPLATE(linux, sys_symlinkat);
 DECL_TEMPLATE(linux, sys_readlinkat);
 DECL_TEMPLATE(linux, sys_fchmodat);
 DECL_TEMPLATE(linux, sys_faccessat);
+DECL_TEMPLATE(linux, sys_faccessat2);
 DECL_TEMPLATE(linux, sys_utimensat);
 DECL_TEMPLATE(linux, sys_name_to_handle_at);
 DECL_TEMPLATE(linux, sys_open_by_handle_at);
@@ -227,6 +228,8 @@ DECL_TEMPLATE(linux, sys_fremovexattr);
 // syscalls.
 DECL_TEMPLATE(linux, sys_sched_setparam);
 DECL_TEMPLATE(linux, sys_sched_getparam);
+DECL_TEMPLATE(linux, sys_sched_setattr);
+DECL_TEMPLATE(linux, sys_sched_getattr);
 DECL_TEMPLATE(linux, sys_sched_setscheduler);
 DECL_TEMPLATE(linux, sys_sched_getscheduler);
 DECL_TEMPLATE(linux, sys_sched_yield);
@@ -237,6 +240,7 @@ DECL_TEMPLATE(linux, sys_sched_setaffinity);
 DECL_TEMPLATE(linux, sys_sched_getaffinity);
 
 DECL_TEMPLATE(linux, sys_unshare);
+DECL_TEMPLATE(linux, sys_setns);
 
 // These ones have different parameters and/or return values on Darwin.
 // Also, some archs on Linux do not match the generic wrapper for sys_pipe.
@@ -298,8 +302,23 @@ DECL_TEMPLATE(linux, sys_membarrier);
 // Linux-specific (new in Linux 3.18)
 DECL_TEMPLATE(linux, sys_bpf);
 
+// Linux-specific (new in Linux 3.19)
+DECL_TEMPLATE(linux, sys_execveat);
+
 // Linux-specific (new in Linux 4.11)
 DECL_TEMPLATE(linux, sys_statx);
+
+// Linux-specific memory protection key syscalls (since Linux 4.9)
+DECL_TEMPLATE(linux, sys_pkey_alloc);
+DECL_TEMPLATE(linux, sys_pkey_free);
+DECL_TEMPLATE(linux, sys_pkey_mprotect);
+
+// Linux io_uring system calls. See also commit 2b188cc1bb85 ("Add io_uring IO
+// interface") # v5.1. See also commit edafccee56ff ("io_uring: add support
+// for pre-mapped user IO buffers") # v5.1.
+DECL_TEMPLATE(linux, sys_io_uring_setup);
+DECL_TEMPLATE(linux, sys_io_uring_enter);
+DECL_TEMPLATE(linux, sys_io_uring_register);
 
 /* ---------------------------------------------------------------------
    Wrappers for sockets and ipc-ery.  These are split into standalone
@@ -379,6 +398,29 @@ DECL_TEMPLATE(linux, sys_getsockname);
 DECL_TEMPLATE(linux, sys_getpeername);
 DECL_TEMPLATE(linux, sys_socketpair);
 DECL_TEMPLATE(linux, sys_kcmp);
+DECL_TEMPLATE(linux, sys_copy_file_range);
+
+/* 64bit time_t syscalls for 32bit arches.  */
+DECL_TEMPLATE(linux, sys_clock_gettime64)
+DECL_TEMPLATE(linux, sys_clock_settime64)
+// clock_adjtime64
+DECL_TEMPLATE(linux, sys_clock_getres_time64)
+DECL_TEMPLATE(linux, sys_clock_nanosleep_time64);
+DECL_TEMPLATE(linux, sys_timer_gettime64);
+DECL_TEMPLATE(linux, sys_timer_settime64);
+DECL_TEMPLATE(linux, sys_timerfd_gettime64);
+DECL_TEMPLATE(linux, sys_timerfd_settime64);
+DECL_TEMPLATE(linux, sys_utimensat_time64);
+DECL_TEMPLATE(linux, sys_pselect6_time64);
+DECL_TEMPLATE(linux, sys_ppoll_time64);
+// io_pgetevents_time64
+DECL_TEMPLATE(linux, sys_recvmmsg_time64);
+DECL_TEMPLATE(linux, sys_mq_timedsend_time64);
+DECL_TEMPLATE(linux, sys_mq_timedreceive_time64);
+DECL_TEMPLATE(linux, sys_semtimedop_time64);
+DECL_TEMPLATE(linux, sys_rt_sigtimedwait_time64);
+DECL_TEMPLATE(linux, sys_futex_time64);
+DECL_TEMPLATE(linux, sys_sched_rr_get_interval_time64);
 
 // Some arch specific functions called from syswrap-linux.c
 extern Int do_syscall_clone_x86_linux ( Word (*fn)(void *), 
@@ -449,6 +491,13 @@ extern UInt do_syscall_clone_mips_linux ( Word (*fn) (void *), //a0     0    32
                                           Int*  child_tid,     //stack  16   48
                                           Int*  parent_tid,    //stack  20   52
                                           void* tls_ptr);      //stack  24   56
+extern UInt do_syscall_clone_nanomips_linux ( Word (*fn) (void *),  /* a0 - 4 */
+                                              void* stack,          /* a1 - 5 */
+                                              Int   flags,          /* a2 - 6 */
+                                              void* arg,            /* a3 - 7 */
+                                              Int*  child_tid,      /* a4 - 8 */
+                                              Int*  parent_tid,     /* a5 - 9 */
+                                              void* tls_ptr);       /* a6 - 10 */
 #endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/

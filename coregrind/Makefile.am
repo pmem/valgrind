@@ -11,12 +11,12 @@ include $(top_srcdir)/Makefile.all.am
 
 AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ += \
 	-I$(top_srcdir)/coregrind \
-	-DVG_LIBDIR="\"$(pkglibdir)"\" \
+	-DVG_LIBDIR="\"$(pkglibexecdir)"\" \
 	-DVG_PLATFORM="\"@VGCONF_ARCH_PRI@-@VGCONF_OS@\""
 if VGCONF_HAVE_PLATFORM_SEC
 AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@ += \
 	-I$(top_srcdir)/coregrind \
-	-DVG_LIBDIR="\"$(pkglibdir)"\" \
+	-DVG_LIBDIR="\"$(pkglibexecdir)"\" \
 	-DVG_PLATFORM="\"@VGCONF_ARCH_SEC@-@VGCONF_OS@\""
 endif
 
@@ -157,10 +157,10 @@ mach_hdrs += \
         m_mach/thread_act.h \
         m_mach/vm_map.h
 mach_defs += \
-	/usr/include/mach/mach_vm.defs \
-        /usr/include/mach/task.defs \
-        /usr/include/mach/thread_act.defs \
-        /usr/include/mach/vm_map.defs
+	@XCODE_DIR@/mach/mach_vm.defs \
+        @XCODE_DIR@/mach/task.defs \
+        @XCODE_DIR@/mach/thread_act.defs \
+        @XCODE_DIR@/mach/vm_map.defs
 endif
 
 # Be careful w.r.t. parallel builds.  See section 27.9 of the automake info
@@ -212,6 +212,7 @@ noinst_HEADERS = \
 	pub_core_mallocfree.h	\
 	pub_core_options.h	\
 	pub_core_oset.h		\
+	pub_core_pathscan.h     \
 	pub_core_poolalloc.h	\
 	pub_core_rangemap.h	\
 	pub_core_redir.h	\
@@ -267,7 +268,6 @@ noinst_HEADERS = \
 	m_gdbserver/target.h \
 	m_gdbserver/valgrind_low.h \
 	m_gdbserver/gdb/signals.h \
-	m_initimg/priv_initimg_pathscan.h \
 	m_scheduler/priv_sema.h \
 	m_scheduler/priv_sched-lock.h \
 	m_scheduler/priv_sched-lock-impl.h \
@@ -317,6 +317,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_mallocfree.c \
 	m_options.c \
 	m_oset.c \
+	m_pathscan.c \
 	m_poolalloc.c \
 	m_rangemap.c \
 	m_redir.c \
@@ -376,6 +377,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_dispatch/dispatch-s390x-linux.S \
 	m_dispatch/dispatch-mips32-linux.S \
 	m_dispatch/dispatch-mips64-linux.S \
+	m_dispatch/dispatch-nanomips-linux.S \
 	m_dispatch/dispatch-x86-darwin.S \
 	m_dispatch/dispatch-amd64-darwin.S \
 	m_dispatch/dispatch-x86-solaris.S \
@@ -397,11 +399,11 @@ COREGRIND_SOURCES_COMMON = \
 	m_gdbserver/valgrind-low-s390x.c \
 	m_gdbserver/valgrind-low-mips32.c \
 	m_gdbserver/valgrind-low-mips64.c \
+	m_gdbserver/valgrind-low-nanomips.c \
 	m_gdbserver/version.c \
 	m_initimg/initimg-linux.c \
 	m_initimg/initimg-darwin.c \
 	m_initimg/initimg-solaris.c \
-	m_initimg/initimg-pathscan.c \
 	m_mach/mach_basics.c \
 	m_mach/mach_msg.c \
 	m_mach/mach_traps-x86-darwin.S \
@@ -421,6 +423,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_sigframe/sigframe-s390x-linux.c \
 	m_sigframe/sigframe-mips32-linux.c \
 	m_sigframe/sigframe-mips64-linux.c \
+	m_sigframe/sigframe-nanomips-linux.c \
 	m_sigframe/sigframe-x86-darwin.c \
 	m_sigframe/sigframe-amd64-darwin.c \
 	m_sigframe/sigframe-solaris.c \
@@ -434,6 +437,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syscall-s390x-linux.S \
 	m_syswrap/syscall-mips32-linux.S \
 	m_syswrap/syscall-mips64-linux.S \
+	m_syswrap/syscall-nanomips-linux.S \
 	m_syswrap/syscall-x86-darwin.S \
 	m_syswrap/syscall-amd64-darwin.S \
 	m_syswrap/syscall-x86-solaris.S \
@@ -453,6 +457,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syswrap-s390x-linux.c \
 	m_syswrap/syswrap-mips32-linux.c \
 	m_syswrap/syswrap-mips64-linux.c \
+	m_syswrap/syswrap-nanomips-linux.c \
 	m_syswrap/syswrap-x86-darwin.c \
 	m_syswrap/syswrap-amd64-darwin.c \
 	m_syswrap/syswrap-xen.c \
@@ -535,6 +540,32 @@ libcoregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_LIBADD = \
     $(libnolto_coregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_OBJECTS)
 libcoregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_DEPENDENCIES = \
     libnolto_coregrind-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a
+endif
+
+#----------------------------------------------------------------------------
+# libgcc-sup-<platform>.a
+# Special supplemental library for functions normally supplied by glibc
+# used by libgcc.
+#----------------------------------------------------------------------------
+
+pkglib_LIBRARIES  += libgcc-sup-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
+if VGCONF_HAVE_PLATFORM_SEC
+pkglib_LIBRARIES += libgcc-sup-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a
+endif
+
+libgcc_sup_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES = \
+	m_libgcc_sup.c
+libgcc_sup_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS = \
+	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libgcc_sup_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS = \
+	$(AM_CFLAGS_PSO_@VGCONF_PLATFORM_PRI_CAPS@)
+if VGCONF_HAVE_PLATFORM_SEC
+libgcc_sup_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_SOURCES = \
+	m_libgcc_sup.c
+libgcc_sup_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS = \
+	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+libgcc_sup_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS = \
+	$(AM_CFLAGS_PSO_@VGCONF_PLATFORM_SEC_CAPS@)
 endif
 
 #----------------------------------------------------------------------------
@@ -714,7 +745,7 @@ GDBSERVER_XML_FILES = \
 	m_gdbserver/mips64-fpu.xml
 
 # so as to make sure these get copied into the install tree
-vglibdir = $(pkglibdir)
+vglibdir = $(pkglibexecdir)
 vglib_DATA  = $(GDBSERVER_XML_FILES)
 
 # so as to make sure these get copied into the tarball

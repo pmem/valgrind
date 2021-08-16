@@ -8,7 +8,6 @@
    framework.
 
    Copyright (C) 2010-2017 RT-RK
-      mips-valgrind@rt-rk.com
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -21,9 +20,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -696,6 +693,14 @@
 #define __NR_execveat                (__NR_Linux + 320)
 #define __NR_userfaultfd             (__NR_Linux + 321)
 #define __NR_membarrier              (__NR_Linux + 322)
+#define __NR_mlock2                  (__NR_Linux + 323)
+#define __NR_copy_file_range         (__NR_Linux + 324)
+#define __NR_preadv2                 (__NR_Linux + 325)
+#define __NR_pwritev2                (__NR_Linux + 326)
+#define __NR_pkey_mprotect           (__NR_Linux + 327)
+#define __NR_pkey_alloc              (__NR_Linux + 328)
+#define __NR_pkey_free               (__NR_Linux + 329)
+#define __NR_statx                   (__NR_Linux + 330)
 
 #else
 #error unknown mips64 abi

@@ -21,9 +21,7 @@
   General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-  02111-1307, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 
   The GNU General Public License is contained in the file COPYING.
 */
@@ -219,7 +217,7 @@ LafterFP2:
 
 #ifdef HAS_ALTIVEC
         vspltisw 3,0x0  /* generate zero */
-        mtvscr  3
+        mtvscr  3       /* sets VSCR[NJ]=0 */
 #endif
         
 LafterVMX2:
@@ -277,7 +275,8 @@ LafterFP8:
         beq     LafterVMX8
 
 #ifdef HAS_ALTIVEC
-        /* Check VSCR[NJ] == 1 */
+        /* Expect VSCR[NJ] to be 0, call invariant_violation if
+           VSCR[NJ] == 1 . */
         /* first generate 4x 0x00010000 */
         vspltisw  4,0x1                   /* 4x 0x00000001 */
         vspltisw  5,0x0                   /* zero */

@@ -8,7 +8,6 @@
    framework.
 
    Copyright (C) 2010-2017 RT-RK
-      mips-valgrind@rt-rk.com
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -21,9 +20,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -117,16 +114,18 @@ ML_(do_syscall_for_client_WRK):
     lw $5, OFFSET_mips32_r5($8)
     lw $6, OFFSET_mips32_r6($8)
     lw $7, OFFSET_mips32_r7($8)
-    subu $29, $29, 24  #set up the steck frame, 
+    subu $29, $29, 32  #set up the steck frame,
     lw $9, OFFSET_mips32_r29($8)
     lw $10, 16($9)
     sw $10, 16($29)
     lw $10, 20($9)
     sw $10, 20($29)
+    lw $10, 24($9)
+    sw $10, 24($29)
 
 2:  syscall
 
-3:  addu $29, $29, 24  #set up the steck frame,
+3:  addu $29, $29, 32  #set up the steck frame,
 
     lw $8, 48($29) /* t0 == ThreadState */
     sw $2, OFFSET_mips32_r2($8)

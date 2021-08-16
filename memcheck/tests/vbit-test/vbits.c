@@ -17,9 +17,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -658,6 +656,7 @@ or_vbits(vbits_t v1, vbits_t v2)
    vbits_t new = { .num_bits = v1.num_bits };
 
    switch (v1.num_bits) {
+   case 1:   new.bits.u32 = (v1.bits.u32 | v2.bits.u32) & 1; break;
    case 8:   new.bits.u8  = v1.bits.u8  | v2.bits.u8;  break;
    case 16:  new.bits.u16 = v1.bits.u16 | v2.bits.u16; break;
    case 32:  new.bits.u32 = v1.bits.u32 | v2.bits.u32; break;
@@ -686,6 +685,7 @@ and_vbits(vbits_t v1, vbits_t v2)
    vbits_t new = { .num_bits = v1.num_bits };
 
    switch (v1.num_bits) {
+   case 1:   new.bits.u32 = (v1.bits.u32 & v2.bits.u32) & 1; break;
    case 8:   new.bits.u8  = v1.bits.u8  & v2.bits.u8;  break;
    case 16:  new.bits.u16 = v1.bits.u16 & v2.bits.u16; break;
    case 32:  new.bits.u32 = v1.bits.u32 & v2.bits.u32; break;

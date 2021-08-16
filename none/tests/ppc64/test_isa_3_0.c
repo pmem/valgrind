@@ -25,8 +25,7 @@
  *   GNU General Public License for more details.
  *
  *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *   along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -1178,23 +1177,23 @@ static void test_xscmpexpdp(void) {
 }
 
 static void test_xscmpeqdp(void) {
-   __asm__ __volatile__ ("xscmpeqdp   %x0, %x1, %x2 " : "+wa" (vec_xt): "ww" (vec_xa), "ww" (vec_xb));
+   __asm__ __volatile__ ("xscmpeqdp   %x0, %x1, %x2 " : "+wa" (vec_xt): "wa" (vec_xa), "wa" (vec_xb));
 }
 
 static void test_xscmpgtdp(void) {
-   __asm__ __volatile__ ("xscmpgtdp   %x0, %x1, %x2 " : "+wa" (vec_xt): "ww" (vec_xa), "ww" (vec_xb));
+   __asm__ __volatile__ ("xscmpgtdp   %x0, %x1, %x2 " : "+wa" (vec_xt): "wa" (vec_xa), "wa" (vec_xb));
 }
 
 static void test_xscmpgedp(void) {
-   __asm__ __volatile__ ("xscmpgedp   %x0, %x1, %x2 " : "+wa" (vec_xt): "ww" (vec_xa), "ww" (vec_xb));
+   __asm__ __volatile__ ("xscmpgedp   %x0, %x1, %x2 " : "+wa" (vec_xt): "wa" (vec_xa), "wa" (vec_xb));
 }
 
 static void test_xsmincdp(void) {
-   __asm__ __volatile__ ("xsmincdp   %x0, %x1, %x2 " : "+wa" (vec_xt): "ww" (vec_xa), "ww" (vec_xb));
+   __asm__ __volatile__ ("xsmincdp   %x0, %x1, %x2 " : "+wa" (vec_xt): "wa" (vec_xa), "wa" (vec_xb));
 }
 
 static void test_xsmaxcdp(void) {
-   __asm__ __volatile__ ("xsmaxcdp   %x0, %x1, %x2 " : "+wa" (vec_xt): "ww" (vec_xa), "ww" (vec_xb));
+   __asm__ __volatile__ ("xsmaxcdp   %x0, %x1, %x2 " : "+wa" (vec_xt): "wa" (vec_xa), "wa" (vec_xb));
 }
 
 static test_list_t testgroup_vector_scalar_compare_double[] = {
@@ -1828,15 +1827,15 @@ static void test_xscvhpdp(void) {
 }
 
 static void test_xscvdphp(void) {
-   __asm__ __volatile__ ("xscvdphp %x0, %x1 " : "+wi" (vec_xt) : "wi" (vec_xb));
+   __asm__ __volatile__ ("xscvdphp %x0, %x1 " : "+wa" (vec_xt) : "wa" (vec_xb));
 }
 
 static void test_xvcvhpsp(void) {
-   __asm__ __volatile__ ("xvcvhpsp %x0, %x1 " : "+ww" (vec_xt) : "ww" (vec_xb));
+   __asm__ __volatile__ ("xvcvhpsp %x0, %x1 " : "+wa" (vec_xt) : "wa" (vec_xb));
 }
 
 static void test_xvcvsphp(void) {
-   __asm__ __volatile__ ("xvcvsphp %x0, %x1 " : "+ww" (vec_xt) : "ww" (vec_xb));
+   __asm__ __volatile__ ("xvcvsphp %x0, %x1 " : "+wa" (vec_xt) : "wa" (vec_xb));
 }
 
 static test_list_t testgroup_vector_scalar_two_double[] = {

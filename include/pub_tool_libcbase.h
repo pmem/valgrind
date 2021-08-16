@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -203,6 +201,18 @@ static void VG_(bzero_inline) ( void* s, SizeT sz )
 #define VG_ROUNDUP(p, a)   VG_ROUNDDN((p)+(a)-1, (a))
 #define VG_PGROUNDDN(p)    VG_ROUNDDN(p, VKI_PAGE_SIZE)
 #define VG_PGROUNDUP(p)    VG_ROUNDUP(p, VKI_PAGE_SIZE)
+
+/* Converts `Device ID` given as pair of 32-bit values (dev_major, dev_minor)
+ * to 64-bit dev_t using MMMM Mmmm mmmM MMmm encoding. This is
+ * downward compatible with legacy systems where dev_t is 16 bits wide,
+ * encoded as MMmm. It is also downward compatible with the Linux kernel,
+ * which uses 32-bit dev_t, encoded as mmmM MMmm.
+ * Original macro can be found in bits/sysmacros.h. */
+#define VG_MAKEDEV(__major, __minor)            \
+   ((((ULong) (__major & 0x00000fffu)) <<  8) | \
+    (((ULong) (__major & 0xfffff000u)) << 32) | \
+    (((ULong) (__minor & 0x000000ffu)) <<  0) | \
+    (((ULong) (__minor & 0xffffff00u)) << 12))
 
 /* ---------------------------------------------------------------------
    Misc useful functions

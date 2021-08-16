@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -107,6 +105,32 @@ void ML_(pre_argv_envp)(Addr a, ThreadId tid, const HChar *s1, const HChar *s2);
 extern Bool
 ML_(handle_auxv_open)(SyscallStatus *status, const HChar *filename,
                       int flags);
+
+extern Bool
+ML_(handle_self_exe_open)(SyscallStatus *status, const HChar *filename,
+                          int flags);
+
+/* Helper function for generic mprotect and linux pkey_mprotect. */
+extern void handle_sys_mprotect (ThreadId tid, SyscallStatus *status,
+                                 Addr *addr, SizeT *len, Int *prot);
+/* Helper functions for preadv/preadv2. */
+extern
+void handle_pre_sys_preadv(ThreadId tid, SyscallStatus* status,
+                           Int fd, Addr vector, Int count,
+                           const char *str);
+extern
+void handle_post_sys_preadv(ThreadId tid, SyscallStatus* status, Addr vector, Int count);
+
+/* Helper function for pwritev/pwritev2. */
+extern
+void handle_sys_pwritev(ThreadId tid, SyscallStatus* status,
+                        Int fd, Addr vector, Int count,
+                        const char *str);
+
+extern
+void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
+                           Addr arg_2, Addr arg_3, Bool is_execveat,
+                           Bool check_pathptr);
 
 DECL_TEMPLATE(generic, sys_ni_syscall);            // * P -- unimplemented
 DECL_TEMPLATE(generic, sys_exit);

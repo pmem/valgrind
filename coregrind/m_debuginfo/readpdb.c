@@ -28,9 +28,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -1635,16 +1633,16 @@ static ULong DEBUG_SnarfLinetab(
                      "  Adding line %d addr=%#lx end=%#lx\n", 
                      ((const unsigned short *)(pnt2.ui + linecount))[j],
                      startaddr, endaddr );
-                  ML_(addLineInfo)(
-                     di, 
-                     fnmdirstr_ix,
-                     startaddr, endaddr,
-                     ((const unsigned short *)(pnt2.ui + linecount))[j], j );
-                  n_lines_read++;
-               }
+               ML_(addLineInfo)(
+                   di,
+                   fnmdirstr_ix,
+                   startaddr, endaddr,
+                   ((const unsigned short *)(pnt2.ui + linecount))[j], j );
+               n_lines_read++;
             }
-        }
-    }
+         }
+      }
+   }
 
    if (debug)
       VG_(umsg)("END SnarfLineTab linetab=%p size=%d\n", 

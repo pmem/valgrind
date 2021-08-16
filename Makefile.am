@@ -16,7 +16,6 @@ TOOLS = \
 		pmemcheck
 
 EXP_TOOLS = \
-		exp-sgcheck \
 		exp-bbv
 
 # Put docs last because building the HTML is slow and we want to get
@@ -46,7 +45,6 @@ SUPP_FILES = \
 	glibc-2.34567-NPTL-helgrind.supp \
 	glibc-2.2-LinuxThreads-helgrind.supp \
 	glibc-2.X-drd.supp \
-	exp-sgcheck.supp \
 	darwin9.supp darwin9-drd.supp \
 	darwin10.supp darwin10-drd.supp \
 	darwin11.supp darwin12.supp darwin13.supp darwin14.supp darwin15.supp \
@@ -59,7 +57,7 @@ DEFAULT_SUPP_FILES = @DEFAULT_SUPP@
 # default.supp, as it is built from the base .supp files at compile-time.
 dist_noinst_DATA = $(SUPP_FILES)
 
-vglibdir = $(pkglibdir)
+vglibdir = $(pkglibexecdir)
 vglib_DATA = default.supp
 
 pkgconfigdir = $(libdir)/pkgconfig
@@ -96,6 +94,10 @@ exp-regtest: check
 ## Preprend @PERL@ because tests/vg_perf isn't executable
 perf: check
 	@PERL@ perf/vg_perf perf
+
+# Auxiliary test suites run under valgrind
+auxchecks: all
+	$(MAKE) -C auxprogs auxchecks
 
 # Nb: no need to include any Makefile.am files here, or files included from
 # them, as automake includes them automatically.  Also not COPYING, README

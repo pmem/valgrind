@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -296,7 +294,11 @@ static inline UWord sr_Res ( SysRes sr ) {
    return sr._isError ? 0 : sr._val;
 }
 static inline UWord sr_Err ( SysRes sr ) {
+#if defined(VGP_nanomips_linux)
+   return sr._isError ? -sr._val : 0;
+#else
    return sr._isError ? sr._val : 0;
+#endif
 }
 static inline Bool sr_EQ ( UInt sysno, SysRes sr1, SysRes sr2 ) {
    /* sysno is ignored for Linux/not-MIPS */
@@ -403,11 +405,12 @@ static inline Bool sr_EQ ( UInt sysno, SysRes sr1, SysRes sr2 ) {
 #undef VG_LITTLEENDIAN
 
 #if defined(VGA_x86) || defined(VGA_amd64) || defined (VGA_arm) \
-    || ((defined(VGA_mips32) || defined(VGA_mips64)) && defined (_MIPSEL)) \
-    || defined(VGA_arm64)  || defined(VGA_ppc64le)
+    || ((defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)) \
+    && defined (_MIPSEL)) || defined(VGA_arm64)  || defined(VGA_ppc64le)
 #  define VG_LITTLEENDIAN 1
 #elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_s390x) \
-      || ((defined(VGA_mips32) || defined(VGA_mips64)) && defined (_MIPSEB))
+      || ((defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)) \
+      && defined (_MIPSEB))
 #  define VG_BIGENDIAN 1
 #else
 #  error Unknown arch
@@ -451,7 +454,7 @@ static inline Bool sr_EQ ( UInt sysno, SysRes sr1, SysRes sr2 ) {
       || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
       || defined(VGA_arm) || defined(VGA_s390x) \
       || defined(VGA_mips32) || defined(VGA_mips64) \
-      || defined(VGA_arm64)
+      || defined(VGA_arm64) || defined(VGA_nanomips)
 #  define VG_REGPARM(n)            /* */
 #else
 #  error Unknown arch

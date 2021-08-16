@@ -23,9 +23,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -150,7 +148,7 @@ SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot,
    res = VG_(do_syscall6)(__NR3264_mmap, (UWord)start, length, 
                          prot, flags, fd, offset);
 #  elif defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-        || defined(VGP_arm_linux)
+        || defined(VGP_arm_linux) || defined(VGP_nanomips_linux)
    /* mmap2 uses 4096 chunks even if actual page size is bigger. */
    aspacem_assert((offset % 4096) == 0);
    res = VG_(do_syscall6)(__NR_mmap2, (UWord)start, length,
@@ -253,7 +251,7 @@ SysRes ML_(am_do_relocate_nooverlap_mapping_NO_NOTIFY)(
 
 SysRes ML_(am_open) ( const HChar* pathname, Int flags, Int mode )
 {
-#  if defined(VGP_arm64_linux)
+#  if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
    /* ARM64 wants to use __NR_openat rather than __NR_open. */
    SysRes res = VG_(do_syscall4)(__NR_openat,
                                  VKI_AT_FDCWD, (UWord)pathname, flags, mode);
@@ -282,7 +280,7 @@ void ML_(am_close) ( Int fd )
 Int ML_(am_readlink)(const HChar* path, HChar* buf, UInt bufsiz)
 {
    SysRes res;
-#  if defined(VGP_arm64_linux)
+#  if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
    res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD,
                                            (UWord)path, (UWord)buf, bufsiz);
 #  elif defined(VGO_linux) || defined(VGO_darwin)
@@ -299,7 +297,11 @@ Int ML_(am_readlink)(const HChar* path, HChar* buf, UInt bufsiz)
 Int ML_(am_fcntl) ( Int fd, Int cmd, Addr arg )
 {
 #  if defined(VGO_linux) || defined(VGO_solaris)
+#  if defined(VGP_nanomips_linux)
+   SysRes res = VG_(do_syscall3)(__NR_fcntl64, fd, cmd, arg);
+#  else
    SysRes res = VG_(do_syscall3)(__NR_fcntl, fd, cmd, arg);
+#  endif
 #  elif defined(VGO_darwin)
    SysRes res = VG_(do_syscall3)(__NR_fcntl_nocancel, fd, cmd, arg);
 #  else
@@ -316,9 +318,21 @@ Bool ML_(am_get_fd_d_i_m)( Int fd,
 {
 #  if defined(VGO_linux) || defined(VGO_darwin)
    SysRes          res;
-   struct vki_stat buf;
+#  if defined(VGO_linux)
+   /* First try with statx. */
+   struct vki_statx bufx;
+   const char* file_name = "";
+   res = VG_(do_syscall5)(__NR_statx, fd, (RegWord)file_name,
+                          VKI_AT_EMPTY_PATH, VKI_STATX_ALL, (RegWord)&bufx);
+   if (!sr_isError(res)) {
+      *dev  = VG_MAKEDEV(bufx.stx_dev_major, bufx.stx_dev_minor);
+      *ino  = (ULong)bufx.stx_ino;
+      *mode = (UInt)bufx.stx_mode;
+      return True;
+   }
+#  endif
 #  if defined(VGO_linux) && defined(__NR_fstat64)
-   /* Try fstat64 first as it can cope with minor and major device
+   /* fstat64 is second candidate as it can cope with minor and major device
       numbers outside the 0-255 range and it works properly for x86
       binaries on amd64 systems where fstat seems to be broken. */
    struct vki_stat64 buf64;
@@ -330,6 +344,8 @@ Bool ML_(am_get_fd_d_i_m)( Int fd,
       return True;
    }
 #  endif
+#  if defined(__NR_fstat)
+   struct vki_stat buf;
    res = VG_(do_syscall2)(__NR_fstat, fd, (UWord)&buf);
    if (!sr_isError(res)) {
       *dev  = (ULong)buf.st_dev;
@@ -337,6 +353,7 @@ Bool ML_(am_get_fd_d_i_m)( Int fd,
       *mode = (UInt) buf.st_mode;
       return True;
    }
+#  endif
    return False;
 #  elif defined(VGO_solaris)
 #  if defined(VGP_x86_solaris)

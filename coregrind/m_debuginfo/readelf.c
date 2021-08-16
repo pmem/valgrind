@@ -22,9 +22,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -38,9 +36,12 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcassert.h"
+#include "pub_core_libcfile.h"
+#include "pub_core_libcproc.h"
 #include "pub_core_machine.h"      /* VG_ELF_CLASS */
 #include "pub_core_options.h"
 #include "pub_core_oset.h"
+#include "pub_core_pathscan.h"     /* find_executable */
 #include "pub_core_syscall.h"
 #include "pub_core_tooliface.h"    /* VG_(needs) */
 #include "pub_core_xarray.h"
@@ -1283,6 +1284,135 @@ DiImage* open_debug_file( const HChar* name, const HChar* buildid, UInt crc,
    return dimg;
 }
 
+#if defined(VGO_linux)
+/* Return the path of the debuginfod-find executable. */
+static
+const HChar* debuginfod_find_path( void )
+{
+  static const HChar* path = (const HChar*) -1;
+
+  if (path == (const HChar*) -1) {
+     if (VG_(getenv)("DEBUGINFOD_URLS") == NULL
+         || VG_(strcmp)("", VG_(getenv("DEBUGINFOD_URLS"))) == 0)
+        path = NULL;
+     else
+        path = VG_(find_executable)("debuginfod-find");
+  }
+
+  return path;
+}
+
+/* Try to find a separate debug file with |buildid| via debuginfod. If found,
+   return its DiImage. Searches for a local debuginfod-find executable and
+   runs it in a child process in order to download the debug file. */
+static
+DiImage* find_debug_file_debuginfod( const HChar* objpath,
+                                     HChar** debugpath,
+                                     const HChar* buildid,
+                                     const UInt crc, Bool rel_ok )
+{
+#  define BUF_SIZE 4096
+   Int          out_fds[2], err_fds[2]; /* pipe fds */
+   DiImage*     dimg = NULL;            /* the img we found */
+   HChar        buf[BUF_SIZE];          /* executable output buffer */
+   const HChar* path;                   /* executable path */
+   SizeT        len;                    /* number of bytes read int buf */
+   Int          ret;                    /* result of read call */
+
+   if (buildid == NULL)
+      return NULL;
+
+   if ((path = debuginfod_find_path()) == NULL)
+      return NULL;
+
+   if (VG_(pipe)(out_fds) != 0
+       || VG_(pipe)(err_fds) != 0)
+      return NULL;
+
+   if (VG_(clo_verbosity) > 1)
+      VG_(umsg)("Downloading debug info for %s...\n", objpath);
+
+   /* Run debuginfod-find to query servers for the debuginfo. */
+   Int pid = VG_(fork)();
+   if (pid == 0) {
+      const HChar *argv[4] = { path, "debuginfo", buildid, (HChar*)0 };
+
+      /* Redirect stdout and stderr */
+      SysRes res = VG_(dup2)(out_fds[1], 1);
+      if (sr_Res(res) < 0)
+         VG_(exit)(1);
+
+      res = VG_(dup2)(err_fds[1], 2);
+      if (sr_Res(res) < 0)
+         VG_(exit)(1);
+
+      /* Disable extra stderr output since it does not play well with umesg */
+      VG_(env_unsetenv)(VG_(client_envp), "DEBUGINFOD_VERBOSE", NULL);
+      VG_(env_unsetenv)(VG_(client_envp), "DEBUGINFOD_PROGRESS", NULL);
+
+      VG_(close)(out_fds[0]);
+      VG_(close)(err_fds[0]);
+      VG_(execv)(argv[0], argv);
+
+      /* If we are still alive here, execv failed. */
+      VG_(exit)(1);
+   }
+
+   VG_(close)(out_fds[1]);
+   VG_(close)(err_fds[1]);
+
+   if (pid < 0) {
+      if (VG_(clo_verbosity) > 1)
+         VG_(umsg)("Server Error\n");
+      goto out;
+   }
+   VG_(waitpid)(pid, NULL, 0);
+
+   /* Set dimg if download was successful. */
+   len = 0;
+   ret = -1;
+   while (len >= 0 && len < BUF_SIZE) {
+      ret = VG_(read)(out_fds[0], buf + len, BUF_SIZE - len);
+      if (ret <= 0)
+         break;
+      len += ret;
+   }
+   if (ret >= 0 && len > 0
+       && buf[0] == '/' && buf[len-1] == '\n') {
+
+      /* Remove newline from filename before trying to open debug file */
+      buf[len-1] = '\0';
+      dimg = open_debug_file(buf, buildid, crc, rel_ok, NULL);
+      if (dimg != NULL) {
+         /* Success */
+         if (*debugpath)
+            ML_(dinfo_free)(*debugpath);
+
+         *debugpath = ML_(dinfo_strdup)("di.fdfd.1", buf);
+         if (VG_(clo_verbosity) > 1)
+            VG_(umsg)("Successfully downloaded debug file for %s\n",
+                      objpath);
+         goto out;
+      }
+   }
+
+   /* Download failed so try to print error message. */
+   HChar* nl;
+   if (VG_(read)(err_fds[0], buf, BUF_SIZE) > 0
+       && (nl = VG_(strchr)(buf, '\n'))) {
+      *nl = '\0';
+      if (VG_(clo_verbosity) > 1)
+         VG_(umsg)("%s\n", buf);
+   } else
+      if (VG_(clo_verbosity) > 1)
+         VG_(umsg)("Server Error\n");
+
+out:
+   VG_(close)(out_fds[0]);
+   VG_(close)(err_fds[0]);
+   return dimg;
+}
+#endif
 
 /* Try to find a separate debug file for a given object file.  If
    found, return its DiImage, which should be freed by the caller.  If
@@ -1318,11 +1448,16 @@ DiImage* find_debug_file( struct _DebugInfo* di,
 
    if (dimg == NULL && debugname != NULL) {
       HChar *objdir = ML_(dinfo_strdup)("di.fdf.2", objpath);
-      HChar *usrmerge_objdir = objdir;
+      HChar *usrmerge_objdir;
       HChar *objdirptr;
 
       if ((objdirptr = VG_(strrchr)(objdir, '/')) != NULL)
          *objdirptr = '\0';
+
+      if ((objdirptr = VG_(strstr)(objdir, "usr")) != NULL)
+         usrmerge_objdir = objdirptr + VG_(strlen)("usr");
+      else
+         usrmerge_objdir = NULL;
 
       debugpath = ML_(dinfo_zalloc)(
                      "di.fdf.3",
@@ -1330,50 +1465,39 @@ DiImage* find_debug_file( struct _DebugInfo* di,
                      + (extrapath ? VG_(strlen)(extrapath) : 0)
                      + (serverpath ? VG_(strlen)(serverpath) : 0));
 
+#     define TRY_OBJDIR(format, ...)                                    \
+      do {                                                              \
+         VG_(sprintf)(debugpath, format, __VA_ARGS__);                  \
+         dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL); \
+         if (dimg != NULL) goto dimg_ok;                                \
+      } while (0);
+
+#     define TRY_OBJDIR_USRMERGE_OBJDIR(format)                         \
+      do {                                                              \
+         TRY_OBJDIR(format, objdir, debugname);                         \
+         if (usrmerge_objdir != NULL) {                                 \
+            TRY_OBJDIR(format, usrmerge_objdir, debugname);             \
+         }                                                              \
+      } while (0)
+
       if (debugname[0] == '/') {
-         VG_(sprintf)(debugpath, "%s", debugname);
-         dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
-         if (dimg != NULL) goto dimg_ok;
+         TRY_OBJDIR("%s", debugname);
       }
 
       if ((objdirptr = VG_(strstr)(usrmerge_objdir, "usr")) != NULL)
          usrmerge_objdir = objdirptr + VG_(strlen)("usr");
 
-      VG_(sprintf)(debugpath, "%s/%s", objdir, debugname);
-      dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
-      if (dimg != NULL) goto dimg_ok;
-
-      VG_(sprintf)(debugpath, "%s/%s", usrmerge_objdir, debugname);
-      dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
-      if (dimg != NULL) goto dimg_ok;
-
-      VG_(sprintf)(debugpath, "%s/.debug/%s", objdir, debugname);
-      dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
-      if (dimg != NULL) goto dimg_ok;
-      
-      VG_(sprintf)(debugpath, "%s/.debug/%s", usrmerge_objdir, debugname);
-      dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
-      if (dimg != NULL) goto dimg_ok;
-
-      VG_(sprintf)(debugpath, "/usr/lib/debug%s/%s", objdir, debugname);
-      dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
-      if (dimg != NULL) goto dimg_ok;
-
-      VG_(sprintf)(debugpath, "/usr/lib/debug%s/%s", usrmerge_objdir, debugname);
-      dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
-      if (dimg != NULL) goto dimg_ok;
+      TRY_OBJDIR_USRMERGE_OBJDIR("%s/%s");
+      TRY_OBJDIR_USRMERGE_OBJDIR("%s/.debug/%s");
+      TRY_OBJDIR_USRMERGE_OBJDIR("/usr/lib/debug%s/%s");
 
       if (extrapath) {
-         VG_(sprintf)(debugpath, "%s%s/%s", extrapath,
-                                            objdir, debugname);
-         dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
-         if (dimg != NULL) goto dimg_ok;
-
-         VG_(sprintf)(debugpath, "%s%s/%s", extrapath,
-                                            usrmerge_objdir, debugname);
-         dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
-         if (dimg != NULL) goto dimg_ok;
+         TRY_OBJDIR("%s%s/%s", extrapath, objdir, debugname);
+         if (usrmerge_objdir != NULL)
+            TRY_OBJDIR("%s%s/%s", extrapath, usrmerge_objdir, debugname);
       }
+#     undef TRY_OBJDIR
+#     undef TRY_OBJDIRS
 
       if (serverpath) {
          /* When looking on the debuginfo server, always just pass the
@@ -1391,6 +1515,11 @@ DiImage* find_debug_file( struct _DebugInfo* di,
 
       ML_(dinfo_free)(objdir);
    }
+
+#  if defined(VGO_linux)
+   if (dimg == NULL)
+      dimg = find_debug_file_debuginfod(objpath, &debugpath, buildid, crc, rel_ok);
+#  endif
 
    if (dimg != NULL) {
       vg_assert(debugpath);
@@ -1572,7 +1701,7 @@ static HChar* readlink_path (const HChar *path)
 
    while (tries > 0) {
       SysRes res;
-#if defined(VGP_arm64_linux)
+#if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
       res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD,
                                               (UWord)path, (UWord)buf, bufsiz);
 #elif defined(VGO_linux) || defined(VGO_darwin)
@@ -2413,7 +2542,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 #     if defined(VGP_x86_linux) || defined(VGP_amd64_linux) \
          || defined(VGP_arm_linux) || defined (VGP_s390x_linux) \
          || defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
-         || defined(VGP_arm64_linux) \
+         || defined(VGP_arm64_linux) || defined(VGP_nanomips_linux) \
          || defined(VGP_x86_solaris) || defined(VGP_amd64_solaris)
       /* Accept .plt where mapped as rx (code) */
       if (0 == VG_(strcmp)(name, ".plt")) {
@@ -2588,7 +2717,10 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       DiSlice debug_types_escn    = DiSlice_INVALID; // .debug_types  (dwarf4)
       DiSlice debug_abbv_escn     = DiSlice_INVALID; // .debug_abbrev (dwarf2)
       DiSlice debug_str_escn      = DiSlice_INVALID; // .debug_str    (dwarf2)
+      DiSlice debug_line_str_escn = DiSlice_INVALID; // .debug_line_str(dwarf5)
       DiSlice debug_ranges_escn   = DiSlice_INVALID; // .debug_ranges (dwarf2)
+      DiSlice debug_rnglists_escn = DiSlice_INVALID; // .debug_rnglists(dwarf5)
+      DiSlice debug_loclists_escn = DiSlice_INVALID; // .debug_loclists(dwarf5)
       DiSlice debug_loc_escn      = DiSlice_INVALID; // .debug_loc    (dwarf2)
       DiSlice debug_frame_escn    = DiSlice_INVALID; // .debug_frame  (dwarf2)
       DiSlice debug_line_alt_escn = DiSlice_INVALID; // .debug_line   (alt)
@@ -2694,9 +2826,21 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          if (!ML_(sli_is_valid)(debug_str_escn))
             FIND(".zdebug_str",        debug_str_escn)
 
+         FIND(   ".debug_line_str",    debug_line_str_escn)
+         if (!ML_(sli_is_valid)(debug_line_str_escn))
+            FIND(".zdebug_str",        debug_line_str_escn)
+
          FIND(   ".debug_ranges",      debug_ranges_escn)
          if (!ML_(sli_is_valid)(debug_ranges_escn))
             FIND(".zdebug_ranges",     debug_ranges_escn)
+
+         FIND(   ".debug_rnglists",    debug_rnglists_escn)
+         if (!ML_(sli_is_valid)(debug_rnglists_escn))
+            FIND(".zdebug_rnglists",   debug_rnglists_escn)
+
+         FIND(   ".debug_loclists",    debug_loclists_escn)
+         if (!ML_(sli_is_valid)(debug_loclists_escn))
+            FIND(".zdebug_loclists",   debug_loclists_escn)
 
          FIND(   ".debug_loc",         debug_loc_escn)
          if (!ML_(sli_is_valid)(debug_loc_escn))
@@ -3005,9 +3149,21 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             if (!ML_(sli_is_valid)(debug_str_escn))
                FIND(need_dwarf2,     ".zdebug_str",       debug_str_escn)
 
+            FIND(   need_dwarf2,     ".debug_line_str",   debug_line_str_escn)
+            if (!ML_(sli_is_valid)(debug_line_str_escn))
+               FIND(need_dwarf2,     ".zdebug_line_str",  debug_line_str_escn)
+
             FIND(   need_dwarf2,     ".debug_ranges",     debug_ranges_escn)
             if (!ML_(sli_is_valid)(debug_ranges_escn))
                FIND(need_dwarf2,     ".zdebug_ranges",    debug_ranges_escn)
+
+            FIND(   need_dwarf2,     ".debug_rnglists",   debug_rnglists_escn)
+            if (!ML_(sli_is_valid)(debug_rnglists_escn))
+               FIND(need_dwarf2,     ".zdebug_rnglists",  debug_rnglists_escn)
+
+            FIND(   need_dwarf2,     ".debug_loclists",   debug_loclists_escn)
+            if (!ML_(sli_is_valid)(debug_loclists_escn))
+               FIND(need_dwarf2,     ".zdebug_loclists",  debug_loclists_escn)
 
             FIND(   need_dwarf2,     ".debug_loc",        debug_loc_escn)
             if (!ML_(sli_is_valid)(debug_loc_escn))
@@ -3017,7 +3173,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             if (!ML_(sli_is_valid)(debug_frame_escn))
                FIND(need_dwarf2,     ".zdebug_frame",     debug_frame_escn)
 
-            FIND(   need_dwarf2,     ".gnu_debugaltlink", debugaltlink_escn)
+            if (!ML_(sli_is_valid)(debugaltlink_escn))
+               FIND(   need_dwarf2,     ".gnu_debugaltlink", debugaltlink_escn)
 
             FIND(   need_dwarf1,     ".debug",            dwarf1d_escn)
             FIND(   need_dwarf1,     ".line",             dwarf1l_escn)
@@ -3242,7 +3399,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                                       debug_abbv_escn,
                                       debug_line_escn,
                                       debug_str_escn,
-                                      debug_str_alt_escn );
+                                      debug_str_alt_escn,
+                                      debug_line_str_escn);
          /* The new reader: read the DIEs in .debug_info to acquire
             information on variable types and locations or inline info.
             But only if the tool asks for it, or the user requests it on
@@ -3253,9 +3411,10 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                di, debug_info_escn,     debug_types_escn,
                    debug_abbv_escn,     debug_line_escn,
                    debug_str_escn,      debug_ranges_escn,
+                   debug_rnglists_escn, debug_loclists_escn,
                    debug_loc_escn,      debug_info_alt_escn,
                    debug_abbv_alt_escn, debug_line_alt_escn,
-                   debug_str_alt_escn
+                   debug_str_alt_escn,  debug_line_str_escn
             );
          }
       }

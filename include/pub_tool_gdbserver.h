@@ -20,9 +20,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -54,16 +52,6 @@
 // the connection with GDB (if still open) and stop gdbserver.
 //--------------------------------------------------------------------
 extern void VG_(gdbserver) ( ThreadId tid );
-
-/* VG_(dyn_vgdb_error) gets its initial value from
-   VG_(clo_vgdb_error).  It can be changed after initial command
-   processing in order to enable/disable the call to VG_(gdbserver) in
-   m_errormgr.c.  The main reasons to change the below is either
-   because the user updates it via a monitor command or to
-   (temporarily) avoid calling gdbserver for error reporting during
-   monitor command handling.
-*/
-extern Int VG_(dyn_vgdb_error);
 
 /* defines the various kinds of breakpoints that gdbserver
    might ask to insert/remove. Note that the below matches

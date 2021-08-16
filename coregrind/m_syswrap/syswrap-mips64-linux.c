@@ -8,7 +8,6 @@
    framework.
 
    Copyright (C) 2010-2017 RT-RK
-      mips-valgrind@rt-rk.com
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -21,9 +20,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -218,8 +215,6 @@ SysRes sys_set_tls ( ThreadId tid, Addr tlsptr )
    file, but that requires even more macro magic. */
 
 DECL_TEMPLATE (mips_linux, sys_set_thread_area);
-DECL_TEMPLATE (mips_linux, sys_tee);
-DECL_TEMPLATE (mips_linux, sys_splice);
 DECL_TEMPLATE (mips_linux, sys_vmsplice);
 DECL_TEMPLATE (mips_linux, sys_ustat);
 DECL_TEMPLATE (mips_linux, sys_sysfs);
@@ -230,7 +225,6 @@ DECL_TEMPLATE (mips_linux, sys_sethostname);
 DECL_TEMPLATE (mips_linux, sys_reboot);
 DECL_TEMPLATE (mips_linux, sys_cacheflush);
 DECL_TEMPLATE (mips_linux, sys_sched_rr_get_interval);
-DECL_TEMPLATE (mips_linux, sys_unshare);
 DECL_TEMPLATE (mips_linux, sys_prctl);
 DECL_TEMPLATE (mips_linux, sys_ptrace);
 DECL_TEMPLATE (mips_linux, sys_mmap);
@@ -238,36 +232,12 @@ DECL_TEMPLATE (mips_linux, sys_rt_sigreturn);
 DECL_TEMPLATE (mips_linux, sys_pipe);
 DECL_TEMPLATE (mips_linux, sys_fadvise64);
 
-PRE(sys_tee)
-{
-   PRINT("sys_tee ( %ld, %ld, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )",
-         SARG1, SARG2, ARG3, ARG4);
-   PRE_REG_READ4(long, "sys_tee", int, fdin, int, fdout, vki_size_t, len,
-                 int, flags);
-}
-
-PRE(sys_splice)
-{
-   PRINT("sys_splice ( %ld, %#" FMT_REGWORD "x, %ld, %#" FMT_REGWORD
-         "x, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )",
-         SARG1, ARG2, SARG3, ARG4, ARG5, ARG6);
-
-   PRE_REG_READ6(long, "sys_splice", int, fdin, vki_loff_t, sizein, int,
-                 fdout, vki_loff_t, sizeout, vki_size_t, len, int, flags);
-}
-
 PRE(sys_vmsplice)
 {
    PRINT("sys_vmsplice ( %ld, %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %ld )",
          SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "sys_vmsplice", int, fdin, struct vki_iovec *, v,
                  vki_size_t, len, int, flags);
-}
-
-PRE(sys_unshare)
-{
-   PRINT("sys_unshare ( %" FMT_REGWORD "u )", ARG1);
-   PRE_REG_READ1(long, "sys_unshare", unsigned long, flags);
 }
 
 PRE(sys_sched_rr_get_interval)
@@ -806,10 +776,10 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_faccessat, sys_faccessat),
    LINXY (__NR_pselect6, sys_pselect6),
    LINXY (__NR_ppoll, sys_ppoll),
-   PLAX_ (__NR_unshare, sys_unshare),
-   PLAX_ (__NR_splice, sys_splice),
+   LINX_ (__NR_unshare, sys_unshare),
+   LINX_ (__NR_splice, sys_splice),
    LINX_ (__NR_sync_file_range, sys_sync_file_range),
-   PLAX_ (__NR_tee, sys_tee),
+   LINX_ (__NR_tee, sys_tee),
    PLAX_ (__NR_vmsplice, sys_vmsplice),
    LINX_ (__NR_set_robust_list, sys_set_robust_list),
    LINXY (__NR_get_robust_list, sys_get_robust_list),
@@ -828,11 +798,24 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_clock_adjtime, sys_clock_adjtime),
    LINXY (__NR_process_vm_readv, sys_process_vm_readv),
    LINX_ (__NR_process_vm_writev, sys_process_vm_writev),
-   LINXY(__NR_getrandom, sys_getrandom),
-   LINXY(__NR_memfd_create, sys_memfd_create),
-   LINX_(__NR_membarrier, sys_membarrier),
-   LINX_(__NR_syncfs, sys_syncfs),
-   LINXY(__NR_statx, sys_statx),
+   LINX_ (__NR_sched_setattr, sys_sched_setattr),
+   LINXY (__NR_sched_getattr, sys_sched_getattr),
+   LINXY (__NR_getrandom, sys_getrandom),
+   LINXY (__NR_memfd_create, sys_memfd_create),
+   LINX_ (__NR_execveat, sys_execveat),
+   LINX_ (__NR_membarrier, sys_membarrier),
+   LINX_ (__NR_copy_file_range, sys_copy_file_range),
+   LINXY (__NR_preadv, sys_preadv),
+   LINX_ (__NR_pwritev, sys_pwritev),
+   LINXY (__NR_preadv2, sys_preadv2),
+   LINX_ (__NR_pwritev2, sys_pwritev2),
+   LINX_ (__NR_syncfs, sys_syncfs),
+   LINXY (__NR_statx, sys_statx),
+   LINX_ (__NR_setns, sys_setns),
+   LINXY (__NR_io_uring_setup, sys_io_uring_setup),
+   LINXY (__NR_io_uring_enter, sys_io_uring_enter),
+   LINXY (__NR_io_uring_register, sys_io_uring_register),
+   LINX_ (__NR_faccessat2, sys_faccessat2),
 };
 
 SyscallTableEntry * ML_(get_linux_syscall_entry) ( UInt sysno )

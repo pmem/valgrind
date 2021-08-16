@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -87,8 +85,8 @@ __attribute__((noreturn))
 extern void VG_(err_config_error) ( const HChar* format, ... );
 
 /* Called by main_process_cmd_line_options to indicate an unrecognised
-   command line option. */
-__attribute__((noreturn))
+   command line option.
+   It shutdowns the system if Clo_Mode is cloE or cloP.*/
 extern void VG_(fmsg_unknown_option) ( const HChar *opt );
 
 #endif   // __PUB_CORE_LIBCPRINT_H

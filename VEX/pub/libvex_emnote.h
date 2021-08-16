@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 
@@ -125,6 +123,10 @@ typedef
 
       /* ppno insn is not supported on this host */
       EmFail_S390X_ppno,
+
+      /* insn needs vector-enhancements facility which is not available on this
+         host */
+      EmFail_S390X_vxe,
 
       EmNote_NUMBER
    }

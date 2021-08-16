@@ -8,7 +8,6 @@
    framework.
 
    Copyright (C) 2010-2017 RT-RK
-      mips-valgrind@rt-rk.com
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -21,9 +20,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -369,6 +366,7 @@ struct vki_f_owner_ex {
 #define VKI_RLIMIT_STACK	3   /* max stack size */
 #define VKI_RLIMIT_CORE		4   /* max core file size */
 #define VKI_RLIMIT_NOFILE	5   /* max number of open files */
+#define VKI_RLIM_INFINITY 0x7fffffffUL
 
 //----------------------------------------------------------------------
 // From linux-2.6.35.5/include/asm-mips/socket.h

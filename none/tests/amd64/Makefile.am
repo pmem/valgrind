@@ -3,6 +3,9 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_cpuid filter_inf_nan filter_stderr gen_insn_test.pl
 
+# Used by avx-1.c and avx_estimate_insn.c
+noinst_HEADERS = avx_tests.h
+
 CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
 
 INSN_TESTS = insn_basic insn_mmx insn_sse insn_sse2 insn_fpu
@@ -24,6 +27,7 @@ EXTRA_DIST = \
 	aes.vgtest aes.stdout.exp aes.stderr.exp \
 	amd64locked.vgtest amd64locked.stdout.exp amd64locked.stderr.exp \
 	avx-1.vgtest avx-1.stdout.exp avx-1.stderr.exp \
+	avx_estimate_insn.vgtest avx_estimate_insn.stdout.exp avx_estimate_insn.stderr.exp \
 	avx2-1.vgtest avx2-1.stdout.exp avx2-1.stderr.exp \
 	asorep.stderr.exp asorep.stdout.exp asorep.vgtest \
 	bmi.stderr.exp bmi.stdout.exp bmi.vgtest \
@@ -78,6 +82,7 @@ EXTRA_DIST = \
 	pcmpxstrx64w.vgtest \
 	rcl-amd64.vgtest rcl-amd64.stdout.exp rcl-amd64.stderr.exp \
 	rdrand.vgtest rdrand.stdout.exp rdrand.stderr.exp \
+	rdseed.vgtest rdseed.stdout.exp rdseed.stderr.exp \
 	redundantRexW.vgtest redundantRexW.stdout.exp \
 	redundantRexW.stderr.exp \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
@@ -120,7 +125,8 @@ if BUILD_ADX_TESTS
 endif
 if BUILD_AVX_TESTS
 if BUILD_VPCLMULQDQ_TESTS
-  check_PROGRAMS += avx-1
+  check_PROGRAMS += avx-1 \
+		    avx_estimate_insn
 endif
 if BUILD_FMA4_TESTS
   check_PROGRAMS += fma4
@@ -162,6 +168,9 @@ if BUILD_F16C_TESTS
 endif
 if BUILD_RDRAND_TESTS
  check_PROGRAMS += rdrand
+endif
+if BUILD_RDSEED_TESTS
+ check_PROGRAMS += rdseed
 endif
 
 

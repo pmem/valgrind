@@ -20,9 +20,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -41,9 +39,6 @@
    guest_generic_bb_to_IR.h. */
 extern
 DisResult disInstr_ARM64 ( IRSB*        irbb,
-                           Bool         (*resteerOkFn) ( void*, Addr ),
-                           Bool         resteerCisOk,
-                           void*        callback_opaque,
                            const UChar* guest_code,
                            Long         delta,
                            Addr         guest_IP,
@@ -305,6 +300,17 @@ typedef
       ARM64CondNV = 15  /* always (unconditional)        : 1 */
    }
    ARM64Condcode;
+
+/* Vector element size specifiers */
+
+typedef
+   enum {
+      ARM64VSizeH = 0, /* 16 bits (integer halfword or half-precision FP)    */
+      ARM64VSizeS = 1, /* 32 bits (integer shortword or single-precision FP) */
+      ARM64VSizeD = 2  /* 64 bits (integer word or double-precision FP)      */
+   }
+   ARM64VecESize;
+
 
 #endif /* ndef __VEX_GUEST_ARM64_DEFS_H */
 

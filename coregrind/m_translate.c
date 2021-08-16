@@ -22,9 +22,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -66,6 +64,11 @@
 /*--- Stats                                                ---*/
 /*------------------------------------------------------------*/
 
+static ULong n_TRACE_total_constructed              = 0;
+static ULong n_TRACE_total_guest_insns              = 0;
+static ULong n_TRACE_total_uncond_branches_followed = 0;
+static ULong n_TRACE_total_cond_branches_followed   = 0;
+
 static ULong n_SP_updates_new_fast            = 0;
 static ULong n_SP_updates_new_generic_known   = 0;
 static ULong n_SP_updates_die_fast            = 0;
@@ -79,6 +82,13 @@ static ULong n_PX_VexRegUpdAllregsAtEachInsn     = 0;
 
 void VG_(print_translation_stats) ( void )
 {
+   VG_(message)
+      (Vg_DebugMsg,
+       "translate: %'llu guest insns, %'llu traces, "
+       "%'llu uncond chased, %llu cond chased\n",
+       n_TRACE_total_guest_insns, n_TRACE_total_constructed,
+       n_TRACE_total_uncond_branches_followed,
+       n_TRACE_total_cond_branches_followed);
    UInt n_SP_updates = n_SP_updates_new_fast + n_SP_updates_new_generic_known
                      + n_SP_updates_die_fast + n_SP_updates_die_generic_known
                      + n_SP_updates_generic_unknown;
@@ -771,7 +781,7 @@ void log_bytes ( const HChar* bytes, SizeT nbytes )
 static Bool translations_allowable_from_seg ( NSegment const* seg, Addr addr )
 {
 #  if defined(VGA_x86) || defined(VGA_s390x) || defined(VGA_mips32)     \
-     || defined(VGA_mips64)
+     || defined(VGA_mips64) || defined(VGA_nanomips)
    Bool allowR = True;
 #  else
    Bool allowR = False;
@@ -1344,7 +1354,7 @@ Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRSB* bb )
       )
    );
    // t9 needs to be set to point to the start of the redirected function.
-#  if defined(VGP_mips32_linux)
+#  if defined(VGP_mips32_linux) || defined(VGP_nanomips_linux)
    VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
    Int offB_GPR25 = offsetof(VexGuestMIPS32State, guest_r25);
    addStmtToIRSB(bb, IRStmt_Put(offB_GPR25, mkU32(closure->readdr)));
@@ -1405,7 +1415,7 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRSB* bb )
       )
    );
    // t9 needs to be set to point to the start of the redirected function.
-#  if defined(VGP_mips32_linux)
+#  if defined(VGP_mips32_linux) || defined(VGP_nanomips_linux)
    Int offB_GPR25 = offsetof(VexGuestMIPS32State, guest_r25);
    addStmtToIRSB(bb, IRStmt_Put(offB_GPR25, mkU32(closure->readdr)));
 #  endif
@@ -1724,6 +1734,11 @@ Bool VG_(translate) ( ThreadId tid,
    }
 #  endif
 
+#if defined(VGP_nanomips_linux)
+      vex_abiinfo.guest__use_fallback_LLSC
+         = SimHintiS(SimHint_fallback_llsc, VG_(clo_sim_hints));
+#endif
+
 #  if defined(VGP_arm64_linux)
    vex_abiinfo.guest__use_fallback_LLSC
       = /* The user asked explicitly */
@@ -1816,6 +1831,11 @@ Bool VG_(translate) ( ThreadId tid,
    vg_assert(tres.n_sc_extents >= 0 && tres.n_sc_extents <= 3);
    vg_assert(tmpbuf_used <= N_TMPBUF);
    vg_assert(tmpbuf_used > 0);
+
+   n_TRACE_total_constructed += 1;
+   n_TRACE_total_guest_insns += tres.n_guest_instrs;
+   n_TRACE_total_uncond_branches_followed += tres.n_uncond_in_trace;
+   n_TRACE_total_cond_branches_followed   += tres.n_cond_in_trace;
    } /* END new scope specially for 'seg' */
 
    /* Tell aspacem of all segments that have had translations taken

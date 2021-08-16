@@ -1,6 +1,6 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" 
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" 
 [ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
 
@@ -13,7 +13,7 @@
     <year>&vg-lifespan;</year>
     <holder><ulink url="&vg-devs-url;">Valgrind Developers</ulink></holder>
    </copyright>
-   <legalnotice>
+   <legalnotice id="manual-legal">
      <para>Email: <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></para>
    </legalnotice>
 </bookinfo>
@@ -43,8 +43,6 @@
   <xi:include href="../../pmemcheck/docs/pmc-manual.xml" parse="xml"
       xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="../../none/docs/nl-manual.xml" parse="xml"  
-      xmlns:xi="http://www.w3.org/2001/XInclude" />
-  <xi:include href="../../exp-sgcheck/docs/sg-manual.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="../../exp-bbv/docs/bbv-manual.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />      

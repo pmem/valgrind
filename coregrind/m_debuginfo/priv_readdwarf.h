@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -52,7 +50,8 @@ void ML_(read_debuginfo_dwarf3)
           DiSlice escn_debug_abbv,      /* .debug_abbrev */
           DiSlice escn_debug_line,      /* .debug_line */
           DiSlice escn_debug_str,       /* .debug_str */
-          DiSlice escn_debug_str_alt ); /* .debug_str */
+          DiSlice escn_debug_str_alt,   /* .debug_str */
+          DiSlice escn_debug_line_str );/* .debug_line_str */
 
 /* --------------------
    DWARF1 reader

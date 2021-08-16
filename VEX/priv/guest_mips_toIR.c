@@ -8,7 +8,6 @@
    framework.
 
    Copyright (C) 2010-2017 RT-RK
-      mips-valgrind@rt-rk.com
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -21,9 +20,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -1303,7 +1300,6 @@ static void jmp_lit32 ( /*MOD*/ DisResult* dres, IRJumpKind kind, Addr32 d32 )
 {
    vassert(dres->whatNext    == Dis_Continue);
    vassert(dres->len         == 0);
-   vassert(dres->continueAt  == 0);
    vassert(dres->jk_StopHere == Ijk_INVALID);
    dres->whatNext    = Dis_StopHere;
    dres->jk_StopHere = kind;
@@ -1314,7 +1310,6 @@ static void jmp_lit64 ( /*MOD*/ DisResult* dres, IRJumpKind kind, Addr64 d64 )
 {
    vassert(dres->whatNext    == Dis_Continue);
    vassert(dres->len         == 0);
-   vassert(dres->continueAt  == 0);
    vassert(dres->jk_StopHere == Ijk_INVALID);
    dres->whatNext    = Dis_StopHere;
    dres->jk_StopHere = kind;
@@ -2736,9 +2731,7 @@ static Bool dis_instr_CCondFmt ( UInt cins )
 /*********************************************************/
 /*---        Branch Instructions for mips64           ---*/
 /*********************************************************/
-static Bool dis_instr_branch ( UInt theInstr, DisResult * dres,
-                               Bool(*resteerOkFn) (void *, Addr),
-                               void *callback_opaque, IRStmt ** set )
+static Bool dis_instr_branch ( UInt theInstr, DisResult * dres, IRStmt ** set )
 {
    UInt jmpKind = 0;
    UChar opc1 = get_opcode(theInstr);
@@ -16744,10 +16737,7 @@ extern UInt disDSPInstr_MIPS_WRK ( UInt );
 
 static UInt disInstr_MIPS_WRK_Special(UInt cins, const VexArchInfo* archinfo,
                                       const VexAbiInfo*  abiinfo, DisResult* dres,
-                                      IRStmt** bstmt, IRExpr** lastn,
-                                      Bool(*resteerOkFn) (/*opaque */void *,
-                                            Addr),
-                                      void*        callback_opaque)
+                                      IRStmt** bstmt, IRExpr** lastn)
 {
    IRTemp t0, t1 = 0, t2, t3, t4, t5;
    UInt rs, rt, rd, sa, tf, function, trap_code, imm, instr_index, rot, sel;
@@ -18371,10 +18361,7 @@ static UInt disInstr_MIPS_WRK_Special(UInt cins, const VexArchInfo* archinfo,
 
 static UInt disInstr_MIPS_WRK_Special2(UInt cins, const VexArchInfo* archinfo,
                                        const VexAbiInfo*  abiinfo, DisResult* dres,
-                                       IRStmt** bstmt, IRExpr** lastn,
-                                       Bool(*resteerOkFn) (/*opaque */void *,
-                                             Addr),
-                                       void*        callback_opaque)
+                                       IRStmt** bstmt, IRExpr** lastn)
 {
    IRTemp t0, t1 = 0, t2, t3, t4, t5, t6;
    UInt rs, rt, rd, function;
@@ -18854,10 +18841,7 @@ static UInt disInstr_MIPS_WRK_Special2(UInt cins, const VexArchInfo* archinfo,
 
 static UInt disInstr_MIPS_WRK_Special3(UInt cins, const VexArchInfo* archinfo,
                                        const VexAbiInfo*  abiinfo, DisResult* dres,
-                                       IRStmt** bstmt, IRExpr** lastn,
-                                       Bool(*resteerOkFn) (/*opaque */void *,
-                                             Addr),
-                                       void*        callback_opaque)
+                                       IRStmt** bstmt, IRExpr** lastn)
 
 {
    IRTemp t0, t1 = 0, t2, t3, t4, t5, t6;
@@ -19728,10 +19712,7 @@ static UInt disInstr_MIPS_WRK_Special3(UInt cins, const VexArchInfo* archinfo,
 
 static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
                                  const VexAbiInfo*  abiinfo, DisResult* dres,
-                                 IRStmt** bstmt, IRExpr** lastn,
-                                 Bool(*resteerOkFn) (/*opaque */void *,
-                                       Addr),
-                                 void*        callback_opaque)
+                                 IRStmt** bstmt, IRExpr** lastn)
 {
    IRTemp t0;
    UInt opcode, rs, rt, trap_code, imm, instr_index, p;
@@ -19747,8 +19728,8 @@ static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
 
    switch (opcode & 0x0F) {
       case 0x00:  /* Special */
-         return disInstr_MIPS_WRK_Special(cins, archinfo, abiinfo, dres, bstmt, lastn,
-                                          resteerOkFn, callback_opaque);
+         return disInstr_MIPS_WRK_Special(cins, archinfo, abiinfo,
+                                          dres, bstmt, lastn);
 
       case 0x01:  /* Regimm */
          switch (rt) {
@@ -19756,8 +19737,7 @@ static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
                DIP("bltz r%u, %u", rs, imm);
 
                if (mode64) {
-                  if (!dis_instr_branch(cins, dres, resteerOkFn,
-                                        callback_opaque, bstmt))
+                  if (!dis_instr_branch(cins, dres, bstmt))
                      return -1;
                } else
                   dis_branch(False, binop(Iop_CmpEQ32, binop(Iop_And32, getIReg(rs),
@@ -19769,8 +19749,7 @@ static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
                DIP("bgez r%u, %u", rs, imm);
 
                if (mode64) {
-                  if (!dis_instr_branch(cins, dres, resteerOkFn,
-                                        callback_opaque, bstmt))
+                  if (!dis_instr_branch(cins, dres, bstmt))
                      return -1;
                } else
                   dis_branch(False, binop(Iop_CmpEQ32, binop(Iop_And32, getIReg(rs),
@@ -19938,8 +19917,7 @@ static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
                DIP("bltzal r%u, %u", rs, imm);
 
                if (mode64) {
-                  if (!dis_instr_branch(cins, dres, resteerOkFn,
-                                        callback_opaque, bstmt))
+                  if (!dis_instr_branch(cins, dres, bstmt))
                      return -1;
                } else
                   dis_branch(True, binop(Iop_CmpEQ32, binop(Iop_And32, getIReg(rs),
@@ -19951,8 +19929,7 @@ static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
                DIP("bgezal r%u, %u", rs, imm);
 
                if (mode64) {
-                  if (!dis_instr_branch(cins, dres, resteerOkFn,
-                                        callback_opaque, bstmt))
+                  if (!dis_instr_branch(cins, dres, bstmt))
                      return -1;
                } else
                   dis_branch(True, binop(Iop_CmpEQ32, binop(Iop_And32, getIReg(rs),
@@ -20056,16 +20033,31 @@ static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
          *lastn = mkexpr(t0);
          break;
 
-      case 0x04:  /* BEQ */
-         DIP("beq r%u, r%u, %u", rs, rt, imm);
+      case 0x04:  /* BEQ, B */
+         if (rs == 0 && rt == 0) {
+            ULong branch_offset;
+            t0 = newTemp(ty);
+            DIP("b %u", imm);
 
-         if (mode64)
-            dis_branch(False, binop(Iop_CmpEQ64, getIReg(rs), getIReg(rt)),
-                       imm, bstmt);
-         else
-            dis_branch(False, binop(Iop_CmpEQ32, getIReg(rs), getIReg(rt)),
-                       imm, bstmt);
+            if (mode64) {
+               branch_offset = extend_s_18to64(imm << 2);
+               assign(t0, mkU64(guest_PC_curr_instr + 4 + branch_offset));
+            } else {
+               branch_offset = extend_s_18to32(imm << 2);
+               assign(t0, mkU32(guest_PC_curr_instr + 4 + branch_offset));
+            }
 
+            *lastn = mkexpr(t0);
+         } else {
+            DIP("beq r%u, r%u, %u", rs, rt, imm);
+
+            if (mode64)
+               dis_branch(False, binop(Iop_CmpEQ64, getIReg(rs), getIReg(rt)),
+                          imm, bstmt);
+            else
+               dis_branch(False, binop(Iop_CmpEQ32, getIReg(rs), getIReg(rt)),
+                          imm, bstmt);
+         }
          break;
 
       case 0x05:  /* BNE */
@@ -20241,6 +20233,7 @@ static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
 #elif defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 6))
 
       case 0x08: { /* BEQZALC, BEQC, BOVC */
+         IRTemp t1, t2, t3, t4;
          if (rs == 0) { /* BEQZALC */
             DIP("beqzalc r%u, %u", rt, imm);
 
@@ -20457,10 +20450,7 @@ static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
 
 static UInt disInstr_MIPS_WRK_10(UInt cins, const VexArchInfo* archinfo,
                                  const VexAbiInfo*  abiinfo, DisResult* dres,
-                                 IRStmt** bstmt, IRExpr** lastn,
-                                 Bool(*resteerOkFn) (/*opaque */void *,
-                                       Addr),
-                                 void*        callback_opaque)
+                                 IRStmt** bstmt, IRExpr** lastn)
 {
    IRTemp t0, t1 = 0, t2, t3, t4, t5, t6, t7;
    UInt opcode, rs, rt, ft, fs, fd, fmt, tf, nd, function, imm;
@@ -23470,8 +23460,8 @@ static UInt disInstr_MIPS_WRK_10(UInt cins, const VexArchInfo* archinfo,
       }
 
       case 0x0C:  /* Special2 */
-         return disInstr_MIPS_WRK_Special2(cins, archinfo, abiinfo, dres, bstmt, lastn,
-                                           resteerOkFn, callback_opaque);
+         return disInstr_MIPS_WRK_Special2(cins, archinfo, abiinfo,
+                                           dres, bstmt, lastn);
 
       case 0x0D: /* DAUI */
          if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
@@ -23501,8 +23491,8 @@ static UInt disInstr_MIPS_WRK_10(UInt cins, const VexArchInfo* archinfo,
          return -1;
 
       case 0x0F:  /* Special3 */
-         return disInstr_MIPS_WRK_Special3(cins, archinfo, abiinfo, dres, bstmt, lastn,
-                                           resteerOkFn, callback_opaque);
+         return disInstr_MIPS_WRK_Special3(cins, archinfo, abiinfo,
+                                           dres, bstmt, lastn);
 
       default:
          return -1;
@@ -24786,11 +24776,7 @@ static UInt disInstr_MIPS_WRK_30(UInt cins, const VexArchInfo* archinfo,
    return 0;
 }
 
-static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
-                                     Addr),
-                                     Bool         resteerCisOk,
-                                     void*        callback_opaque,
-                                     Long         delta64,
+static DisResult disInstr_MIPS_WRK ( Long         delta64,
                                      const VexArchInfo* archinfo,
                                      const VexAbiInfo*  abiinfo,
                                      Bool         sigill_diag )
@@ -24816,7 +24802,6 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
    /* Set result defaults. */
    dres.whatNext = Dis_Continue;
    dres.len = 0;
-   dres.continueAt = 0;
    dres.jk_StopHere = Ijk_INVALID;
    dres.hint        = Dis_HintNone;
 
@@ -24828,23 +24813,33 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
    DIP("\t0x%llx:\t0x%08x\t", (Addr64)guest_PC_curr_instr, cins);
 
    if (delta != 0) {
-      if (branch_or_jump(guest_code + delta - 4)) {
-         if (lastn == NULL && bstmt == NULL) {
-            vassert(0);
-         } else {
-            dres.whatNext = Dis_StopHere;
-
-            if (lastn != NULL) {
-               delay_slot_jump = True;
-            } else if (bstmt != NULL) {
-               delay_slot_branch = True;
-            }
-         }
+      if (branch_or_jump(guest_code + delta - 4)
+          && (lastn != NULL || bstmt != NULL)) {
+         dres.whatNext = Dis_StopHere;
+         delay_slot_jump = (lastn != NULL);
+         delay_slot_branch = (bstmt != NULL);
       }
 
-      if (branch_or_link_likely(guest_code + delta - 4)) {
-         likely_delay_slot = True;
-      }
+      likely_delay_slot = (lastn != NULL)
+                          && branch_or_link_likely(guest_code + delta - 4);
+   }
+
+   // Emit an Illegal instruction in case a branch/jump
+   // instruction is encountered in the delay slot
+   // of an another branch/jump
+   if ((delay_slot_branch || likely_delay_slot || delay_slot_jump) &&
+       (branch_or_jump(guest_code + delta) ||
+        branch_or_link_likely(guest_code + delta))) {
+      if (mode64)
+         putPC(mkU64(guest_PC_curr_instr + 4));
+      else
+         putPC(mkU32(guest_PC_curr_instr + 4));
+
+      dres.jk_StopHere = Ijk_SigILL;
+      dres.whatNext    = Dis_StopHere;
+      lastn = NULL;
+      bstmt = NULL;
+      return dres;
    }
 
    /* Spot "Special" instructions (see comment at top of file). */
@@ -24952,8 +24947,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
    switch (opcode & 0x30) {
       case 0x00:
-         result = disInstr_MIPS_WRK_00(cins, archinfo, abiinfo, &dres, &bstmt, &lastn,
-                                       resteerOkFn, callback_opaque);
+         result = disInstr_MIPS_WRK_00(cins, archinfo, abiinfo,
+                                       &dres, &bstmt, &lastn);
 
          if (result == -1) goto decode_failure;
 
@@ -24963,8 +24958,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
       case 0x10:
 
-         result = disInstr_MIPS_WRK_10(cins, archinfo, abiinfo, &dres, &bstmt, &lastn,
-                                       resteerOkFn, callback_opaque);
+         result = disInstr_MIPS_WRK_10(cins, archinfo, abiinfo,
+                                       &dres, &bstmt, &lastn);
 
          if (result == -1) goto decode_failure;
 
@@ -25057,23 +25052,23 @@ decode_failure:
 
 decode_success:
 
+   dres.len = 4;
+   DIP("\n");
+
    /* All decode successes end up here. */
    switch (dres.whatNext) {
       case Dis_Continue:
-         if (mode64)
-            putPC(mkU64(guest_PC_curr_instr + 4));
-         else
-            putPC(mkU32(guest_PC_curr_instr + 4));
-
-         break;
-
-      case Dis_ResteerU:
-      case Dis_ResteerC:
-         if (mode64)
-            putPC(mkU64(dres.continueAt));
-         else
-            putPC(mkU32(dres.continueAt));
-
+         if (branch_or_jump(guest_code + delta) ||
+             branch_or_link_likely(guest_code + delta)) {
+            guest_PC_curr_instr += 4;
+            dres = disInstr_MIPS_WRK(delta64 + 4, archinfo, abiinfo, sigill_diag);
+            dres.len = 8;
+         } else {
+            if (mode64)
+               putPC(mkU64(guest_PC_curr_instr + 4));
+            else
+               putPC(mkU32(guest_PC_curr_instr + 4));
+         }
          break;
 
       case Dis_StopHere:
@@ -25096,9 +25091,6 @@ decode_success:
          else
             putPC(mkU32(guest_PC_curr_instr + 4));
       }
-   dres.len = 4;
-
-   DIP("\n");
 
    return dres;
 
@@ -25111,9 +25103,6 @@ decode_success:
 /* Disassemble a single instruction into IR.  The instruction
    is located in host memory at &guest_code[delta]. */
 DisResult disInstr_MIPS( IRSB*        irsb_IN,
-                         Bool         (*resteerOkFn) ( void *, Addr ),
-                         Bool         resteerCisOk,
-                         void*        callback_opaque,
                          const UChar* guest_code_IN,
                          Long         delta,
                          Addr         guest_IP,
@@ -25143,8 +25132,7 @@ DisResult disInstr_MIPS( IRSB*        irsb_IN,
    guest_PC_curr_instr = (Addr64)guest_IP;
 #endif
 
-   dres = disInstr_MIPS_WRK(resteerOkFn, resteerCisOk, callback_opaque,
-                            delta, archinfo, abiinfo, sigill_diag_IN);
+   dres = disInstr_MIPS_WRK(delta, archinfo, abiinfo, sigill_diag_IN);
 
    return dres;
 }

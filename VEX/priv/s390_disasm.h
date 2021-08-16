@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -93,7 +91,8 @@ enum {
    S390_XMNM_LOCFHR = 13,
    S390_XMNM_LOCHI = 14,
    S390_XMNM_LOCGHI = 15,
-   S390_XMNM_LOCHHI = 16
+   S390_XMNM_LOCHHI = 16,
+   S390_XMNM_BIC = 17
 };
 
 void s390_disasm(UInt command, ...);

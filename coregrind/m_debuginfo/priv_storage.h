@@ -23,9 +23,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -356,7 +354,7 @@ typedef
       Int   f7_off;
    }
    DiCfSI_m;
-#elif defined(VGA_mips32) || defined(VGA_mips64)
+#elif defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
 typedef
    struct {
       UChar cfa_how; /* a CFIC_ value */
@@ -417,7 +415,9 @@ typedef
       Creg_ARM_R15,
       Creg_ARM_R14,
       Creg_ARM_R7,
+      Creg_ARM64_SP,
       Creg_ARM64_X30,
+      Creg_ARM64_X29,
       Creg_S390_IA,
       Creg_S390_SP,
       Creg_S390_FP,

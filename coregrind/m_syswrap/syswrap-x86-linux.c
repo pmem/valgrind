@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -1576,20 +1574,21 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_syncfs,            sys_syncfs),           // 344
 
    LINXY(__NR_sendmmsg,          sys_sendmmsg),         // 345
-//   LINX_(__NR_setns,             sys_ni_syscall),       // 346
+   LINX_(__NR_setns,             sys_setns),            // 346
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv), // 347
    LINX_(__NR_process_vm_writev, sys_process_vm_writev),// 348
    LINX_(__NR_kcmp,              sys_kcmp),             // 349
 
 //   LIN__(__NR_finit_module,      sys_ni_syscall),       // 350
-//   LIN__(__NR_sched_setattr,     sys_ni_syscall),       // 351
-//   LIN__(__NR_sched_getattr,     sys_ni_syscall),       // 352
+   LINX_(__NR_sched_setattr,     sys_sched_setattr),    // 351
+   LINXY(__NR_sched_getattr,     sys_sched_getattr),    // 352
    LINX_(__NR_renameat2,         sys_renameat2),        // 353
 //   LIN__(__NR_seccomp,           sys_ni_syscall),       // 354
 
    LINXY(__NR_getrandom,         sys_getrandom),        // 355
    LINXY(__NR_memfd_create,      sys_memfd_create),     // 356
 //   LIN__(__NR_bpf,               sys_ni_syscall),       // 357
+   LINX_(__NR_execveat,          sys_execveat),         // 358
    LINXY(__NR_socket,            sys_socket),           // 359
    LINXY(__NR_socketpair,        sys_socketpair),       // 360
    LINX_(__NR_bind,              sys_bind),             // 361
@@ -1608,10 +1607,45 @@ static SyscallTableEntry syscall_table[] = {
 
    LINX_(__NR_membarrier,        sys_membarrier),       // 375
 
+   LINX_(__NR_copy_file_range,   sys_copy_file_range),   // 377
+   LINXY(__NR_preadv2,           sys_preadv2),           // 378
+   LINX_(__NR_pwritev2,          sys_pwritev2),          // 379
+
+   LINXY(__NR_pkey_mprotect,     sys_pkey_mprotect),    // 380
+   LINX_(__NR_pkey_alloc,        sys_pkey_alloc),       // 381
+   LINX_(__NR_pkey_free,         sys_pkey_free),        // 382
    LINXY(__NR_statx,             sys_statx),            // 383
 
    /* Explicitly not supported on i386 yet. */
-   GENX_(__NR_arch_prctl,        sys_ni_syscall)        // 384
+   GENX_(__NR_arch_prctl,        sys_ni_syscall),       // 384
+
+   LINXY(__NR_clock_gettime64,   sys_clock_gettime64),  // 403
+   LINX_(__NR_clock_settime64,   sys_clock_settime64),  // 404
+
+   LINXY(__NR_clock_getres_time64, sys_clock_getres_time64), // 406
+   LINXY(__NR_clock_nanosleep_time64, sys_clock_nanosleep_time64), // 407
+   LINXY(__NR_timer_gettime64,   sys_timer_gettime64),  // 408
+   LINXY(__NR_timer_settime64,   sys_timer_settime64),  // 409
+   LINXY(__NR_timerfd_gettime64, sys_timerfd_gettime64),// 410
+   LINXY(__NR_timerfd_settime64, sys_timerfd_settime64),// 411
+   LINX_(__NR_utimensat_time64,  sys_utimensat_time64), // 412
+   LINXY(__NR_pselect6_time64,   sys_pselect6_time64),  // 413
+   LINXY(__NR_ppoll_time64,      sys_ppoll_time64),     // 414
+
+   LINXY(__NR_recvmmsg_time64,   sys_recvmmsg_time64),  // 417
+   LINX_(__NR_mq_timedsend_time64, sys_mq_timedsend_time64), // 418
+   LINXY(__NR_mq_timedreceive_time64, sys_mq_timedreceive_time64), // 419
+   LINX_(__NR_semtimedop_time64, sys_semtimedop_time64),// 420
+   LINXY(__NR_rt_sigtimedwait_time64, sys_rt_sigtimedwait_time64), // 421
+   LINXY(__NR_futex_time64,      sys_futex_time64),     // 422
+   LINXY(__NR_sched_rr_get_interval_time64,
+         sys_sched_rr_get_interval_time64),             // 423
+
+   LINXY(__NR_io_uring_setup,    sys_io_uring_setup),   // 425
+   LINXY(__NR_io_uring_enter,    sys_io_uring_enter),   // 426
+   LINXY(__NR_io_uring_register, sys_io_uring_register),// 427
+
+   LINX_(__NR_faccessat2,	 sys_faccessat2),       // 439
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

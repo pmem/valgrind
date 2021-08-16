@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 
@@ -60,7 +58,8 @@ typedef
       VexArchPPC64,
       VexArchS390X,
       VexArchMIPS32,
-      VexArchMIPS64
+      VexArchMIPS64,
+      VexArchNANOMIPS,
    }
    VexArch;
 
@@ -101,6 +100,7 @@ typedef
 #define VEX_HWCAPS_AMD64_AVX2   (1<<11) /* AVX2 instructions */
 #define VEX_HWCAPS_AMD64_RDRAND (1<<13) /* RDRAND instructions */
 #define VEX_HWCAPS_AMD64_F16C   (1<<14) /* F16C instructions */
+#define VEX_HWCAPS_AMD64_RDSEED (1<<15) /* RDSEED instructions */
 
 /* ppc32: baseline capability is integer only */
 #define VEX_HWCAPS_PPC32_F     (1<<8)  /* basic (non-optional) FP */
@@ -112,6 +112,8 @@ typedef
 #define VEX_HWCAPS_PPC32_DFP   (1<<17) /* Decimal Floating Point (DFP) -- e.g., dadd */
 #define VEX_HWCAPS_PPC32_ISA2_07   (1<<19) /* ISA 2.07 -- e.g., mtvsrd */
 #define VEX_HWCAPS_PPC32_ISA3_0    (1<<21) /* ISA 3.0  -- e.g., cnttzw */
+#define VEX_HWCAPS_PPC32_ISA3_1    (1<<22) /* ISA 3.1  -- e.g., brh */
+/* ISA 3.1 not supported in 32-bit mode */
 
 /* ppc64: baseline capability is integer and basic FP insns */
 #define VEX_HWCAPS_PPC64_V     (1<<13) /* Altivec (VMX) */
@@ -122,6 +124,7 @@ typedef
 #define VEX_HWCAPS_PPC64_DFP   (1<<18) /* Decimal Floating Point (DFP) -- e.g., dadd */
 #define VEX_HWCAPS_PPC64_ISA2_07   (1<<20) /* ISA 2.07 -- e.g., mtvsrd */
 #define VEX_HWCAPS_PPC64_ISA3_0    (1<<22) /* ISA 3.0  -- e.g., cnttzw */
+#define VEX_HWCAPS_PPC64_ISA3_1    (1<<23) /* ISA 3.1  -- e.g., brh */
 
 /* s390x: Hardware capability encoding
 
@@ -146,7 +149,10 @@ typedef
 #define VEX_S390X_MODEL_ZBC12    11
 #define VEX_S390X_MODEL_Z13      12
 #define VEX_S390X_MODEL_Z13S     13
-#define VEX_S390X_MODEL_UNKNOWN  14     /* always last in list */
+#define VEX_S390X_MODEL_Z14      14
+#define VEX_S390X_MODEL_Z14_ZR1  15
+#define VEX_S390X_MODEL_Z15      16
+#define VEX_S390X_MODEL_UNKNOWN  17     /* always last in list */
 #define VEX_S390X_MODEL_MASK     0x3F
 
 #define VEX_HWCAPS_S390X_LDISP (1<<6)   /* Long-displacement facility */
@@ -163,7 +169,9 @@ typedef
 #define VEX_HWCAPS_S390X_PFPO  (1<<17)  /* Perform floating point ops facility */
 #define VEX_HWCAPS_S390X_VX    (1<<18)  /* Vector facility */
 #define VEX_HWCAPS_S390X_MSA5  (1<<19)  /* message security assistance facility */
-
+#define VEX_HWCAPS_S390X_MI2   (1<<20)  /* miscellaneous-instruction-extensions facility 2 */
+#define VEX_HWCAPS_S390X_LSC2  (1<<21)  /* Conditional load/store facility2 */
+#define VEX_HWCAPS_S390X_VXE   (1<<22)  /* Vector-enhancements facility */
 
 /* Special value representing all available s390x hwcaps */
 #define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_LDISP | \
@@ -179,7 +187,10 @@ typedef
                                 VEX_HWCAPS_S390X_ETF2  | \
                                 VEX_HWCAPS_S390X_PFPO  | \
                                 VEX_HWCAPS_S390X_VX    | \
-                                VEX_HWCAPS_S390X_MSA5)
+                                VEX_HWCAPS_S390X_MSA5  | \
+                                VEX_HWCAPS_S390X_MI2   | \
+                                VEX_HWCAPS_S390X_LSC2  | \
+                                VEX_HWCAPS_S390X_VXE)
 
 #define VEX_HWCAPS_S390X(x)  ((x) & ~VEX_S390X_MODEL_MASK)
 #define VEX_S390X_MODEL(x)   ((x) &  VEX_S390X_MODEL_MASK)
@@ -196,7 +207,18 @@ typedef
 #define VEX_ARM_ARCHLEVEL(x) ((x) & 0x3f)
 
 /* ARM64: baseline capability is AArch64 v8. */
-/* (no definitions since no variants so far) */
+#define VEX_HWCAPS_ARM64_FHM         (1 << 4)
+#define VEX_HWCAPS_ARM64_DPBCVAP     (1 << 5)
+#define VEX_HWCAPS_ARM64_DPBCVADP    (1 << 6)
+#define VEX_HWCAPS_ARM64_SM3         (1 << 7)
+#define VEX_HWCAPS_ARM64_SM4         (1 << 8)
+#define VEX_HWCAPS_ARM64_SHA3        (1 << 9)
+#define VEX_HWCAPS_ARM64_RDM         (1 << 10)
+#define VEX_HWCAPS_ARM64_ATOMICS     (1 << 11)
+#define VEX_HWCAPS_ARM64_I8MM        (1 << 12)
+#define VEX_HWCAPS_ARM64_BF16        (1 << 13)
+#define VEX_HWCAPS_ARM64_FP16        (1 << 14)
+#define VEX_HWCAPS_ARM64_VFP16       (1 << 15)
 
 /* MIPS baseline capability */
 /* Assigned Company values for bits 23:16 of the PRId Register
@@ -509,15 +531,12 @@ typedef
          BBs longer than this are split up.  Default=60 (guest
          insns). */
       Int guest_max_insns;
-      /* How aggressive should front ends be in following
-         unconditional branches to known destinations?  Default=10,
-         meaning that if a block contains less than 10 guest insns so
-         far, the front end(s) will attempt to chase into its
-         successor. A setting of zero disables chasing.  */
-      Int guest_chase_thresh;
-      /* EXPERIMENTAL: chase across conditional branches?  Not all
-         front ends honour this.  Default: NO. */
-      Bool guest_chase_cond;
+      /* Should Vex try to construct superblocks, by chasing unconditional
+         branches/calls to known destinations, and performing AND/OR idiom
+         recognition?  It is recommended to set this to True as that possibly
+         improves performance a bit, and also is important for avoiding certain
+         kinds of false positives in Memcheck.  Default=True.  */
+      Bool guest_chase;
       /* Register allocator version. Allowed values are:
          - '2': previous, good and slow implementation.
          - '3': current, faster implementation; perhaps producing slightly worse
@@ -651,6 +670,12 @@ typedef
       /* Stats only: the number of guest insns included in the
          translation.  It may be zero (!). */
       UInt n_guest_instrs;
+      /* Stats only: the number of unconditional branches incorporated into the
+         trace. */
+      UShort n_uncond_in_trace;
+      /* Stats only: the number of conditional branches incorporated into the
+         trace. */
+      UShort n_cond_in_trace;
    }
    VexTranslateResult;
 

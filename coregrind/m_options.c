@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -42,6 +40,47 @@
 
 // See pub_{core,tool}_options.h for explanations of all these.
 
+static Clo_Mode clo_mode = cloE;
+static Bool clo_recognised = False;
+
+void VG_(set_Clo_Mode) (Clo_Mode mode)
+{
+   clo_mode = mode;
+   clo_recognised = False;
+}
+Clo_Mode VG_(Clo_Mode) (void)
+{
+   return clo_mode;
+}
+
+void VG_(set_Clo_Recognised) (void)
+{
+   clo_recognised = True;
+}
+
+Bool VG_(Clo_Recognised) (void)
+{
+   return clo_recognised;
+}
+
+Bool VG_(check_clom) (Clo_Mode modes, const HChar* arg, const HChar* option,
+                      Bool recognised)
+{
+   Bool res = recognised && (modes & VG_(Clo_Mode)());
+   Bool dynamic = cloD == VG_(Clo_Mode)();
+
+   if (recognised) {
+      VG_(set_Clo_Recognised) ();
+      if (dynamic && !res)
+         VG_(umsg)("Cannot change %s option dynamically\n", option);
+      else if (dynamic && VG_(clo_verbosity) >= 1)
+         VG_(umsg)("Handling new value %s for option %s\n", arg, option);
+   }
+   if (cloH == VG_(Clo_Mode)() && (cloD & modes))
+      VG_(list_clo)(option);
+
+   return res;
+}
 
 /* Define, and set defaults. */
 
@@ -59,7 +98,8 @@ Bool   VG_(clo_show_error_list) = False;
 #if defined(VGPV_arm_linux_android) \
     || defined(VGPV_x86_linux_android) \
     || defined(VGPV_mips32_linux_android) \
-    || defined(VGPV_arm64_linux_android)
+    || defined(VGPV_arm64_linux_android) \
+    || defined(VGP_nanomips_linux)
 VgVgdb VG_(clo_vgdb)           = Vg_VgdbNo; // currently disabled on Android
 #else
 VgVgdb VG_(clo_vgdb)           = Vg_VgdbYes;
@@ -132,7 +172,7 @@ Bool   VG_(clo_read_var_info)  = False;
 XArray *VG_(clo_req_tsyms);  // array of strings
 Bool   VG_(clo_run_libc_freeres) = True;
 Bool   VG_(clo_run_cxx_freeres) = True;
-Bool   VG_(clo_track_fds)      = False;
+UInt   VG_(clo_track_fds)      = 0;
 Bool   VG_(clo_show_below_main)= False;
 Bool   VG_(clo_keep_debuginfo) = False;
 Bool   VG_(clo_show_emwarns)   = False;
@@ -154,7 +194,7 @@ UInt   VG_(clo_unw_stack_scan_frames) = 5;
 VgSmc VG_(clo_smc_check) = Vg_SmcAllNonFile;
 #elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
       || defined(VGA_arm) || defined(VGA_arm64) \
-      || defined(VGA_mips32) || defined(VGA_mips64)
+      || defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
 VgSmc VG_(clo_smc_check) = Vg_SmcStack;
 #else
 #  error "Unknown arch"
@@ -318,7 +358,41 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
    HChar opt[VG_(strlen)(option_name) + VG_(strlen)(format) + 2];
    VG_(sprintf)(opt, "%s=%s", option_name, format);
    VG_(fmsg_bad_option)(opt, "%s", message);
+   VG_(exit)(1); // Cannot continue
+   /*NOTREACHED*/
   }
+}
+
+static int col = 0;
+void VG_(list_clo)(const HChar *qq_option)
+{
+   int len = VG_(strlen)(qq_option);
+   if (col + len + 1 > 80) {
+      VG_(printf)("\n");
+      col = 0;
+   }
+
+   if (col == 0) {
+      VG_(printf)("    ");
+      col += 4;
+   } else {
+      VG_(printf)(" ");
+      col += 1;
+   }
+   VG_(printf)("%s", qq_option);
+   col += len;
+}
+void VG_(list_dynamic_options) (void)
+{
+   HChar dummy[40];
+
+   VG_(sprintf)(dummy, "%s", "<dummy option to trigger help>");
+   VG_(printf)("  dynamically changeable options:\n");
+   VG_(process_dynamic_option) (cloH, dummy);
+   if (col > 0) {
+      VG_(printf)("\n");
+      col = 0;
+   }
 }
 
 /*====================================================================*/

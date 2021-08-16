@@ -22,9 +22,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -540,7 +538,8 @@ get_cache_info(VexArchInfo *vai)
 
 #elif defined(VGA_arm) || defined(VGA_ppc32)    || \
    defined(VGA_ppc64be) || defined(VGA_ppc64le) || \
-   defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_arm64)
+   defined(VGA_mips32) || defined(VGA_mips64) || \
+   defined(VGA_arm64) || defined(VGA_nanomips)
 static Bool
 get_cache_info(VexArchInfo *vai)
 {

@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -157,6 +155,12 @@ extern UInt  VG_(mips32_linux_REDIR_FOR_strlen)( void* );
 extern Addr  VG_(mips64_linux_SUBST_FOR_rt_sigreturn);
 extern Char* VG_(mips64_linux_REDIR_FOR_index)( const Char*, Int );
 extern UInt  VG_(mips64_linux_REDIR_FOR_strlen)( void* );
+#endif
+
+#if defined(VGP_nanomips_linux)
+extern Addr  VG_(nanomips_linux_SUBST_FOR_rt_sigreturn);
+extern Char* VG_(nanomips_linux_REDIR_FOR_index)( const Char*, Int );
+extern UInt  VG_(nanomips_linux_REDIR_FOR_strlen)( void* );
 #endif
 
 #if defined(VGP_x86_solaris)

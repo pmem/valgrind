@@ -23,9 +23,7 @@
   General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-  02111-1307, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 
   The GNU General Public License is contained in the file COPYING.
 */
@@ -1316,6 +1314,55 @@ VG_(trampoline_stuff_end):
 #	undef UD2_1024
 #	undef UD2_PAGE
 
+/*---------------------- nanomips-linux --------------------*/
+#else
+#if defined(VGP_nanomips_linux)
+
+.global VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
+
+.set push
+.set noreorder
+
+.global VG_(nanomips_linux_SUBST_FOR_rt_sigreturn)
+VG_(nanomips_linux_SUBST_FOR_rt_sigreturn):
+   li $t4, __NR_rt_sigreturn
+   syscall[32]
+   .long 0
+
+.global VG_(nanomips_linux_REDIR_FOR_index)
+.type   VG_(nanomips_linux_REDIR_FOR_index), @function
+VG_(nanomips_linux_REDIR_FOR_index):
+   index_loop:
+      lbu $t0, 0($a0)
+      beqc $t0, $a1, index_end
+      addiu $a0, $a0, 1
+      bnec $t0, $zero, index_loop
+      move $a0, $zero
+   index_end:
+      jrc $ra
+.size VG_(nanomips_linux_REDIR_FOR_index), .-VG_(nanomips_linux_REDIR_FOR_index)
+
+.global VG_(nanomips_linux_REDIR_FOR_strlen)
+.type   VG_(nanomips_linux_REDIR_FOR_strlen), @function
+VG_(nanomips_linux_REDIR_FOR_strlen):
+      move $t1, $a0
+   strlen_loop:
+      lbu $t0, 0($a0)
+      addiu $a0, $a0, 1
+      bnec $t0, $zero, strlen_loop
+      subu $a0, $a0, $t1
+      addiu $a0, $a0, -1
+      jrc $ra
+
+.size VG_(nanomips_linux_REDIR_FOR_strlen), .-VG_(nanomips_linux_REDIR_FOR_strlen)
+
+.set pop
+
+.global VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
+
 /*---------------------- mips64-linux ----------------------*/
 #else
 #if defined(VGP_mips64_linux)
@@ -1568,6 +1615,7 @@ VG_(trampoline_stuff_end):
 #else
 #  error Unknown platform
 
+#endif
 #endif
 #endif
 #endif

@@ -1,6 +1,6 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
 [ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
 
@@ -236,6 +236,15 @@ tool-specific macros).</para>
     run-time. So, if it exists, it is preferable to use a specific
     client request to have better compile time verifications of the
     arguments.
+    </para>
+   </listitem>
+  </varlistentry>
+
+  <varlistentry>
+   <term><command><computeroutput>VALGRIND_CLO_CHANGE(option)</computeroutput>:</command></term>
+   <listitem>
+     <para>Changes the value of a dynamically changeable option (a string).
+       See <xref linkend="manual-core.dynopts"/>.
     </para>
    </listitem>
   </varlistentry>
@@ -680,7 +689,19 @@ vgdb --pid=3145 l f r a
 execution of the program after a standalone invocation of
 vgdb.  Monitor commands sent from GDB do not cause the program to
 continue: the program execution is controlled explicitly using GDB
-commands such as "continue" or "next".</para>
+  commands such as "continue" or "next".</para>
+
+<para>Many monitor commands (e.g. v.info location, memcheck who_points_at, ...) require an address
+  argument and an optional length: <varname>&lt;addr&gt; [&lt;len&gt;]</varname>.
+  The arguments can also be provided by using a 'C array like syntax' by providing the address
+  followed by the length between square brackets.</para>
+<para>For example, the following two monitor commands provide the same information:</para>
+<programlisting><![CDATA[
+(gdb) mo xb 0x804a2f0 10
+...
+(gdb) mo xb 0x804a2f0[10]
+...
+]]></programlisting>
 
 </sect2>
 
@@ -820,15 +841,15 @@ are however some limitations and peculiarities:</para>
      the precision of registers and flags values (a typical performance 
      impact for memcheck is given for each option).
        <itemizedlist>
-         <listitem>
+         <listitem><para>
            <option>--vex-iropt-register-updates=allregs-at-mem-access</option> (+10%)
            ensures that all registers and flags are up to date at each memory
            access.
-         </listitem>
-         <listitem>
+         </para></listitem>
+         <listitem><para>
            <option>--vex-iropt-register-updates=allregs-at-each-insn</option> (+25%)
            ensures that all registers and flags are up to date at each instruction.
-         </listitem>
+         </para></listitem>
        </itemizedlist>
        Note that <option>--vgdb=full</option> (+500%, see above
        Precision of "stop-at" commands) automatically
@@ -1243,6 +1264,13 @@ vgdb v.set log_output -c leak_check any
   </varlistentry>
 
   <varlistentry>
+    <term><option>-T</option></term>
+    <listitem><para>Instructs vgdb to add timestamps to vgdb
+    information messages.
+    </para></listitem>
+  </varlistentry>
+
+  <varlistentry>
     <term><option>-D</option></term>
     <listitem><para>Instructs a standalone vgdb to show the
     state of the shared memory used by the Valgrind gdbserver.  vgdb
@@ -1343,8 +1371,20 @@ client request.
   <listitem>
     <para><varname>v.info open_fds</varname> shows the list of open file
     descriptors and details related to the file descriptor.
-    This only works if <option>--track-fds=yes</option>
-    was given at Valgrind startup.</para>
+    This only works if <option>--track-fds=yes</option> or
+    <option>--track-fds=all</option> (to include
+    <computeroutput>stdin</computeroutput>,
+    <computeroutput>stdout</computeroutput> and
+    <computeroutput>stderr</computeroutput>) was given at Valgrindr
+    startup.</para>
+  </listitem>
+  
+  <listitem>
+    <para><varname>v.clo &lt;clo_option&gt;...</varname> changes one or more
+        dynamic command line options. If no clo_option is given, lists the
+        dynamically changeable options. See
+        <xref linkend="manual-core.dynopts"/>.
+      </para>
   </listitem>
 
   <listitem>
@@ -1399,7 +1439,7 @@ client request.
   <listitem>
     <para><varname>xtmemory [&lt;filename&gt; default xtmemory.kcg.%p.%n]</varname>
       requests the tool (Memcheck, Massif, Helgrind) to produce an xtree heap memory report. 
-      See <xref linkend="manual-core.xtree"/> for
+      See <xref linkend="&vg-xtree-id;"/> for
       a detailed explanation about execution trees. </para>
   </listitem>
 
@@ -1534,8 +1574,7 @@ $3 = {lwpid = 0x4688, threadgroup = 0x4688, parent = 0x0,
 (gdb) p vex_control
 $5 = {iropt_verbosity = 0, iropt_level = 2, 
   iropt_register_updates = VexRegUpdUnwindregsAtMemAccess, 
-  iropt_unroll_thresh = 120, guest_max_insns = 60, guest_chase_thresh = 10, 
-  guest_chase_cond = 0 '\000'}
+  iropt_unroll_thresh = 120, guest_max_insns = 60, guest_chase_thresh = 10}
 (gdb) 
 ]]></screen>
   </listitem>

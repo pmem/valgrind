@@ -1,6 +1,6 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+          "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
 [ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
 
@@ -9,7 +9,7 @@
 <refmeta>
   <refentrytitle>VALGRIND</refentrytitle>
   <manvolnum>1</manvolnum>
-  <refmiscinfo>Release &rel-version;</refmiscinfo>
+  <refmiscinfo class="source">Release &rel-version;</refmiscinfo>
 </refmeta>
 
 <refnamediv>
@@ -21,7 +21,7 @@
 <cmdsynopsis>
   <command>valgrind</command>
   <arg><replaceable>valgrind-options</replaceable></arg>
-  <arg><command>your-program</command></arg>
+  <arg><replaceable>your-program</replaceable></arg>
   <arg><replaceable>your-program-options</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -202,15 +202,6 @@ system: <filename>&vg-docs-path;</filename>, or online:
 
 
 
-<refsect1 id="sgcheck-options">
-<title>SGcheck Options</title>
-
-<xi:include href="../../exp-sgcheck/docs/sg-manual.xml" 
-            xpointer="sg.opts.list"
-            xmlns:xi="http://www.w3.org/2001/XInclude" />
-
-</refsect1>
-
 <refsect1 id="bbv-options">
 <title>BBV Options</title>
 
@@ -230,6 +221,19 @@ system: <filename>&vg-docs-path;</filename>, or online:
 
 </refsect1>
 
+<refsect1 id="debuginfod">
+<title>Debuginfod</title>
+
+<xi:include href="manual-core.xml"
+            xpointer="debuginfod.para.1"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+<xi:include href="manual-core.xml"
+            xpointer="debuginfod.para.2"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+<xi:include href="manual-core.xml"
+            xpointer="debuginfod.para.3"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+</refsect1>
 
 <refsect1 id="see_also">
 <title>See Also</title>
@@ -259,6 +263,9 @@ ms_print(1),
 <ulink id="&vg-cg-manual-id;"
        xreflabel="&vg-cg-manual-label;"
        url="&vg-cg-manual-url;">&vg-cg-manual-label;</ulink>.
+<ulink id="&vg-xtree-id;"
+       xreflabel="&vg-xtree-label;"
+       url="&vg-xtree-url;">&vg-xtree-label;</ulink>
 </para>
 
 </refsect1>

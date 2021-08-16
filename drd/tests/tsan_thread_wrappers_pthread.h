@@ -16,9 +16,7 @@
   General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-  02111-1307, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 
   The GNU General Public License is contained in the file COPYING.
 */
@@ -351,11 +349,11 @@ class WriterLockScoped {  // Scoped RWLock Locker/Unlocker
 class MyThread {
  public:
   MyThread(void* (*worker)(void *), void *arg = NULL, const char *name = NULL)
-      :wpvpv_(worker), arg_(arg), name_(name) {}
+      :wpvpv_(worker), wvv_(), wvpv_(), arg_(arg), name_(name) {}
   MyThread(void (*worker)(void), void *arg = NULL, const char *name = NULL)
-      :wvv_(worker), arg_(arg), name_(name) {}
+      :wpvpv_(), wvv_(worker), wvpv_(), arg_(arg), name_(name) {}
   MyThread(void (*worker)(void *), void *arg = NULL, const char *name = NULL)
-      :wvpv_(worker), arg_(arg), name_(name) {}
+      :wpvpv_(), wvv_(), wvpv_(worker), arg_(arg), name_(name) {}
 
   void Start() { CHECK(0 == pthread_create(&t_, NULL, ThreadBody, this));}
   void Join()  { CHECK(0 == pthread_join(t_, NULL));}

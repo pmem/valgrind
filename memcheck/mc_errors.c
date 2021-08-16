@@ -22,9 +22,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -1382,6 +1380,16 @@ Bool MC_(read_extra_suppression_info) ( Int fd, HChar** bufpp,
       eof = VG_(get_line) ( fd, bufpp, nBufp, lineno );
       if (eof) return False;
       VG_(set_supp_string)(su, VG_(strdup)("mc.resi.1", *bufpp));
+      if (VG_(strcmp) (*bufpp, "preadv(vector[...])") == 0
+          || VG_(strcmp) (*bufpp, "pwritev(vector[...])") == 0) {
+         /* Report the incompatible change introduced in 3.15
+            when reading a unsupported 3.14 or before entry.
+            See bug 417075. */
+         VG_(umsg)("WARNING: %s is an obsolete suppression line "
+                   "not supported in valgrind 3.15 or later.\n"
+                   "You should replace [...] by a specific index"
+                   " such as [0] or [1] or [2] or similar\n\n", *bufpp);
+      }
    } else if (VG_(get_supp_kind)(su) == LeakSupp) {
       // We might have the optional match-leak-kinds line
       MC_LeakSuppExtra* lse;

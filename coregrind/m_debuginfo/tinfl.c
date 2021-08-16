@@ -12,7 +12,7 @@
 
    The original file has been modified in order to be a part of Valgrind
    project, a dynamic binary instrumentation framework.
-   RT-RK Institute for Computer Based Systems, 2016 (mips-valgrind@rt-rk.com)
+   RT-RK Institute for Computer Based Systems, 2016
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -25,9 +25,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */

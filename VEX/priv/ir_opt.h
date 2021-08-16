@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 
@@ -71,6 +69,12 @@ Addr ado_treebuild_BB (
         Bool (*preciseMemExnsFn)(Int,Int,VexRegisterUpdates),
         VexRegisterUpdates pxControl
      );
+
+IRSB* do_minimal_initial_iropt_BB(
+         IRSB* bb0
+      );
+void concatenate_irsbs ( IRSB* dst, IRSB* src );
+void deltaIRStmt ( IRStmt* st, Int delta );
 
 #endif /* ndef __VEX_IR_OPT_H */
 

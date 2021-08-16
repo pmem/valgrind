@@ -29,8 +29,7 @@ case I chased).
  *   GNU General Public License for more details.
  *
  *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *   along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -326,8 +325,7 @@ uint32_t* get_rwx_area ( void )
  *   GNU General Public License for more details.
  *
  *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *   along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #if !defined (__TEST_PPC_H__)
@@ -3258,7 +3256,6 @@ static void test_vrsqrtefp (void)
     __asm__ __volatile__ ("vrsqrtefp    17, 14");
 }
 
-#if 0   // TODO: Not yet supported
 static void test_vlogefp (void)
 {
     __asm__ __volatile__ ("vlogefp      17, 14");
@@ -3268,7 +3265,6 @@ static void test_vexptefp (void)
 {
     __asm__ __volatile__ ("vexptefp     17, 14");
 }
-#endif
 
 static test_t tests_afa_ops_one[] = {
     { &test_vrfin           , "       vrfin", },
@@ -3277,8 +3273,8 @@ static test_t tests_afa_ops_one[] = {
     { &test_vrfim           , "       vrfim", },
     { &test_vrefp           , "       vrefp", },
     { &test_vrsqrtefp       , "   vrsqrtefp", },
-    //    { &test_vlogefp         , "     vlogefp", },   // TODO: Not yet supported
-    //    { &test_vexptefp        , "    vexptefp", },   // TODO: Not yet supported
+    { &test_vlogefp         , "     vlogefp", },
+    { &test_vexptefp        , "    vexptefp", },
     { NULL,                   NULL,           },
 };
 #endif /* defined (HAS_ALTIVEC) */
@@ -7202,7 +7198,8 @@ static void test_av_float_three_args (const char* name, test_func_t func,
 
             /* Valgrind emulation for vmaddfp and vnmsubfp generates negative 
              * NAN.  Technically, NAN is not positive or negative so mask off
-             * the sign bit to eliminate false errors.
+             * the sign bit to eliminate false errors.  The lower 22-bits of
+             * the 23-bit significand are a don't care for a NAN.  Mask them off.
              * 
              * Valgrind emulation is creating negative zero.  Mask off negative
              * from zero result.
@@ -7218,7 +7215,7 @@ static void test_av_float_three_args (const char* name, test_func_t func,
                 /* NAN result*/
                 if (((dst[n] & 0x7F800000) == 0x7F800000) &&
                    ((dst[n] & 0x7FFFFF) != 0))
-                   dst[n] &= 0x7FFFFFFF;
+                   dst[n] &= 0x7FC00000;
 
                 /* Negative zero result */
                 else if (dst[n] == 0x80000000)

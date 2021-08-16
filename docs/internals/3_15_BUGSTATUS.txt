@@ -1,0 +1,246 @@
+
+========================================================================
+========================================================================
+
+Created Tues 14 May 2019.  This contains bugs reported only after the release
+of 3.15.0.  It doesn't carry over bugs from earlier versions.
+
+=== Debuginfo reader ===================================================
+=== Documentation ======================================================
+=== GDB server =========================================================
+=== KernelInterface ====================================================
+=== KernelInterface/Linux ==============================================
+
+408858  Add new io_uring_register, setup, enter syscalls
+        No patch, no test case
+
+410743  shmat() calls for 32-bit programs fail when running in 64-bit valgrind
+        Not sure if this is important.  Ask MJW.
+
+411100  Valgrind does not provide a solution in the error message when an
+        mmap error is detected.
+        ** Initial load failure for very large executables?
+           Has discussion links.
+
+415621  epoll_ctl reports for uninitialized padding
+        * maybe an inaccurate wrapper; may be easy to fix?
+
+416285  Use prlimit64 in VG_(getrlimit) and VG_(setrlimit)
+        * HOST-SIDE syscall; may become important
+
+=== KernelInterface/OS X ===============================================
+
+407933  VgTs_Runnable syscall mach:50 (lwpid 771)
+
+408758  memcheck internal error: Signal 10 (SIGBUS)
+        Memcheck OSX failure
+
+410562  Unrecognised instruction 'UD2'
+        on OSX
+
+412745  Support macOS Catalina (10.15)
+
+413369  unhandled syscall getpgid
+
+413410  Mac Os 10.15 valgrind 3.15.0 (== 412745 ?)
+
+416436  Unrecognised instruction in (__pthread_init.cold.2) macOS 10.15
+
+=== MPI ================================================================
+
+413251  Compilation error using GCC 7.4.0 & OpenMPI 4.0.2
+        May not be hard to fix, but finding the bandwidth is difficult
+
+=== Output =============================================================
+=== Tools ==============================================================
+=== Tools/Cachegrind ===================================================
+=== Tools/Callgrind ====================================================
+
+409934  Callgrind: Warning: L3 cache found, using its data for the LL simulation
+        * Misleading warning message?
+
+412711  Patch: Add a per-thread simulate flag to Callgrind
+        Uh.  Is this a good idea, even?
+
+415293  Incorrect call-graph tracking due
+        to new _dl_runtime_resolve_xsave* functions
+        * Potentially important, and may be easy to fix?
+
+=== Tools/DHAT =========================================================
+
+409678  DHAT: make it able to distinguish reads from writes
+        Has patches, but do we want to take them?
+
+=== Tools/DRD ==========================================================
+=== Tools/Helgrind =====================================================
+=== Tools/Lackey =======================================================
+=== Tools/Massif =======================================================
+=== Tools/Memcheck =====================================================
+
+407589  Add support for C11 aligned_alloc() and GNU reallocarray()
+        * Missing allocation intercepts?
+
+415141  Possible leak with calling __libc_freeres before
+        all thread's tid_addresses are cleared
+        Not really Memcheck specific.  MJW knows more.
+
+=== Tools/SGCheck ======================================================
+=== Uncategorised ======================================================
+=== Uncategorised/build ================================================
+
+415516  Can't cross compile on openwrt
+        * MIPS build failure
+
+=== Uncategorised/run ==================================================
+
+411203  valgrind should have a mean to pass environment variable to target
+        program
+        * I think this is invalid, but maybe I misunderstand
+
+=== VEX ================================================================
+=== VEX/amd64 ==========================================================
+
+408140  Missing support for vmovdqu64
+        is an AVX512 insn
+
+409999  vex amd64->IR: 0x62 0xD1 0xFE 0x8 0x6F 0x84 0x24 0x8 0x0 0x0
+        *** 0x62 is BOUND, but that isn't valid in 64-bit mode
+        == 393351
+        == 414944
+        == 411303
+        == 414053
+        393351 has STR
+
+=== VEX/arm32 ==========================================================
+
+410102  Valgrind ir sanity check failure crash
+        But is on 3.13 at latest.  No small test case.
+
+=== VEX/arm64 ==========================================================
+
+409391  [PATCH] LSE instruction support : LDADD 32bit
+        arm64 something.  AH can maybe deal with it?
+
+409646  No case for 1Uto32 - arm64
+        For 'taintgrind'.  Should be trivial to fix.
+
+412377  SIGILL on cache flushes on arm64
+        * Needs looking at.  Not sure if this is valid or not.
+
+414270  Collection of bugs for new ARMv8.1 work and features
+414268  Enable AArch64 feature detection and decoding for v8.x instructions
+        (where x>0)
+
+=== VEX/mips ===========================================================
+=== VEX/other ==========================================================
+=== VEX/ppc ============================================================
+=== VEX/s390x ==========================================================
+
+416301  s390x: "compare and signal" not supported
+        * Potentially important (??)
+
+=== VEX/x86 ============================================================
+=== zz_other ===========================================================
+
+414278  VG_(memcpy) used for overlapping moves
+        * Comment-only change
+
+414290  Release notes are corrupted on valgrind.org
+415393  Valgrind webpages and non-printable characters (== 414290)
+        **
+
+=== zz_other/Android ===================================================
+=== zz_other/amd64 =====================================================
+
+407377  SIGSEGV if debugged application going to VMW_PORT() macro
+        Happens when using VMWare trapdoor?
+
+=== zz_other/arm32 =====================================================
+=== zz_other/arm64 =====================================================
+=== zz_other/*BSD ======================================================
+=== zz_other/mips ======================================================
+=== zz_other/ppc =======================================================
+=== zz_other/s390 ======================================================
+=== zz_other/Win32 =====================================================
+=== zz_other/Win64 =====================================================
+
+253657  [Contains patches to improve PDB reading]
+        Improve PDB* reading ?
+
+
+=== zz_other/x86 =======================================================
+
+.416682  [MIPS-Linux] mmap failed under valgrind
+
+.416753  new 32bit time syscalls for 2038+
+In progress
+
+. 416760  ppc64le Assertion 'VG_IS_16_ALIGNED(sizeof(struct rt_sigframe))'
+Seems important.  Status unclear.
+
+.416779  valgrind: m_debuginfo/debuginfo.c:454
+(discard_or_archive_DebugInfo): Assertion '!di->have_dinfo ||
+is_DebugInfo_active(di)' failed.
+WINE wierdness
+
+.417075  pwritev(vector[...]) suppression ignored
+
+.394227  [x86] False negative "uninitialised value" report due to not
+recognizing simd registers clear by pcmp* (still alive)
+
+.417175  Valgrind is not working on Android pie.
+
+.417187  [MIPS] Conditional branch problem since 'grail' changes
+It sounds like the MIPS folks have basically solved the problem
+
+.417238  Test memcheck/tests/vbit-test fails on mips64 BE
+Has discussion
+
+.417264  Musl issues: Fix none/tests/pth_atfork1.c
+Uhmm, MUSL
+
+.417266  Make memcheck/tests/linux/sigqueue usable with musl
+Uhmm, MUSL
+
+.417377  False-positive "uninitialised value(s)" reports from memcheck
+
+.417572  unhandled instruction bytes: 0xC5 0x79 0xD6 0xED 0xC5 0xF9 0x51
+Ech, some avx thing
+
+.417578  Add suppressions for glibc DTV leaks
+Has patch, should land
+
+.417993  vbit-test fail on s390x with Iop_Add32: spurious dependency
+    on uninitialised value
+Needs investigation
+
+.418004  Grail code additions break ppc64
+
+.418106  configure error: Valgrind not working with Darwin version 18.14.2
+
+.418756  MAP_FIXED_NOREPLACE mmap flag unsupported
+
+.418840  SIG_IGN doesn't clear pending signal if SIG_IGN is already the handler
+
+.418961  Character encoding issue on website
+
+.419054  Unhandled syscall getcpu on arm32
+
+.419562  PR_SET_PTRACER error with Ubuntu on WSL
+
+.419864  arm32 fe: valgrind: Unrecognised instruction at address 0x5bf24a3
+
+-- as of Fri 17 Apr 16:15:11 CEST 2020
+
+Bug 416760 - ppc64le Assertion 'VG_IS_16_ALIGNED(sizeof(struct rt_sigframe))' failed (edit) -
+==================
+
+Extras
+(not new) 319393  bad rounding in cvtsi2ss instruction
+
+Can we get rid of exp-sgcheck now?
+
+Very large executable support -- adjust tool load address?  Status?
+
+port the ZF-after-BTx fixes over to x86?
+

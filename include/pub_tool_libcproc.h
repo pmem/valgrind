@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -104,6 +102,16 @@ extern Int VG_(getegid) ( void );
 extern UInt VG_(read_millisecond_timer) ( void );
 
 extern Int  VG_(gettimeofday)(struct vki_timeval *tv, struct vki_timezone *tz);
+
+#  if defined(VGO_linux) || defined(VGO_solaris)
+/* Get the clock value as specified by clk_id.  Asserts if unsuccesful.  */
+extern void VG_(clock_gettime)(struct vki_timespec *ts, vki_clockid_t clk_id);
+#  elif defined(VGO_darwin)
+  /* It seems clock_gettime is only available on recent Darwin versions.
+     For the moment, let's assume it is not available.  */
+#  else
+#    error "Unknown OS"
+#  endif
 
 // Returns the number of milliseconds of user cpu time we have used,
 // as reported by 'getrusage'.

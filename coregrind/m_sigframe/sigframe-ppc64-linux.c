@@ -24,9 +24,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -114,7 +112,7 @@ struct rt_sigframe {
    vki_siginfo_t         info;
    struct vg_sig_private priv;
    UChar                 abigap[288];   // unused
-};
+} __attribute__ ((aligned (16)));
 
 #define SET_SIGNAL_LR(zztst, zzval)                          \
    do { tst->arch.vex.guest_LR = (zzval);                    \

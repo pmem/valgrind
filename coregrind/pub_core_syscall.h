@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -86,12 +84,14 @@ extern SysRes VG_(mk_SysRes_mips32_linux)( UWord v0, UWord v1,
                                            UWord a3 );
 extern SysRes VG_(mk_SysRes_mips64_linux)( ULong v0, ULong v1,
                                            ULong a3 );
+extern SysRes VG_(mk_SysRes_nanomips_linux)( UWord a0);
 extern SysRes VG_(mk_SysRes_x86_solaris) ( Bool isErr, UInt val, UInt val2 );
 extern SysRes VG_(mk_SysRes_amd64_solaris) ( Bool isErr, ULong val, ULong val2 );
 extern SysRes VG_(mk_SysRes_Error)       ( UWord val );
 extern SysRes VG_(mk_SysRes_Success)     ( UWord val );
 
-#if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+#if defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
+    || defined(VGP_nanomips_linux)
 /* On Linux/MIPS, VG_(mk_SysRes_Success) sets the second result word
    to zero.  Here is a version that allows setting both values. */
 extern SysRes VG_(mk_SysRes_SuccessEx)   ( UWord val, UWord valEx );

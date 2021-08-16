@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -43,12 +41,16 @@
 struct vg_mallocfunc_info {
    void* (*tl_malloc)              (ThreadId tid, SizeT n);
    void* (*tl___builtin_new)       (ThreadId tid, SizeT n);
+   void* (*tl___builtin_new_aligned) (ThreadId tid, SizeT n, SizeT align);
    void* (*tl___builtin_vec_new)   (ThreadId tid, SizeT n);
+   void* (*tl___builtin_vec_new_aligned) (ThreadId tid, SizeT n, SizeT align);
    void* (*tl_memalign)            (ThreadId tid, SizeT align, SizeT n);
    void* (*tl_calloc)              (ThreadId tid, SizeT nmemb, SizeT n);
    void  (*tl_free)                (ThreadId tid, void* p);
    void  (*tl___builtin_delete)    (ThreadId tid, void* p);
+   void  (*tl___builtin_delete_aligned)    (ThreadId tid, void* p, SizeT n);
    void  (*tl___builtin_vec_delete)(ThreadId tid, void* p);
+   void  (*tl___builtin_vec_delete_aligned)(ThreadId tid, void* p, SizeT n);
    void* (*tl_realloc)             (ThreadId tid, void* p, SizeT size);
    SizeT (*tl_malloc_usable_size)  (ThreadId tid, void* payload);
    void  (*mallinfo)               (ThreadId tid, struct vg_mallinfo* mi);

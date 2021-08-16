@@ -25,9 +25,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -820,7 +818,8 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
       have a sloppyXcheck mode which we enable on x86 and s390 - in this
       mode we allow the kernel to report execute permission when we weren't
       expecting it but not vice versa. */
-#  if defined(VGA_x86) || defined (VGA_s390x)
+#  if defined(VGA_x86) || defined (VGA_s390x) || \
+      defined(VGA_mips32) || defined(VGA_mips64)
    sloppyXcheck = True;
 #  else
    sloppyXcheck = False;
@@ -2681,7 +2680,7 @@ static SysRes VG_(am_mmap_file_float_valgrind_flags) ( SizeT length, UInt prot,
    req.rkind = MAny;
    req.start = 0;
    #if defined(VGA_arm) || defined(VGA_arm64) \
-      || defined(VGA_mips32) || defined(VGA_mips64)
+      || defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
    aspacem_assert(VKI_SHMLBA >= VKI_PAGE_SIZE);
    #else
    aspacem_assert(VKI_SHMLBA == VKI_PAGE_SIZE);

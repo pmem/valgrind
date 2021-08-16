@@ -26,9 +26,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -1293,6 +1291,30 @@ static ARMCondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       addInstr(env, ARMInstr_Imm32(r, 0));
       addInstr(env, ARMInstr_CmpOrTst(True/*isCmp*/, r, ARMRI84_R(r)));
       return e->Iex.Const.con->Ico.U1 ? ARMcc_EQ : ARMcc_NE;
+   }
+
+   /* --- And1(x,y), Or1(x,y) --- */
+   /* FIXME: We could (and probably should) do a lot better here, by using the
+      iselCondCode_C/_R scheme used in the amd64 insn selector. */
+   if (e->tag == Iex_Binop
+       && (e->Iex.Binop.op == Iop_And1 || e->Iex.Binop.op == Iop_Or1)) {
+      HReg x_as_32 = newVRegI(env);
+      ARMCondCode cc_x = iselCondCode(env, e->Iex.Binop.arg1);
+      addInstr(env, ARMInstr_Mov(x_as_32, ARMRI84_I84(0,0)));
+      addInstr(env, ARMInstr_CMov(cc_x, x_as_32, ARMRI84_I84(1,0)));
+
+      HReg y_as_32 = newVRegI(env);
+      ARMCondCode cc_y = iselCondCode(env, e->Iex.Binop.arg2);
+      addInstr(env, ARMInstr_Mov(y_as_32, ARMRI84_I84(0,0)));
+      addInstr(env, ARMInstr_CMov(cc_y, y_as_32, ARMRI84_I84(1,0)));
+
+      HReg tmp = newVRegI(env);
+      ARMAluOp aop = e->Iex.Binop.op == Iop_And1 ? ARMalu_AND : ARMalu_OR;
+      addInstr(env, ARMInstr_Alu(aop, tmp, x_as_32, ARMRI84_R(y_as_32)));
+
+      ARMRI84* one  = ARMRI84_I84(1,0);
+      addInstr(env, ARMInstr_CmpOrTst(False/*test*/, tmp, one));
+      return ARMcc_NE;
    }
 
    // JRS 2013-Jan-03: this seems completely nonsensical

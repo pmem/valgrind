@@ -22,9 +22,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -74,7 +72,7 @@ static inline UWord VG_TT_FAST_HASH ( Addr guest ) {
    return merged & VG_TT_FAST_MASK;
 }
 
-#elif defined(VGA_s390x) || defined(VGA_arm)
+#elif defined(VGA_s390x) || defined(VGA_arm) || defined(VGA_nanomips)
 static inline UWord VG_TT_FAST_HASH ( Addr guest ) {
    // Instructions are 2-byte aligned.
    UWord merged = ((UWord)guest) >> 1;

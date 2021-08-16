@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -76,6 +74,7 @@ static Error* errors = NULL;
    suppressions file.  Note that the list gets rearranged as a result
    of the searches done by is_suppressible_error(). */
 static Supp* suppressions = NULL;
+static Bool load_suppressions_called = False;
 
 /* Running count of unsuppressed errors detected. */
 static UInt n_errs_found = 0;
@@ -526,7 +525,7 @@ void do_actions_on_error(const Error* err, Bool allow_db_attach)
    /* if user wants to debug from a certain error nr, then wait for gdb/vgdb */
    if (VG_(clo_vgdb) != Vg_VgdbNo
        && allow_db_attach 
-       && VG_(dyn_vgdb_error) <= n_errs_shown) {
+       && VG_(clo_vgdb_error) <= n_errs_shown) {
       VG_(umsg)("(action on error) vgdb me ... \n");
       VG_(gdbserver)( err->tid );
       VG_(umsg)("Continuing ...\n");
@@ -1472,7 +1471,7 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
    VG_(umsg)("FATAL: in suppressions file \"%s\" near line %d:\n",
            filename, lineno );
    VG_(umsg)("   %s\n", err_str );
-   
+
    VG_(close)(fd);
    VG_(umsg)("exiting now.\n");
    VG_(exit)(1);
@@ -1480,11 +1479,19 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
 #  undef BOMB
 }
 
+void VG_(add_suppression_file)(const HChar *filename)
+{
+   HChar *f = VG_(strdup)("errormgr.addsup", filename);
+   VG_(addToXA)(VG_(clo_suppressions), &f);
+   if (load_suppressions_called)
+      load_one_suppressions_file( VG_(sizeXA)(VG_(clo_suppressions)) - 1 );
+}
 
 void VG_(load_suppressions) ( void )
 {
    Int i;
    suppressions = NULL;
+   load_suppressions_called = True;
    for (i = 0; i < VG_(sizeXA)(VG_(clo_suppressions)); i++) {
       if (VG_(clo_verbosity) > 1) {
          VG_(dmsg)("Reading suppressions file: %s\n", 

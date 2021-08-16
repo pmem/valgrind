@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -194,6 +192,12 @@ struct vki_sigcontext {
         /* 4K reserved for FP/SIMD state and future expansion */
         __vki_u8 __reserved[4096] __attribute__((__aligned__(16)));
 };
+
+//----------------------------------------------------------------------
+// From linux-5.0.0/arch/arm64/include/uapi/asm/siginfo.h
+//----------------------------------------------------------------------
+
+#define __VKI_ARCH_SI_PREAMBLE_SIZE (4 * sizeof(int))
 
 //----------------------------------------------------------------------
 // From linux-3.10.5/uapi/include/asm-generic/mman-common.h

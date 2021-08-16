@@ -29,9 +29,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -979,7 +977,7 @@ void VG_(XT_massif_print)
       FP("n%u: %llu %s\n", n_groups, top_total, header->top_node_desc);
 
       /* Output depth 0 groups. */
-      DMSG(1, "XT_massif_print outputing %u depth 0 groups\n", n_groups);
+      DMSG(1, "XT_massif_print outputting %u depth 0 groups\n", n_groups);
       for (i = 0; i < n_groups; i++)
          ms_output_group(fp, 0, 0, &groups[i], sig_sz, header->sig_threshold);
 

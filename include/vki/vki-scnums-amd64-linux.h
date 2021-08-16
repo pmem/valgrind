@@ -22,9 +22,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -32,7 +30,7 @@
 #ifndef __VKI_SCNUMS_AMD64_LINUX_H
 #define __VKI_SCNUMS_AMD64_LINUX_H
 
-// Derived from linux-2.6/arch/x86/entry/syscalls/syscall_64.tbl
+// Derived from linux-5.2/arch/x86/entry/syscalls/syscall_64.tbl
 
 #define __NR_read                                0
 #define __NR_write                               1
@@ -414,6 +412,8 @@
 #define __NR_pkey_alloc         330
 #define __NR_pkey_free          331
 #define __NR_statx              332
+#define __NR_io_pgetevents	333
+#define __NR_rseq		334
 
 #endif /* __VKI_SCNUMS_AMD64_LINUX_H */
 

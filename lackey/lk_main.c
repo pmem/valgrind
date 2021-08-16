@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -742,7 +740,7 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
                 * instrument, by the VEX statements that are the
                 * translation of that known destination. This feature is
                 * called 'SB chasing' and can be influenced by command
-                * line option --vex-guest-chase-thresh.
+                * line option --vex-guest-chase=[yes|no].
                 *
                 * To get an accurate count of the calls to a specific
                 * function, taking SB chasing into account, we need to

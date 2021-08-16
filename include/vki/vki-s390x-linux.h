@@ -20,9 +20,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -808,6 +806,7 @@ typedef vki_s390_regs vki_elf_gregset_t;
 
 #define VKI_HWCAP_S390_TE           1024
 #define VKI_HWCAP_S390_VXRS         2048
+#define VKI_HWCAP_S390_VXRS_EXT     8192
 
 
 //----------------------------------------------------------------------

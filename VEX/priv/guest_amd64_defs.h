@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 
@@ -51,9 +49,6 @@
    guest_generic_bb_to_IR.h. */
 extern
 DisResult disInstr_AMD64 ( IRSB*        irbb,
-                           Bool         (*resteerOkFn) ( void*, Addr ),
-                           Bool         resteerCisOk,
-                           void*        callback_opaque,
                            const UChar* guest_code,
                            Long         delta,
                            Addr         guest_IP,
@@ -167,9 +162,15 @@ extern void  amd64g_dirtyhelper_storeF80le ( Addr/*addr*/, ULong/*data*/ );
 extern void  amd64g_dirtyhelper_CPUID_baseline ( VexGuestAMD64State* st );
 extern void  amd64g_dirtyhelper_CPUID_sse3_and_cx16 ( VexGuestAMD64State* st );
 extern void  amd64g_dirtyhelper_CPUID_sse42_and_cx16 ( VexGuestAMD64State* st );
-extern void  amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st );
-extern void  amd64g_dirtyhelper_CPUID_avx2 ( VexGuestAMD64State* st,
-                                             ULong hasF16C, ULong hasRDRAND );
+extern void  amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st,
+                                                     ULong hasF16C,
+                                                     ULong hasRDRAND,
+                                                     ULong hasRDSEED );
+
+extern void amd64g_dirtyhelper_CPUID_avx2 ( VexGuestAMD64State* st,
+                                            ULong hasF16C, ULong hasRDRAND,
+                                            ULong hasRDSEED );
+
 
 extern void  amd64g_dirtyhelper_FINIT ( VexGuestAMD64State* );
 
@@ -197,6 +198,7 @@ extern void amd64g_dirtyhelper_SxDT ( void* address,
 // resulting C flag value in bit 32.
 extern ULong amd64g_dirtyhelper_RDRAND ( void );
 
+extern ULong amd64g_dirtyhelper_RDSEED ( void );
 
 /* Helps with PCMP{I,E}STR{I,M}.
 

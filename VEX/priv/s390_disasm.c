@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -143,6 +141,7 @@ vr_operand(UInt archreg)
       "%v0", "%v1", "%v2", "%v3",
       "%v4", "%v5", "%v6", "%v7",
       "%v8", "%v9", "%v10", "%v11",
+      "%v12", "%v13", "%v14", "%v15",
       "%v16", "%v17", "%v18", "%v19",
       "%v20", "%v21", "%v22", "%v23",
       "%v24", "%v25", "%v26", "%v27",
@@ -434,6 +433,16 @@ s390_disasm(UInt command, ...)
             /* There are no special opcodes when mask == 0 or 15. In that case
                the integer mask is appended as the final operand */
             if (mask == 0 || mask == 15) mask_suffix = mask;
+            break;
+         case S390_XMNM_BIC:
+            mask = va_arg(args, UInt);
+            if (mask == 0) {
+               /* There is no special opcode when mask == 0. */
+               p  += vex_sprintf(p, "bic");
+               mask_suffix = mask;
+            } else {
+               p  += vex_sprintf(p, "%s", construct_mnemonic("bi", "", mask));
+            }
             break;
          }
       }

@@ -22,9 +22,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -511,10 +509,10 @@ static UInt alloc_CEnt ( DiImage* img, SizeT szB, Bool fromC )
    return entNo;
 }
 
-static void realloc_CEnt ( DiImage* img, UInt entNo, SizeT szB )
+static void realloc_CEnt ( DiImage* img, UInt entNo, SizeT szB, Bool fromC )
 {
    vg_assert(img != NULL);
-   vg_assert(szB >= CACHE_ENTRY_SIZE);
+   vg_assert(fromC || szB >= CACHE_ENTRY_SIZE);
    vg_assert(is_sane_CEnt("realloc_CEnt-pre", img, entNo));
    img->ces[entNo] = ML_(dinfo_realloc)("di.realloc_CEnt.1",
                                         img->ces[entNo],
@@ -770,7 +768,7 @@ static UChar get_slowcase ( DiImage* img, DiOffT off )
    }
    vg_assert(i >= 0 && i < CACHE_N_ENTRIES);
 
-   realloc_CEnt(img, i, size);
+   realloc_CEnt(img, i, size, /*fromC?*/cslc != NULL);
    img->ces[i]->size = size;
    img->ces[i]->used = 0;
    if (cslc == NULL) {

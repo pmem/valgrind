@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -72,6 +70,13 @@ ST_IN HReg hregARM64_D13 ( void ) { return mkHReg(False, HRcFlt64,  13, 25); }
 ST_IN HReg hregARM64_X8  ( void ) { return mkHReg(False, HRcInt64,  8,  26); }
 ST_IN HReg hregARM64_X9  ( void ) { return mkHReg(False, HRcInt64,  9,  27); }
 ST_IN HReg hregARM64_X21 ( void ) { return mkHReg(False, HRcInt64, 21,  28); }
+
+// This is the integer register with encoding 31.  Be *very* careful how you
+// use it, since its meaning is dependent on the instruction and indeed even
+// the position within an instruction, that it appears.  It denotes either the
+// zero register or the stack pointer.
+ST_IN HReg hregARM64_XZR_XSP ( void ) { return mkHReg(False,
+                                                      HRcInt64, 31, 29); }
 #undef ST_IN
 
 extern UInt ppHRegARM64 ( HReg );
@@ -251,6 +256,17 @@ typedef
 
 typedef
    enum {
+      ARM64rrs_ADD=54,
+      ARM64rrs_SUB,
+      ARM64rrs_AND,
+      ARM64rrs_OR,
+      ARM64rrs_XOR,
+      ARM64rrs_INVALID
+   }
+   ARM64RRSOp;
+
+typedef
+   enum {
       ARM64un_NEG=60,
       ARM64un_NOT,
       ARM64un_CLZ,
@@ -293,6 +309,14 @@ typedef
 
 typedef
    enum {
+      ARM64fpt_FMADD=105,
+      ARM64fpt_FMSUB,
+      ARM64fpt_INVALID
+   }
+   ARM64FpTriOp;
+
+typedef
+   enum {
       ARM64fpu_NEG=110,
       ARM64fpu_ABS,
       ARM64fpu_SQRT,
@@ -311,6 +335,7 @@ typedef
                              ARM64vecb_MUL32x4,
       ARM64vecb_MUL16x8,     ARM64vecb_MUL8x16,
       ARM64vecb_FADD64x2,    ARM64vecb_FADD32x4,
+      ARM64vecb_FADD16x8,
       ARM64vecb_FSUB64x2,    ARM64vecb_FSUB32x4,
       ARM64vecb_FMUL64x2,    ARM64vecb_FMUL32x4,
       ARM64vecb_FDIV64x2,    ARM64vecb_FDIV32x4,
@@ -398,8 +423,8 @@ typedef
 
 typedef
    enum {
-      ARM64vecu_FNEG64x2=350, ARM64vecu_FNEG32x4,
-      ARM64vecu_FABS64x2,     ARM64vecu_FABS32x4,
+      ARM64vecu_FNEG64x2=350, ARM64vecu_FNEG32x4,     ARM64vecu_FNEG16x8,
+      ARM64vecu_FABS64x2,     ARM64vecu_FABS32x4,     ARM64vecu_FABS16x8,
       ARM64vecu_NOT,
       ARM64vecu_ABS64x2,      ARM64vecu_ABS32x4,
       ARM64vecu_ABS16x8,      ARM64vecu_ABS8x16,
@@ -414,7 +439,7 @@ typedef
       ARM64vecu_URSQRTE32x4,
       ARM64vecu_FRECPE64x2,   ARM64vecu_FRECPE32x4,
       ARM64vecu_FRSQRTE64x2,  ARM64vecu_FRSQRTE32x4,
-      ARM64vecu_FSQRT64x2,    ARM64vecu_FSQRT32x4,
+      ARM64vecu_FSQRT64x2,    ARM64vecu_FSQRT32x4,    ARM64vecu_FSQRT16x8,
       ARM64vecu_INVALID
    }
    ARM64VecUnaryOp;
@@ -462,9 +487,11 @@ typedef
       ARM64in_Arith=1220,
       ARM64in_Cmp,
       ARM64in_Logic,
+      ARM64in_RRS,
       ARM64in_Test,
       ARM64in_Shift,
       ARM64in_Unary,
+      ARM64in_Set64,
       ARM64in_MovI,        /* int reg-reg move */
       ARM64in_Imm64,
       ARM64in_LdSt64,
@@ -482,6 +509,7 @@ typedef
       ARM64in_LdrEX,
       ARM64in_StrEX,
       ARM64in_CAS,
+      ARM64in_CASP,
       ARM64in_MFence,
       ARM64in_ClrEX,
       /* ARM64in_V*: scalar ops involving vector registers */
@@ -496,8 +524,11 @@ typedef
       ARM64in_VCvtHD,   /* scalar 16 bit FP <--> 64 bit FP */
       ARM64in_VUnaryD,
       ARM64in_VUnaryS,
+      ARM64in_VUnaryH,
       ARM64in_VBinD,
       ARM64in_VBinS,
+      ARM64in_VTriD,
+      ARM64in_VTriS,
       ARM64in_VCmpD,
       ARM64in_VCmpS,
       ARM64in_VFCSel,
@@ -550,6 +581,15 @@ typedef
             ARM64RIL*    argR;
             ARM64LogicOp op;
          } Logic;
+         /* 64 bit AND/OR/XOR/ADD/SUB, reg, reg-with-imm-shift */
+         struct {
+            HReg         dst;
+            HReg         argL;
+            HReg         argR;
+            ARM64ShiftOp shiftOp;
+            UChar        amt; /* 1 to 63 only */
+            ARM64RRSOp   mainOp;
+         } RRS;
          /* 64 bit TST reg, reg or bimm (AND and set flags) */
          struct {
             HReg      argL;
@@ -568,6 +608,11 @@ typedef
             HReg         src;
             ARM64UnaryOp op;
          } Unary;
+         /* CSET -- Convert a condition code to a 64-bit value (0 or 1). */
+         struct {
+            HReg          dst;
+            ARM64CondCode cond;
+         } Set64;
          /* MOV dst, src -- reg-reg move for integer registers */
          struct {
             HReg dst;
@@ -675,6 +720,7 @@ typedef
             Uses x8 as scratch (but that's not allocatable).
             Hence: RD x3, x5, x7; WR x1
 
+           loop:
             (szB=8)  mov  x8, x5
             (szB=4)  and  x8, x5, #0xFFFFFFFF
             (szB=2)  and  x8, x5, #0xFFFF
@@ -686,15 +732,18 @@ typedef
             bne     after
             -- if branch taken, failure; x1[[8*szB-1 : 0] holds old value
             -- attempt to store
-            stxr    w1, x7, [x3]
+            stxr    w8, x7, [x3]
             -- if store successful, x1==0, so the eor is "x1 := x5"
-            -- if store failed,     x1==1, so the eor makes x1 != x5
-            eor     x1, x5, x1
+            -- if store failed,     branch back and try again.
+            cbne    w8, loop
            after:
          */
          struct {
             Int szB; /* 1, 2, 4 or 8 */
          } CAS;
+         struct {
+            Int szB; /* 4 or 8 */
+         } CASP;
          /* Mem fence.  An insn which fences all loads and stores as
             much as possible before continuing.  On ARM64 we emit the
             sequence "dsb sy ; dmb sy ; isb sy", which is probably
@@ -776,6 +825,12 @@ typedef
             HReg           dst;
             HReg           src;
          } VUnaryS;
+         /* 16-bit FP unary */
+         struct {
+            ARM64FpUnaryOp op;
+            HReg           dst;
+            HReg           src;
+         } VUnaryH;
          /* 64-bit FP binary arithmetic */
          struct {
             ARM64FpBinOp op;
@@ -790,6 +845,22 @@ typedef
             HReg         argL;
             HReg         argR;
          } VBinS;
+         /* 64-bit FP ternary arithmetic */
+         struct {
+            ARM64FpTriOp op;
+            HReg         dst;
+            HReg         arg1;
+            HReg         arg2;
+            HReg         arg3;
+         } VTriD;
+         /* 32-bit FP ternary arithmetic */
+         struct {
+            ARM64FpTriOp op;
+            HReg         dst;
+            HReg         arg1;
+            HReg         arg2;
+            HReg         arg3;
+         } VTriS;
          /* 64-bit FP compare */
          struct {
             HReg argL;
@@ -914,9 +985,12 @@ typedef
 extern ARM64Instr* ARM64Instr_Arith   ( HReg, HReg, ARM64RIA*, Bool isAdd );
 extern ARM64Instr* ARM64Instr_Cmp     ( HReg, ARM64RIA*, Bool is64 );
 extern ARM64Instr* ARM64Instr_Logic   ( HReg, HReg, ARM64RIL*, ARM64LogicOp );
+extern ARM64Instr* ARM64Instr_RRS     ( HReg, HReg, HReg, ARM64ShiftOp,
+                                        UChar amt, ARM64RRSOp mainOp );
 extern ARM64Instr* ARM64Instr_Test    ( HReg, ARM64RIL* );
 extern ARM64Instr* ARM64Instr_Shift   ( HReg, HReg, ARM64RI6*, ARM64ShiftOp );
 extern ARM64Instr* ARM64Instr_Unary   ( HReg, HReg, ARM64UnaryOp );
+extern ARM64Instr* ARM64Instr_Set64   ( HReg, ARM64CondCode );
 extern ARM64Instr* ARM64Instr_MovI    ( HReg, HReg );
 extern ARM64Instr* ARM64Instr_Imm64   ( HReg, ULong );
 extern ARM64Instr* ARM64Instr_LdSt64  ( Bool isLoad, HReg, ARM64AMode* );
@@ -940,6 +1014,7 @@ extern ARM64Instr* ARM64Instr_Mul     ( HReg dst, HReg argL, HReg argR,
 extern ARM64Instr* ARM64Instr_LdrEX   ( Int szB );
 extern ARM64Instr* ARM64Instr_StrEX   ( Int szB );
 extern ARM64Instr* ARM64Instr_CAS     ( Int szB );
+extern ARM64Instr* ARM64Instr_CASP    ( Int szB );
 extern ARM64Instr* ARM64Instr_MFence  ( void );
 extern ARM64Instr* ARM64Instr_ClrEX   ( void );
 extern ARM64Instr* ARM64Instr_VLdStH  ( Bool isLoad, HReg sD, HReg rN,
@@ -957,8 +1032,13 @@ extern ARM64Instr* ARM64Instr_VCvtHS  ( Bool hToS, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VCvtHD  ( Bool hToD, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VUnaryD ( ARM64FpUnaryOp op, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VUnaryS ( ARM64FpUnaryOp op, HReg dst, HReg src );
+extern ARM64Instr* ARM64Instr_VUnaryH ( ARM64FpUnaryOp op, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VBinD   ( ARM64FpBinOp op, HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VBinS   ( ARM64FpBinOp op, HReg, HReg, HReg );
+extern ARM64Instr* ARM64Instr_VTriD   ( ARM64FpTriOp op, HReg dst,
+                                        HReg, HReg, HReg );
+extern ARM64Instr* ARM64Instr_VTriS   ( ARM64FpTriOp op, HReg dst,
+                                        HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VCmpD   ( HReg argL, HReg argR );
 extern ARM64Instr* ARM64Instr_VCmpS   ( HReg argL, HReg argR );
 extern ARM64Instr* ARM64Instr_VFCSel  ( HReg dst, HReg argL, HReg argR,

@@ -19,9 +19,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -33,10 +31,10 @@
 
 void invoker_restrictions_msg(void)
 {
-   fprintf(stderr, 
-           "Note: vgdb invoker not implemented on this platform.\n"
-           "For more info: read user manual section"
-           " 'Limitations of the Valgrind gdbserver'.\n");
+   TSFPRINTF(stderr, 
+             "Note: vgdb invoker not implemented on this platform.\n"
+             "For more info: read user manual section"
+             " 'Limitations of the Valgrind gdbserver'.\n");
 }
 
 void invoker_cleanup_restore_and_detach(void *v_pid)

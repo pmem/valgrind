@@ -23,9 +23,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -697,7 +695,7 @@ static SyscallTableEntry syscall_main_table[] = {
 //zz    //   (__NR_setdomainname,     sys_setdomainname),  // 121 */*(?)
    GENXY(__NR_uname,             sys_newuname),       // 122
 //   PLAX_(__NR_modify_ldt,        sys_modify_ldt),     // 123
-//zz    LINXY(__NR_adjtimex,          sys_adjtimex),       // 124
+   LINXY(__NR_adjtimex,          sys_adjtimex),       // 124
 //zz 
    GENXY(__NR_mprotect,          sys_mprotect),       // 125
    LINXY(__NR_sigprocmask,       sys_sigprocmask),    // 126
@@ -744,7 +742,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_sched_get_priority_max, sys_sched_get_priority_max),// 159
 
    LINX_(__NR_sched_get_priority_min, sys_sched_get_priority_min),// 160
-//zz    //LINX?(__NR_sched_rr_get_interval,  sys_sched_rr_get_interval), // 161 */*
+   LINXY(__NR_sched_rr_get_interval,  sys_sched_rr_get_interval), // 161
    GENXY(__NR_nanosleep,         sys_nanosleep),      // 162
    GENX_(__NR_mremap,            sys_mremap),         // 163
    LINX_(__NR_setresuid,         sys_setresuid16),    // 164
@@ -1007,16 +1005,53 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_clock_adjtime,     sys_clock_adjtime),    // 372
    LINX_(__NR_syncfs,            sys_syncfs),           // 373
    LINXY(__NR_sendmmsg,          sys_sendmmsg),         // 374
-
+   LINX_(__NR_setns,             sys_setns),            // 375
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv), // 376
    LINX_(__NR_process_vm_writev, sys_process_vm_writev),// 377
 
+   LINX_(__NR_sched_setattr,     sys_sched_setattr),    // 380
+   LINXY(__NR_sched_getattr,     sys_sched_getattr),    // 381
    LINX_(__NR_renameat2,         sys_renameat2),        // 382
 
    LINXY(__NR_getrandom,         sys_getrandom),        // 384
    LINXY(__NR_memfd_create,      sys_memfd_create),     // 385
 
+   LINX_(__NR_execveat,          sys_execveat),         // 387
+
+   LINX_(__NR_membarrier,        sys_membarrier),       // 389
+   LINX_(__NR_copy_file_range,   sys_copy_file_range),  // 391
+   LINXY(__NR_preadv2,           sys_preadv2),          // 392
+   LINX_(__NR_pwritev2,          sys_pwritev2),         // 393
+
    LINXY(__NR_statx,             sys_statx),            // 397
+
+   LINXY(__NR_clock_gettime64,   sys_clock_gettime64),  // 403
+   LINX_(__NR_clock_settime64,   sys_clock_settime64),  // 404
+
+   LINXY(__NR_clock_getres_time64, sys_clock_getres_time64), // 406
+   LINXY(__NR_clock_nanosleep_time64, sys_clock_nanosleep_time64), // 407
+   LINXY(__NR_timer_gettime64,   sys_timer_gettime64),  // 408
+   LINXY(__NR_timer_settime64,   sys_timer_settime64),  // 409
+   LINXY(__NR_timerfd_gettime64, sys_timerfd_gettime64),// 410
+   LINXY(__NR_timerfd_settime64, sys_timerfd_settime64),// 411
+   LINX_(__NR_utimensat_time64,  sys_utimensat_time64), // 412
+   LINXY(__NR_pselect6_time64,   sys_pselect6_time64),  // 413
+   LINXY(__NR_ppoll_time64,      sys_ppoll_time64),     // 414
+
+   LINXY(__NR_recvmmsg_time64,   sys_recvmmsg_time64),  // 417
+   LINX_(__NR_mq_timedsend_time64, sys_mq_timedsend_time64), // 418
+   LINXY(__NR_mq_timedreceive_time64, sys_mq_timedreceive_time64), // 419
+   LINX_(__NR_semtimedop_time64, sys_semtimedop_time64),// 420
+   LINXY(__NR_rt_sigtimedwait_time64, sys_rt_sigtimedwait_time64), // 421
+   LINXY(__NR_futex_time64,      sys_futex_time64),     // 422
+   LINXY(__NR_sched_rr_get_interval_time64,
+         sys_sched_rr_get_interval_time64),             // 423
+
+   LINXY(__NR_io_uring_setup,    sys_io_uring_setup),    // 425
+   LINXY(__NR_io_uring_enter,    sys_io_uring_enter),    // 426
+   LINXY(__NR_io_uring_register, sys_io_uring_register), // 427
+
+   LINX_(__NR_faccessat2,    sys_faccessat2),           // 439
 };
 
 

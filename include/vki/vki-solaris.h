@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -1330,6 +1328,7 @@ typedef struct sigaction vki_sigaction_fromK_t;
 
 #include <sys/time.h>
 #define VKI_CLOCK_MONOTONIC CLOCK_MONOTONIC
+#define VKI_CLOCK_THREAD_CPUTIME_ID CLOCK_THREAD_CPUTIME_ID
 
 #define vki_clockid_t clockid_t
 #define vki_timespec timespec

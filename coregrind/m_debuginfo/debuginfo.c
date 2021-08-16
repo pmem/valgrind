@@ -23,9 +23,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -1176,7 +1174,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    is_ro_map = False;
 
 #  if defined(VGA_x86) || defined(VGA_ppc32) || defined(VGA_mips32) \
-      || defined(VGA_mips64)
+      || defined(VGA_mips64) || defined(VGA_nanomips)
    is_rx_map = seg->hasR && seg->hasX;
    is_rw_map = seg->hasR && seg->hasW;
 #  elif defined(VGA_amd64) || defined(VGA_ppc64be) || defined(VGA_ppc64le)  \
@@ -2288,10 +2286,9 @@ Vg_FnNameKind VG_(get_fnname_kind) ( const HChar* name )
    } else if (
 #      if defined(VGO_linux)
        VG_STREQ("__libc_start_main",  name) ||  // glibc glibness
+       VG_STREQN(18, "__libc_start_main.", name) || // gcc optimization
        VG_STREQ("generic_start_main", name) ||  // Yellow Dog doggedness
-#      if defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
-       VG_STREQ("generic_start_main.isra.0", name) || // ppc glibness
-#      endif
+       VG_STREQN(19, "generic_start_main.", name) || // gcc optimization
 #      elif defined(VGO_darwin)
        // See readmacho.c for an explanation of this.
        VG_STREQ("start_according_to_valgrind", name) ||  // Darwin, darling
@@ -2868,7 +2865,8 @@ UWord evalCfiExpr ( const XArray* exprs, Int ix,
             case Creg_S390_SP: return eec->uregs->sp;
             case Creg_S390_FP: return eec->uregs->fp;
             case Creg_S390_LR: return eec->uregs->lr;
-#           elif defined(VGA_mips32) || defined(VGA_mips64)
+#           elif defined(VGA_mips32) || defined(VGA_mips64) \
+              || defined(VGA_nanomips)
             case Creg_IA_IP: return eec->uregs->pc;
             case Creg_IA_SP: return eec->uregs->sp;
             case Creg_IA_BP: return eec->uregs->fp;
@@ -2876,7 +2874,9 @@ UWord evalCfiExpr ( const XArray* exprs, Int ix,
 #           elif defined(VGA_ppc32) || defined(VGA_ppc64be) \
                || defined(VGA_ppc64le)
 #           elif defined(VGP_arm64_linux)
+            case Creg_ARM64_SP: return eec->uregs->sp;
             case Creg_ARM64_X30: return eec->uregs->x30;
+            case Creg_ARM64_X29: return eec->uregs->x29;
 #           else
 #             error "Unsupported arch"
 #           endif
@@ -3130,7 +3130,7 @@ static Addr compute_cfa ( const D3UnwindRegs* uregs,
       case CFIC_IA_BPREL:
          cfa = cfsi_m->cfa_off + uregs->fp;
          break;
-#     elif defined(VGA_mips32) || defined(VGA_mips64)
+#     elif defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
       case CFIC_IA_SPREL:
          cfa = cfsi_m->cfa_off + uregs->sp;
          break;
@@ -3288,7 +3288,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    ipHere = uregsHere->r15;
 #  elif defined(VGA_s390x)
    ipHere = uregsHere->ia;
-#  elif defined(VGA_mips32) || defined(VGA_mips64)
+#  elif defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
    ipHere = uregsHere->pc;
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
 #  elif defined(VGP_arm64_linux)
@@ -3428,7 +3428,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    COMPUTE(uregsPrev.f5, uregsHere->f5, cfsi_m->f5_how, cfsi_m->f5_off);
    COMPUTE(uregsPrev.f6, uregsHere->f6, cfsi_m->f6_how, cfsi_m->f6_off);
    COMPUTE(uregsPrev.f7, uregsHere->f7, cfsi_m->f7_how, cfsi_m->f7_off);
-#  elif defined(VGA_mips32) || defined(VGA_mips64)
+#  elif defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
    COMPUTE(uregsPrev.pc, uregsHere->pc, cfsi_m->ra_how, cfsi_m->ra_off);
    COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi_m->sp_how, cfsi_m->sp_off);
    COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi_m->fp_how, cfsi_m->fp_off);

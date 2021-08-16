@@ -1,7 +1,7 @@
 /*
   This file is part of drd, a thread error detector.
 
-  Copyright (C) 2006-2017 Bart Van Assche <bvanassche@acm.org>.
+  Copyright (C) 2006-2020 Bart Van Assche <bvanassche@acm.org>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -14,9 +14,7 @@
   General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-  02111-1307, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 
   The GNU General Public License is contained in the file COPYING.
 */
@@ -51,7 +49,7 @@
 #define STACK_POINTER_OFFSET OFFSET_arm64_XSP
 #elif defined(VGA_s390x)
 #define STACK_POINTER_OFFSET OFFSET_s390x_r15
-#elif defined(VGA_mips32)
+#elif defined(VGA_mips32) || defined(VGA_nanomips)
 #define STACK_POINTER_OFFSET OFFSET_mips32_r29
 #elif defined(VGA_mips64)
 #define STACK_POINTER_OFFSET OFFSET_mips64_r29

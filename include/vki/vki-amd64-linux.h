@@ -21,9 +21,7 @@
    General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
 */
@@ -298,6 +296,21 @@ struct vki_f_owner_ex {
 #define VKI_RLIMIT_STACK	3	/* max stack size */
 #define VKI_RLIMIT_CORE		4	/* max core file size */
 #define VKI_RLIMIT_NOFILE	7	/* max number of open files */
+
+//----------------------------------------------------------------------
+// From linux-5.0.0/arch/x86/include/uapi/asm/siginfo.h
+//----------------------------------------------------------------------
+
+/* We need that to ensure that sizeof(siginfo) == 128. */
+#ifdef __x86_64__
+# ifdef __ILP32__
+typedef long long __vki_kernel_si_clock_t __attribute__((aligned(4)));
+#  define __VKI_ARCH_SI_CLOCK_T             __vki_kernel_si_clock_t
+#  define __VKI_ARCH_SI_ATTRIBUTES          __attribute__((aligned(8)))
+# else
+#  define __VKI_ARCH_SI_PREAMBLE_SIZE (4 * sizeof(int))
+# endif
+#endif
 
 //----------------------------------------------------------------------
 // From linux-2.6.9/include/asm-x86_64/socket.h
