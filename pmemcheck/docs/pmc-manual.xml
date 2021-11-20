@@ -550,7 +550,7 @@ Overlapping regions:
 
 	  <varlistentry id="crm.flush" xreflabel="VALGRIND_PMC_DO_FLUSH">
 	    <term>
-		  <option><![CDATA[VALGRIND_PMC_DO_CLFLUSH(addr, size)]]></option>
+		  <option><![CDATA[VALGRIND_PMC_DO_FLUSH(addr, size)]]></option>
         </term>
 		<listitem>
 		  <para>
