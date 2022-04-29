@@ -889,7 +889,9 @@ int main(void)
    SY(SYS_clock_nanosleep, x0+5000, x0+3000, x0, x0+1); SUCC;
 #endif
 
-   // unimpl SYS_clock_getcpuclockid2                      247
+   // SYS_clock_getcpuclockid2                             247
+   GO(SYS_clock_getcpuclockid2, "3s 1m");
+   SY(SYS_clock_getcpuclockid2, x0+1, x0+1, x0+1); FAIL;
 
    // BSDXY(__NR_ntp_gettime,      sys_ntp_gettime),       // 248
 
@@ -1613,7 +1615,7 @@ int main(void)
    SY(SYS_thr_kill2, x0-1, x0-1, x0+9999); FAIL;
 
    /* SYS_shm_open                482 */
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
    GO(SYS_freebsd12_shm_open, "(SHM_ANON) 3s 0m");
    SY(SYS_freebsd12_shm_open, x0+SHM_ANON, x0+2, x0+9); SUCC;
 #else
@@ -1729,7 +1731,7 @@ int main(void)
 
    /* SYS_posix_openpt            504 */
    GO(SYS_posix_openpt, "1s 1m");
-   SY(SYS_posix_openpt, x0+0xffff0000); FAIL;
+   SY(SYS_posix_openpt, x0+0x8); FAIL;
 
    // gssd_syscall                505
 
@@ -1746,7 +1748,7 @@ int main(void)
    SY(SYS_jail_remove, x0+1); FAIL;
 
    /* SYS_closefrom               509 */
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
    GO(SYS_freebsd12_closefrom, "1s 0m");
    SY(SYS_freebsd12_closefrom, x0+100000); SUCC;
 #else

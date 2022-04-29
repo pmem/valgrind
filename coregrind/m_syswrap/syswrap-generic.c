@@ -2919,7 +2919,7 @@ void VG_(reap_threads)(ThreadId self)
 
 /* This handles the common part of the PRE macro for execve and execveat. */
 void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
-                           Addr arg_2, Addr arg_3, Bool is_execveat,
+                           Addr arg_2, Addr arg_3, ExecveType execveType,
                            Bool check_pathptr)
 {
    HChar*       path = NULL;       /* path to executable */
@@ -2933,24 +2933,45 @@ void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
    Bool         setuid_allowed, trace_this_child;
    const char   *str;
    char         str2[30], str3[30];
+   Addr         arg_2_check = arg_2;
 
-   if (is_execveat)
-       str = "execveat";
-   else
-       str = "execve";
+   switch (execveType) {
+   case EXECVE:
+      str = "execve";
+      break;
+   case EXECVEAT:
+      str = "execveat";
+      break;
+   case FEXECVE:
+      str = "fexecve";
+      break;
+   default:
+      vg_assert(False);
+   }
 
    VG_(strcpy)(str2, str);
    VG_(strcpy)(str3, str);
 
-   if (arg_2 != 0) {
-       /* At least the terminating NULL must be addressable. */
-      if (!ML_(safe_to_deref)((HChar **) (Addr)arg_2, sizeof(HChar *))) {
-         SET_STATUS_Failure(VKI_EFAULT);
-         return;
+   VG_(strcat)(str2, "(argv)");
+   VG_(strcat)(str3, "(argv[0])");
+
+   /* argv[] should not be NULL and valid.  */
+   PRE_MEM_READ(str2, arg_2_check, sizeof(Addr));
+
+   /* argv[0] should not be NULL and valid.  */
+   if (ML_(safe_to_deref)((HChar **) (Addr)arg_2_check, sizeof(HChar *))) {
+      Addr argv0 = *(Addr*)arg_2_check;
+      PRE_MEM_RASCIIZ( str3, argv0 );
+      /* The rest of argv can be NULL or a valid string pointer.  */
+      if (VG_(am_is_valid_for_client)(arg_2_check, sizeof(HChar), VKI_PROT_READ)) {
+         arg_2_check += sizeof(HChar*);
+         str3[VG_(strlen)(str)] = '\0';
+         VG_(strcat)(str3, "(argv[i])");
+         ML_(pre_argv_envp)( arg_2_check, tid, str2, str3 );
       }
-      VG_(strcat)(str2, "(argv)");
-      VG_(strcat)(str3, "(argv[i])");
-      ML_(pre_argv_envp)( arg_2, tid, str2, str3 );
+   } else {
+      SET_STATUS_Failure(VKI_EFAULT);
+      return;
    }
    // Reset helper strings to syscall name.
    str2[VG_(strlen)(str)] = '\0';
@@ -3230,7 +3251,7 @@ PRE(sys_execve)
    Addr arg_2 = (Addr)ARG2;
    Addr arg_3 = (Addr)ARG3;
 
-   handle_pre_sys_execve(tid, status, (Addr)pathname, arg_2, arg_3, 0, True);
+   handle_pre_sys_execve(tid, status, (Addr)pathname, arg_2, arg_3, EXECVE, True);
 }
 
 PRE(sys_access)

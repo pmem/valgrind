@@ -290,6 +290,18 @@ PRE(sys_freebsd6_ftruncate)
 }
 #endif
 
+// SYS_clock_getcpuclockid2   247
+// no manpage for this, from syscalls.master
+// int clock_getcpuclockid2(id_t id, int which, _Out_ clockid_t *clock_id);
+PRE(sys_clock_getcpuclockid2)
+{
+   PRINT("sys_clock_getcpuclockid2( %" FMT_REGWORD "d, %" FMT_REGWORD "d, %#" FMT_REGWORD "x )",
+         SARG1,SARG2,ARG3);
+   PRE_REG_READ3(int, "clock_getcpuclockid2",
+                 id_t, id, int, len, clockid_t *, clock_id);
+   PRE_MEM_WRITE("clock_getcpuclockid2(clock_id)", ARG3, sizeof(vki_clockid_t));
+}
+
 // SYS_rfork 251
 // pid_t rfork(int flags);
 PRE(sys_rfork)
@@ -410,10 +422,10 @@ PRE(sys_sigreturn)
 {
    PRINT("sys_sigreturn ( %#" FMT_REGWORD "x )", ARG1);
    PRE_REG_READ1(int, "sigreturn",
-                 struct vki_ucontext *, ucp);
+                 struct vki_ucontext *, scp);
 
-   PRE_MEM_READ( "sigreturn(ucp)", ARG1, sizeof(struct vki_ucontext) );
-   PRE_MEM_WRITE( "sigreturn(ucp)", ARG1, sizeof(struct vki_ucontext) );
+   PRE_MEM_READ( "sigreturn(scp)", ARG1, sizeof(struct vki_ucontext) );
+   PRE_MEM_WRITE( "sigreturn(scp)", ARG1, sizeof(struct vki_ucontext) );
 }
 
 static void restore_mcontext(ThreadState *tst, struct vki_mcontext *sc)
@@ -946,21 +958,23 @@ PRE(sys_procctl)
          SARG1, SARG2, SARG3, ARG4);
    PRE_REG_READ4(int, "procctl", vki_idtype_t, idtype, vki_id_t, id, int, cmd, void *, arg);
    switch (ARG3) {
-   case PROC_ASLR_CTL:
-   case PROC_SPROTECT:
-   case PROC_TRACE_CTL:
-   case PROC_TRAPCAP_CTL:
-   case PROC_PDEATHSIG_CTL:
-   case PROC_STACKGAP_CTL:
+   case VKI_PROC_ASLR_CTL:
+   case VKI_PROC_SPROTECT:
+   case VKI_PROC_TRACE_CTL:
+   case VKI_PROC_TRAPCAP_CTL:
+   case VKI_PROC_PDEATHSIG_CTL:
+   case VKI_PROC_STACKGAP_CTL:
+   case VKI_PROC_NO_NEW_PRIVS_CTL:
+   case VKI_PROC_WXMAP_CTL:
       PRE_MEM_READ("procctl(arg)", ARG4, sizeof(int));
       break;
-   case PROC_REAP_STATUS:
+   case VKI_PROC_REAP_STATUS:
       PRE_MEM_READ("procctl(arg)", ARG4, sizeof(struct vki_procctl_reaper_status));
       break;
-   case PROC_REAP_GETPIDS:
+   case VKI_PROC_REAP_GETPIDS:
       PRE_MEM_READ("procctl(arg)", ARG4, sizeof(struct vki_procctl_reaper_pids));
       break;
-   case PROC_REAP_KILL:
+   case VKI_PROC_REAP_KILL:
       /* The first three fields are reads
        * int rk_sig;
        * u_int rk_flags;
@@ -975,14 +989,16 @@ PRE(sys_procctl)
       PRE_MEM_READ("procctl(arg)", ARG4, sizeof(int) + sizeof(u_int) + sizeof(vki_pid_t));
       PRE_MEM_WRITE("procctl(arg)", ARG4+offsetof(struct vki_procctl_reaper_kill, rk_killed), sizeof(u_int) + sizeof(vki_pid_t));
       break;
-   case PROC_ASLR_STATUS:
-   case PROC_PDEATHSIG_STATUS:
-   case PROC_STACKGAP_STATUS:
-   case PROC_TRAPCAP_STATUS:
-   case PROC_TRACE_STATUS:
+   case VKI_PROC_ASLR_STATUS:
+   case VKI_PROC_PDEATHSIG_STATUS:
+   case VKI_PROC_STACKGAP_STATUS:
+   case VKI_PROC_TRAPCAP_STATUS:
+   case VKI_PROC_TRACE_STATUS:
+   case VKI_PROC_NO_NEW_PRIVS_STATUS:
+   case VKI_PROC_WXMAP_STATUS:
       PRE_MEM_WRITE("procctl(arg)", ARG4, sizeof(int));
-   case PROC_REAP_ACQUIRE:
-   case PROC_REAP_RELEASE:
+   case VKI_PROC_REAP_ACQUIRE:
+   case VKI_PROC_REAP_RELEASE:
    default:
       break;
    }
@@ -991,14 +1007,16 @@ PRE(sys_procctl)
 POST(sys_procctl)
 {
    switch (ARG3) {
-   case PROC_REAP_KILL:
+   case VKI_PROC_REAP_KILL:
       POST_MEM_WRITE(ARG4+offsetof(struct vki_procctl_reaper_kill, rk_killed), sizeof(u_int) + sizeof(vki_pid_t));
       break;
-   case PROC_ASLR_STATUS:
-   case PROC_PDEATHSIG_STATUS:
-   case PROC_STACKGAP_STATUS:
-   case PROC_TRAPCAP_STATUS:
-   case PROC_TRACE_STATUS:
+   case VKI_PROC_ASLR_STATUS:
+   case VKI_PROC_PDEATHSIG_STATUS:
+   case VKI_PROC_STACKGAP_STATUS:
+   case VKI_PROC_TRAPCAP_STATUS:
+   case VKI_PROC_TRACE_STATUS:
+   case VKI_PROC_NO_NEW_PRIVS_STATUS:
+   case VKI_PROC_WXMAP_STATUS:
       POST_MEM_WRITE(ARG4, sizeof(int));
    default:
       break;
@@ -1052,10 +1070,10 @@ PRE(sys_fake_sigreturn)
 
    PRINT("sys_sigreturn ( %#" FMT_REGWORD "x )", ARG1);
    PRE_REG_READ1(long, "sigreturn",
-                 struct vki_ucontext *, ucp);
+                 struct vki_ucontext *, scp);
 
-   PRE_MEM_READ( "sigreturn(ucp)", ARG1, sizeof(struct vki_ucontext) );
-   PRE_MEM_WRITE( "sigreturn(ucp)", ARG1, sizeof(struct vki_ucontext) );
+   PRE_MEM_READ( "sigreturn(scp)", ARG1, sizeof(struct vki_ucontext) );
+   PRE_MEM_WRITE( "sigreturn(scp)", ARG1, sizeof(struct vki_ucontext) );
 
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(tid >= 1 && tid < VG_N_THREADS);

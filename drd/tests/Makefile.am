@@ -105,6 +105,8 @@ EXTRA_DIST =                                        \
 	circular_buffer.vgtest			    \
 	concurrent_close.stderr.exp		    \
 	concurrent_close.vgtest			    \
+	condvar.stderr.exp			    \
+	condvar.vgtest				    \
 	custom_alloc.stderr.exp			    \
 	custom_alloc.vgtest			    \
 	custom_alloc_fiw.stderr.exp		    \
@@ -225,6 +227,8 @@ EXTRA_DIST =                                        \
 	pth_inconsistent_cond_wait.vgtest           \
 	pth_mutex_reinit.stderr.exp		    \
 	pth_mutex_reinit.vgtest			    \
+	pth_mutex_signal.stderr.exp		    \
+	pth_mutex_signal.vgtest			    \
 	pth_once.stderr.exp			    \
 	pth_once.vgtest				    \
 	pth_process_shared_mutex.stderr.exp         \
@@ -271,6 +275,8 @@ EXTRA_DIST =                                        \
 	sem_open_traced.vgtest                      \
 	sem_wait.stderr.exp                         \
 	sem_wait.vgtest                             \
+	shared_timed_mutex.stderr.exp               \
+	shared_timed_mutex.vgtest                   \
 	swapcontext.stderr.exp                      \
 	swapcontext.vgtest                          \
 	sigalrm.stderr.exp                          \
@@ -365,6 +371,8 @@ EXTRA_DIST =                                        \
 	threaded-fork.vgtest			    \
 	threaded-fork-vcs.stderr.exp		    \
 	threaded-fork-vcs.vgtest		    \
+	timed_mutex.stderr.exp                      \
+	timed_mutex.vgtest                          \
 	tls_threads.stderr.exp			    \
 	tls_threads.vgtest			    \
 	trylock.stderr.exp                          \
@@ -408,6 +416,7 @@ check_PROGRAMS =      \
   pth_detached3       \
   pth_inconsistent_cond_wait \
   pth_mutex_reinit    \
+  pth_mutex_signal    \
   pth_process_shared_mutex   \
   recursive_mutex     \
   rwlock_race         \
@@ -458,6 +467,21 @@ check_PROGRAMS += \
 endif
 endif
 
+if CXX_CAN_INCLUDE_CONDITION_VARIABLE_HEADER
+check_PROGRAMS += \
+    condvar
+endif
+
+if CXX_CAN_USE_SHARED_TIMED_MUTEX
+check_PROGRAMS += \
+    shared_timed_mutex
+endif
+
+if CXX_CAN_USE_TIMED_MUTEX
+check_PROGRAMS += \
+    timed_mutex
+endif
+
 if HAVE_OPENMP
 check_PROGRAMS += omp_matinv omp_prime omp_printf
 endif
@@ -502,6 +526,8 @@ LDADD = -lpthread
 
 
 bug322621_SOURCES           = bug322621.cpp
+condvar_SOURCES		    = condvar.cpp
+condvar_CXXFLAGS            = $(AM_CXXFLAGS) -std=c++0x
 concurrent_close_SOURCES    = concurrent_close.cpp
 if !VGCONF_OS_IS_FREEBSD
 dlopen_main_LDADD           = -ldl
@@ -581,6 +607,9 @@ if VGCONF_OS_IS_SOLARIS
 rwlock_test_CFLAGS          += -D__EXTENSIONS__
 endif
 
+shared_timed_mutex_SOURCES  = shared_timed_mutex.cpp
+shared_timed_mutex_CXXFLAGS = $(AM_CXXFLAGS) -std=c++1y
+
 std_atomic_SOURCES          = std_atomic.cpp
 std_atomic_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare
 
@@ -616,3 +645,5 @@ if VGCONF_OS_IS_SOLARIS
 swapcontext_CFLAGS          += -D__EXTENSIONS__
 endif
 
+timed_mutex_SOURCES         = timed_mutex.cpp
+timed_mutex_CXXFLAGS        = $(AM_CXXFLAGS) -std=c++0x

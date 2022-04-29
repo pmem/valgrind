@@ -490,13 +490,14 @@ typedef __vki_signalfn_t *__vki_sighandler_t;
 #define  VKI_SIGIO      23
 #define  VKI_SIGXCPU    24
 #define  VKI_SIGXFSZ    25
-#define  VKI_SIGVTALRM     26
+#define  VKI_SIGVTALRM  26
 #define  VKI_SIGPROF    27
-#define  VKI_SIGWINCH      28
+#define  VKI_SIGWINCH   28
 #define  VKI_SIGINFO    29
 #define  VKI_SIGUSR1    30
 #define  VKI_SIGUSR2    31
 #define  VKI_SIGTHR     32
+#define  VKI_SIGLIBRT   33
 
 #define  VKI_SIGRTMIN      65
 #define  VKI_SIGRTMAX      126
@@ -607,6 +608,16 @@ typedef struct vki_siginfo {
 #define VKI_TRAP_TRACE  2  /* process trace trap */
 #define VKI_TRAP_DTRACE 3   /* DTrace induced trap.                 */
 #define VKI_TRAP_CAP    4   /* Capabilities protective trap.        */
+
+/*
+ * SIGCHLD si_codes
+ */
+#define VKI_CLD_EXITED    1  /* child has exited */
+#define VKI_CLD_KILLED    2  /* child was killed */
+#define VKI_CLD_DUMPED    3  /* child terminated abnormally */
+#define VKI_CLD_TRAPPED   4  /* traced child has trapped */
+#define VKI_CLD_STOPPED   5  /* child has stopped */
+#define VKI_CLD_CONTINUED 6  /* stopped child has continued */
 
 #if 0 /* freebsd-6 */
 typedef struct vki_sigevent {
@@ -1535,11 +1546,17 @@ struct vki_dirent {
 #define VKI_O_WRONLY   O_WRONLY
 #define VKI_O_RDWR     O_RDWR
 
+#define VKI_FREAD FREAD
+#define VKI_WRITE WRITE
+
 #define VKI_O_NONBLOCK    O_NONBLOCK
 #define VKI_O_APPEND   O_APPEND
 #define VKI_O_CREAT    O_CREAT
 #define VKI_O_TRUNC    O_TRUNC
 #define VKI_O_EXCL     O_EXCL
+#define VKI_O_DIRECTORY	O_DIRECTORY
+#define VKI_O_EXEC      O_EXEC
+#define VKI_O_SEARCH	O_EXEC
 
 #define VKI_AT_FDCWD            AT_FDCWD
 
@@ -2278,23 +2295,26 @@ typedef struct vki_domainset vki_domainset_t;
 // From sys/procctl.h
 //----------------------------------------------------------------------
 
-#define PROC_SPROTECT           1
-#define PROC_REAP_ACQUIRE       2
-#define PROC_REAP_RELEASE       3
-#define PROC_REAP_STATUS        4
-#define PROC_REAP_GETPIDS       5
-#define PROC_REAP_KILL          6
-#define PROC_TRACE_CTL          7
-#define PROC_TRACE_STATUS       8
-#define PROC_TRAPCAP_CTL        9
-#define PROC_TRAPCAP_STATUS     10
-#define PROC_PDEATHSIG_CTL      11
-#define PROC_PDEATHSIG_STATUS   12
-#define PROC_ASLR_CTL           13
-#define PROC_ASLR_STATUS        14
-#define PROC_STACKGAP_CTL       17
-#define PROC_STACKGAP_STATUS    18
-
+#define VKI_PROC_SPROTECT           1
+#define VKI_PROC_REAP_ACQUIRE       2
+#define VKI_PROC_REAP_RELEASE       3
+#define VKI_PROC_REAP_STATUS        4
+#define VKI_PROC_REAP_GETPIDS       5
+#define VKI_PROC_REAP_KILL          6
+#define VKI_PROC_TRACE_CTL          7
+#define VKI_PROC_TRACE_STATUS       8
+#define VKI_PROC_TRAPCAP_CTL        9
+#define VKI_PROC_TRAPCAP_STATUS     10
+#define VKI_PROC_PDEATHSIG_CTL      11
+#define VKI_PROC_PDEATHSIG_STATUS   12
+#define VKI_PROC_ASLR_CTL           13
+#define VKI_PROC_ASLR_STATUS        14
+#define VKI_PROC_STACKGAP_CTL       17
+#define VKI_PROC_STACKGAP_STATUS    18
+#define VKI_PROC_NO_NEW_PRIVS_CTL   19
+#define VKI_PROC_NO_NEW_PRIVS_STATUS 20
+#define VKI_PROC_WXMAP_CTL          21
+#define VKI_PROC_WXMAP_STATUS       22
 
 struct vki_procctl_reaper_status {
    u_int   rs_flags;

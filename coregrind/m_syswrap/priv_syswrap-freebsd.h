@@ -227,7 +227,7 @@ DECL_TEMPLATE(freebsd, sys_timer_getoverrun) // 239
 // unimpl ffclock_setestimate 242
 // unimpl ffclock_getestimate 243
 DECL_TEMPLATE(freebsd, sys_clock_nanosleep) // 244
-// unimpl clock_getcpuclockid2 247
+DECL_TEMPLATE(freebsd, sys_clock_getcpuclockid2) // 247
 // unimpl ntp_gettime 248
 DECL_TEMPLATE(freebsd, sys_minherit) // 250
 DECL_TEMPLATE(freebsd, sys_rfork) // 251
@@ -523,23 +523,24 @@ DECL_TEMPLATE(freebsd, sys_fhreadlink) // 567
 // unimpl __NR_funlinkat           568
 // unimpl __NR_copy_file_range     569
 DECL_TEMPLATE(freebsd, sys___sysctlbyname) // 570
+
+#if (FREEBSD_VERS >= FREEBSD_13_0)
+// looks like close_range got backported
+// to 12.2 leaving these 4 marked as UNIMPL in 12.2
 // unimpl __NR_shm_open2           571
 // unimpl __NR_shm_rename          572
 // unimpl __NR_sigfastblock        573
-// unimpl __NR___realpathat        574
+DECL_TEMPLATE(freebsd, sys___realpathat) // 574
+#endif
+
 // unimpl __NR_close_range         575
 
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
 
 // unimpl __NR_rpctls_syscall      576
-
-#endif
-
-#if (FREEBSD_VERS >= FREEBSD_14)
-
-// unimpl __NR___specialfd         577
+DECL_TEMPLATE(freebsd, sys___specialfd) // 577
 // unimpl __NR_aio_writev          578
 // unimpl __NR_aio_readv           579
 

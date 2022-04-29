@@ -2,7 +2,7 @@
 include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr filter_pts dump_stdout filter_sigwait \
-	filter_scalar
+	filter_scalar filter_realpathat
 
 EXTRA_DIST = \
 	scalar.h \
@@ -33,7 +33,6 @@ EXTRA_DIST = \
 	scalar.vgtest \
 	scalar.stderr.exp \
 		scalar.stderr.exp-x86 \
-		scalar.stderr.exp-freebsd130 \
 	capsicum.vgtest \
 	capsicum.stderr.exp \
 	getfh.vgtest \
@@ -70,14 +69,24 @@ EXTRA_DIST = \
 	utimes.stderr.exp-x86 \
 	utimes.stderr.exp \
 	static_allocs.vgtest \
-	static_allocs.stderr.exp
+	static_allocs.stderr.exp \
+	fexecve.vgtest \
+	fexecve.stderr.exp \
+	realpathat.vgtest \
+	realpathat.stderr.exp \
+	scalar_13_plus.vgtest \
+	scalar_13_plus.stderr.exp \
+	eventfd1.vgtest \
+	eventfd1.stderr.exp eventfd1.stdout.exp \
+	eventfd2.vgtest \
+	eventfd2.stderr.exp eventfd2.stdout.exp
 
 check_PROGRAMS = \
 	statfs pdfork_pdkill getfsstat inlinfo inlinfo_nested.so extattr \
 	sigwait chflags get_set_login revoke scalar capsicum getfh \
 	linkat scalar_fork scalar_thr_exit scalar_abort2 scalar_pdfork \
 	scalar_vfork stat file_locking_wait6 utimens access chmod_chown \
-	misc get_set_context utimes static_allocs
+	misc get_set_context utimes static_allocs fexecve
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
@@ -89,5 +98,11 @@ inlinfo_LDADD = inlinfo_nested.so
 inlinfo_nested_so_SOURCES = inlinfo_nested.c
 inlinfo_nested_so_CFLAGS = $(AM_CFLAGS) -fPIC @FLAG_W_NO_UNINITIALIZED@
 inlinfo_nested_so_LDFLAGS = -Wl,-rpath,$(top_builddir)/memcheck/tests/freebsd -shared -fPIC
+
+if FREEBSD_VERS_13_PLUS
+check_PROGRAMS += realpathat scalar_13_plus eventfd1 eventfd2
+
+scalar_13_plus_CFLAGS = ${AM_CFLAGS} -g
+endif
 
 scalar_CFLAGS = ${AM_CFLAGS} -g

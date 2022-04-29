@@ -4774,10 +4774,20 @@ PRE(sys_ipc)
       break;
    }
    case VKI_SEMTIMEDOP:
+#ifdef VGP_s390x_linux
+      /* On s390x Linux platforms the sys_ipc semtimedop call has four instead
+         of five parameters, where the timeout is passed in the third instead of
+         the fifth. */
+      PRE_REG_READ5(int, "ipc",
+                    vki_uint, call, int, first, int, second, long, third,
+                    void *, ptr);
+      ML_(generic_PRE_sys_semtimedop)( tid, ARG2, ARG5, ARG3, ARG4 );
+#else
       PRE_REG_READ6(int, "ipc",
                     vki_uint, call, int, first, int, second, int, third,
                     void *, ptr, long, fifth);
       ML_(generic_PRE_sys_semtimedop)( tid, ARG2, ARG5, ARG3, ARG6 );
+#endif
       *flags |= SfMayBlock;
       break;
    case VKI_MSGSND:
@@ -12910,8 +12920,9 @@ PRE(sys_bpf)
                break;
             }
             /* Name is limited to 128 characters in kernel/bpf/syscall.c. */
-            pre_asciiz_str(tid, attr->raw_tracepoint.name, 128,
-                           "bpf(attr->raw_tracepoint.name)");
+            if (attr->raw_tracepoint.name != NULL)
+               pre_asciiz_str(tid, attr->raw_tracepoint.name, 128,
+                              "bpf(attr->raw_tracepoint.name)");
          }
          break;
       case VKI_BPF_BTF_LOAD:
@@ -13206,7 +13217,7 @@ POST(sys_io_uring_setup)
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG1);
+         ML_(record_fd_open_nameless)(tid, RES);
       POST_MEM_WRITE(ARG2 + offsetof(struct vki_io_uring_params, sq_off),
                      sizeof(struct vki_io_sqring_offsets) +
                      sizeof(struct vki_io_cqring_offsets));
@@ -13296,7 +13307,7 @@ PRE(sys_execveat)
            if (path[0] == '\0') {
                if (ARG5 & VKI_AT_EMPTY_PATH) {
                    if (VG_(resolve_filename)(ARG1, &buf)) {
-                       VG_(strcpy)(path, buf);
+                       path = buf;
                        check_pathptr = False;
                    }
                }
@@ -13332,7 +13343,7 @@ PRE(sys_execveat)
        return;
    }
 
-   handle_pre_sys_execve(tid, status, (Addr) path, arg_2, arg_3, 1,
+   handle_pre_sys_execve(tid, status, (Addr) path, arg_2, arg_3, EXECVEAT,
                          check_pathptr);
 
    /* The exec failed, we keep running... cleanup. */

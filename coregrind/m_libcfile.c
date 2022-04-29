@@ -179,6 +179,34 @@ Bool VG_(resolve_filename) ( Int fd, const HChar** result )
 #  endif
 }
 
+#if defined(VGO_freebsd)
+
+/* This should only be called after a successful call to
+ * Bool VG_(resolve_filename) ( Int fd, const HChar** result )
+ * so that filedesc_buf is still valid for fd */
+Bool VG_(resolve_filemode) ( Int fd, Int * result )
+{
+   Char *bp, *eb;
+   struct vki_kinfo_file *kf;
+
+   /* Walk though the list. */
+   bp = filedesc_buf;
+   eb = filedesc_buf + sizeof(filedesc_buf);
+   while (bp < eb) {
+      kf = (struct vki_kinfo_file *)bp;
+      if (kf->kf_fd == fd)
+         break;
+      bp += kf->kf_structsize;
+   }
+   if (bp >= eb)
+     *result = -1;
+   else
+     *result = kf->kf_flags;
+   return True;
+}
+#endif
+
+
 SysRes VG_(mknod) ( const HChar* pathname, Int mode, UWord dev )
 {
 #  if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
@@ -303,11 +331,15 @@ Int VG_(pipe) ( Int fd[2] )
    SysRes res = VG_(do_syscall1)(__NR_pipe, (UWord)fd);
    return sr_isError(res) ? -1 : 0;
 #  elif defined(VGO_freebsd)
+#if defined(__NR_pipe2)
+   SysRes res = VG_(do_syscall2)(__NR_pipe2, (UWord)fd, 0);
+#else
    SysRes res = VG_(do_syscall0)(__NR_freebsd10_pipe);
    if (!sr_isError(res)) {
       fd[0] = sr_Res(res);
       fd[1] = sr_ResHI(res);
    }
+#endif
    return sr_isError(res) ? -1 : 0;
 #  elif defined(VGO_darwin)
    /* __NR_pipe is UX64, so produces a double-word result */

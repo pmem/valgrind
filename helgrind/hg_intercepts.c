@@ -1110,6 +1110,55 @@ PTH_FUNC(int, pthreadZumutexZureltimedlock, // pthread_mutex_reltimedlock
 }
 #endif
 
+#if defined(VGP_linux)
+//-----------------------------------------------------------
+// glibc:   pthread_mutex_clocklock
+//
+// pthread_mutex_clocklock.  Identical logic to pthread_mutex_timedlock.
+__attribute__((noinline))
+static int mutex_clocklock_WRK(pthread_mutex_t *mutex,
+                               clockid_t clockid,
+                               void *timeout)
+{
+   int    ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< pthread_mxclocklock %p %p", mutex, timeout);
+      fflush(stderr);
+   }
+
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_PRE,
+                pthread_mutex_t*,mutex, long,1/*isTryLock-ish*/);
+
+   CALL_FN_W_WWW(ret, fn, mutex, clockid, timeout);
+
+   /* There's a hole here: libpthread now knows the lock is locked,
+      but the tool doesn't, so some other thread could run and detect
+      that the lock has been acquired by someone (this thread).  Does
+      this matter?  Not sure, but I don't think so. */
+
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
+                pthread_mutex_t *, mutex, long, (ret == 0) ? True : False);
+
+   if (ret != 0) {
+      if (ret != ETIMEDOUT)
+         DO_PthAPIerror( "pthread_mutex_clocklock", ret );
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: mxclocklock -> %d >>\n", ret);
+   }
+   return ret;
+}
+
+PTH_FUNC(int, pthreadZumutexZuclocklock, // pthread_mutex_clocklock
+         pthread_mutex_t *mutex,
+         clockid_t clockid,
+         void *timeout) {
+   return mutex_clocklock_WRK(mutex, clockid, timeout);
+}
+#endif
 
 //-----------------------------------------------------------
 // glibc:   pthread_mutex_unlock
@@ -1407,6 +1456,88 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
    }
 #else
 #  error "Unsupported OS"
+#endif
+
+#if defined(VGO_linux)
+//-----------------------------------------------------------
+// glibc:   pthread_cond_clockwait
+//
+__attribute__((noinline))
+static int pthread_cond_clockwait_WRK(pthread_cond_t* cond,
+                                      pthread_mutex_t* mutex,
+                                      clockid_t clockid,
+                                      struct timespec* abstime,
+                                      int timeout_error)
+{
+   int ret;
+   OrigFn fn;
+   unsigned long mutex_is_valid;
+   Bool abstime_is_valid;
+   VALGRIND_GET_ORIG_FN(fn);
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< pthread_cond_clockwait %p %p %p",
+                      cond, mutex, abstime);
+      fflush(stderr);
+   }
+
+   /* Tell the tool a cond-wait is about to happen, so it can check
+      for bogus argument values.  In return it tells us whether it
+      thinks the mutex is valid or not. */
+   DO_CREQ_W_WW(mutex_is_valid,
+                _VG_USERREQ__HG_PTHREAD_COND_WAIT_PRE,
+                pthread_cond_t*,cond, pthread_mutex_t*,mutex);
+   assert(mutex_is_valid == 1 || mutex_is_valid == 0);
+
+   abstime_is_valid = abstime->tv_nsec >= 0 && abstime->tv_nsec < 1000000000;
+
+   /* Tell the tool we're about to drop the mutex.  This reflects the
+      fact that in a cond_wait, we show up holding the mutex, and the
+      call atomically drops the mutex and waits for the cv to be
+      signalled. */
+   if (mutex_is_valid && abstime_is_valid) {
+      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_UNLOCK_PRE,
+                  pthread_mutex_t*,mutex);
+   }
+
+   CALL_FN_W_WWWW(ret, fn, cond,mutex,clockid,abstime);
+
+   if (mutex_is_valid && !abstime_is_valid && ret != EINVAL) {
+      DO_PthAPIerror("Bug in libpthread: pthread_cond_clockwait "
+                     "invalid abstime did not cause"
+                     " EINVAL", ret);
+   }
+
+   if (mutex_is_valid && abstime_is_valid) {
+      /* and now we have the mutex again if (ret == 0 || ret == timeout) */
+      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
+                   pthread_mutex_t *, mutex,
+                   long, (ret == 0 || ret == timeout_error) ? True : False);
+   }
+
+   DO_CREQ_v_WWWW(_VG_USERREQ__HG_PTHREAD_COND_WAIT_POST,
+                  pthread_cond_t*,cond, pthread_mutex_t*,mutex,
+                  long,ret == timeout_error,
+                  long, (ret == 0 || ret == timeout_error) && mutex_is_valid
+                        ? True : False);
+
+   if (ret != 0 && ret != timeout_error) {
+      DO_PthAPIerror( "pthread_cond_clockwait", ret );
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " cotimedwait -> %d >>\n", ret);
+   }
+
+   return ret;
+}
+
+   PTH_FUNC(int, pthreadZucondZuclockwait, // pthread_cond_clockwait
+                 pthread_cond_t* cond, pthread_mutex_t* mutex,
+                 clockid_t clockid,
+                 struct timespec* abstime) {
+      return pthread_cond_clockwait_WRK(cond, mutex, clockid, abstime, ETIMEDOUT);
+   }
 #endif
 
 
@@ -2603,6 +2734,49 @@ PTH_FUNC(int, pthreadZurwlockZutimedrdlock, // pthread_rwlock_timedrdlock
 #  error "Unsupported OS"
 #endif
 
+#if defined(VGO_linux)
+//-----------------------------------------------------------
+// glibc:   pthread_rwlock_clockrdlock
+//
+__attribute__((noinline)) __attribute__((unused))
+static int pthread_rwlock_clockrdlock_WRK(pthread_rwlock_t *rwlock,
+                                          clockid_t clockid,
+                                          const struct timespec *timeout)
+{
+   int    ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< pthread_rwl_clockrdl %p", rwlock); fflush(stderr);
+   }
+
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
+                 pthread_rwlock_t *, rwlock,
+                 long, 0/*isW*/, long, 0/*isTryLock*/);
+
+   CALL_FN_W_WWW(ret, fn, rwlock, clockid, timeout);
+
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+                 pthread_rwlock_t *, rwlock, long, 0/*isW*/,
+                 long, (ret == 0) ? True : False);
+   if (ret != 0) {
+      DO_PthAPIerror("pthread_rwlock_clockrdlock", ret);
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: rwl_clockrdl -> %d >>\n", ret);
+   }
+   return ret;
+}
+
+PTH_FUNC(int, pthreadZurwlockZuclockrdlock, // pthread_rwlock_clockrdlock
+              pthread_rwlock_t *rwlock,
+              clockid_t clockid,
+              const struct timespec *timeout) {
+   return pthread_rwlock_clockrdlock_WRK(rwlock, clockid, timeout);
+}
+#endif
+
 
 //-----------------------------------------------------------
 // glibc:   Unhandled
@@ -2661,6 +2835,49 @@ PTH_FUNC(int, pthreadZurwlockZutimedwrlock, // pthread_rwlock_timedwrlock
    }
 #else
 #  error "Unsupported OS"
+#endif
+
+#if defined(VGO_linux)
+//-----------------------------------------------------------
+// glibc:   pthread_rwlock_clockwrlock
+//
+__attribute__((noinline)) __attribute__((unused))
+static int pthread_rwlock_clockwrlock_WRK(pthread_rwlock_t *rwlock,
+                                          clockid_t clockid,
+                                          const struct timespec *timeout)
+{
+   int    ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< pthread_rwl_clockwrl %p", rwlock); fflush(stderr);
+   }
+
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
+                 pthread_rwlock_t *, rwlock,
+                 long, 1/*isW*/, long, 0/*isTryLock*/);
+
+   CALL_FN_W_WWW(ret, fn, rwlock, clockid, timeout);
+
+   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+                 pthread_rwlock_t *, rwlock, long, 1/*isW*/,
+                 long, (ret == 0) ? True : False);
+   if (ret != 0) {
+      DO_PthAPIerror("pthread_rwlock_clockwrlock", ret);
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: rwl_clockwrl -> %d >>\n", ret);
+   }
+   return ret;
+}
+
+PTH_FUNC(int, pthreadZurwlockZuclockwrlock, // pthread_rwlock_clockwrlock
+              pthread_rwlock_t *rwlock,
+              clockid_t clockid,
+              const struct timespec *timeout) {
+   return pthread_rwlock_clockwrlock_WRK(rwlock, clockid, timeout);
+}
 #endif
 
 

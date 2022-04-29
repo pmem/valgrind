@@ -894,11 +894,11 @@ POST(sys_getsockname)
 // generic
 
 // SYS_chflags 34
-// int fchflags(int fd, unsigned long flags)
+// int chflags(const char *path, unsigned long flags)
 PRE(sys_chflags)
 {
    PRINT("sys_chflags ( %#" FMT_REGWORD "x(%s), 0x%" FMT_REGWORD "x )", ARG1,(char *)ARG1,ARG2);
-   PRE_REG_READ2(long, "chflags",
+   PRE_REG_READ2(int, "chflags",
                  const char *, path, unsigned long, flags);
    PRE_MEM_RASCIIZ( "chflags(path)", ARG1 );
 }
@@ -2438,12 +2438,17 @@ PRE(sys_clock_nanosleep)
 POST(sys_clock_nanosleep)
 {
    if (ARG2 != 0)
-      PRE_MEM_WRITE( "clock_nanosleep(rmtp)", ARG2, sizeof(struct vki_timespec) );
+      POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
 }
 
 // SYS_clock_getcpuclockid2   247
-// no manpage for this
-// @todo
+// x86/amd64
+
+POST(sys_clock_getcpuclockid2)
+{
+   POST_MEM_WRITE(ARG3, sizeof(vki_clockid_t));
+}
+
 
 // SYS_ntp_gettime   248
 // int ntp_gettime(struct ntptimeval *);
@@ -3851,6 +3856,7 @@ POST(sys_swapcontext)
       POST_MEM_WRITE( ARG1, sizeof(struct vki_ucontext) );
 }
 
+// @todo PJF In FreeBSD 14 and onwards this is SYS_freebsd13_swapoff
 // SYS_swapoff 424
 // int swapoff(const char *special);
 PRE(sys_swapoff)
@@ -4898,11 +4904,77 @@ PRE(sys_fexecve)
 {
    PRINT("sys_fexecve ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
          SARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "fexecve",
+   PRE_REG_READ3(int, "fexecve",
                  int, fd, char * const *, argv,
                  char * const *, envp);
-   PRE_MEM_RASCIIZ( "fexecve(argv)", ARG2 );
-   PRE_MEM_RASCIIZ( "fexecve(envp)", ARG3 );
+
+   if (!ML_(fd_allowed)(ARG1, "fexecve", tid, False)) {
+      SET_STATUS_Failure(VKI_EBADF);
+      return;
+   }
+
+   const HChar *fname;
+
+   if (VG_(resolve_filename)(ARG1, &fname) == False) {
+      SET_STATUS_Failure(VKI_ENOENT);
+      return;
+   }
+
+   struct vg_stat stats;
+   if (VG_(fstat)(ARG1, &stats) != 0) {
+      SET_STATUS_Failure(VKI_EACCES);
+      return;
+   }
+
+   Int openFlags;
+
+   if (VG_(resolve_filemode)(ARG1, &openFlags) == False) {
+      SET_STATUS_Failure(VKI_ENOENT);
+      return;
+   }
+
+   /*
+    * openFlags is in kernel FFLAGS format
+    * (see /usr/include/sys/fcntl.h)
+    * which alllows us to tell if RDONLY is set
+    *
+    */
+
+   Bool isScript = False;
+
+   SysRes res;
+   res = VG_(open)(fname, VKI_O_RDONLY,
+                   VKI_S_IRUSR|VKI_S_IRGRP|VKI_S_IROTH);
+   if (sr_isError(res)) {
+      SET_STATUS_Failure(VKI_ENOENT);
+      return;
+   } else {
+      char buf[2];
+      VG_(read)((Int)sr_Res(res), buf, 2);
+      VG_(close)((Int)sr_Res(res));
+      if (buf[0] == '#' && buf[1] == '!')
+      {
+         isScript = True;
+      }
+   }
+
+   if (isScript) {
+      if (!(openFlags & VKI_FREAD)) {
+         SET_STATUS_Failure(VKI_EACCES);
+         return;
+      }
+   } else {
+      if (!((openFlags & VKI_O_EXEC) ||
+            (stats.mode & (VKI_S_IXUSR|VKI_S_IXGRP|VKI_S_IXOTH)))) {
+         SET_STATUS_Failure(VKI_EACCES);
+         return;
+      }
+   }
+
+   Addr arg_2 = (Addr)ARG2;
+   Addr arg_3 = (Addr)ARG3;
+
+   handle_pre_sys_execve(tid, status, (Addr)fname, arg_2, arg_3, FEXECVE, False);
 }
 
 // SYS_freebsd11_fstatat   493
@@ -5118,9 +5190,8 @@ PRE(sys_unlinkat)
 // int posix_openpt(int oflag);
 PRE(sys_posix_openpt)
 {
-   PRINT("sys_posix_openpt ( %" FMT_REGWORD "d )", SARG2);
+   PRINT("sys_posix_openpt ( %" FMT_REGWORD "d )", SARG1);
    PRE_REG_READ1(int, "posix_openpt", int, oflag);
-
 }
 
 // SYS_gssd_syscall  505
@@ -6075,7 +6146,7 @@ POST(sys_fhreadlink)
 
 #if (FREEBSD_VERS >= FREEBSD_12_2)
 
-// SYS___sysctlbyname
+// SYS___sysctlbyname 570
 // int sysctlbyname(const char *name, void *oldp, size_t *oldlenp,
 //                  const void *newp, size_t newlen);
 // syscalls.master:
@@ -6136,7 +6207,46 @@ POST(sys___sysctlbyname)
    }
 }
 
-#endif
+#endif // (FREEBSD_VERS >= FREEBSD_12_2)
+
+#if (FREEBSD_VERS >= FREEBSD_13_0)
+
+// SYS___realpathat 474
+// from syscalls.master
+//         int __realpathat(int fd,
+//         _In_z_ const char *path,
+//         _Out_writes_z_(size) char *buf,
+//         size_t size,
+//         int flags)
+PRE(sys___realpathat)
+{
+   PRINT("sys___realpathat ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x, %" FMT_REGWORD "u %" FMT_REGWORD "d )",
+         SARG1,ARG2,(const char*)ARG2,ARG3,ARG4,SARG5 );
+   PRE_REG_READ5(int, "__realpathat", int, fd, const char *, path,
+                 char *, buf, vki_size_t, size, int, flags);
+   PRE_MEM_RASCIIZ("__realpathat(path)", (Addr)ARG2);
+   PRE_MEM_WRITE("__realpathat(buf)", (Addr)ARG3, ARG4);
+}
+
+POST(sys___realpathat)
+{
+   POST_MEM_WRITE((Addr)ARG3, ARG4);
+}
+
+// SYS___specialfd 577
+// syscalls.master
+// int __specialfd(int type,
+//                _In_reads_bytes_(len) const void *req,
+//                 size_t len);
+PRE(sys___specialfd)
+{
+   PRINT("sys___specialfd ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u )",
+         SARG1,ARG2,(const char*)ARG2,ARG3 );
+   PRE_REG_READ3(int, "__specialfd", int, type, const void *, req, vki_size_t, len);
+   PRE_MEM_READ("__specialfd(req)", (Addr)ARG2, ARG3);
+}
+
+#endif // (FREEBSD_VERS >= FREEBSD_13_0)
 
 #undef PRE
 #undef POST
@@ -6453,7 +6563,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    // unimpl SYS_ffclock_getestimate                       243
 
    BSDXY(__NR_clock_nanosleep,  sys_clock_nanosleep),   // 244
-   // unimpl SYS_clock_getcpuclockid2                      247
+   BSDXY(__NR_clock_getcpuclockid2, sys_clock_getcpuclockid2), // 247
 
    // unimpl SYS_ntp_gettime                               248
    BSDXY(__NR_minherit,         sys_minherit),          // 250
@@ -6830,21 +6940,27 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    // unimpl __NR_funlinkat           568
    // unimpl __NR_copy_file_range     569
    BSDXY(__NR___sysctlbyname,   sys___sysctlbyname),    // 570
+
+#if (FREEBSD_VERS >= FREEBSD_13_0)
    // unimpl __NR_shm_open2           571
    // unimpl __NR_shm_rename          572
    // unimpl __NR_sigfastblock        573
-   // unimpl __NR___realpathat        574
+   BSDXY( __NR___realpathat,    sys___realpathat),      // 574
+#endif
    // unimpl __NR_close_range         575
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
    // unimpl __NR_rpctls_syscall      576
+   BSDX_(__NR___specialfd,      sys___specialfd),       // 577
+   // unimpl __NR_aio_writev          578
+   // unimpl __NR_aio_readv           579
 #endif
 
 #if (FREEBSD_VERS >= FREEBSD_14)
-   // unimpl __NR___specialfd         577
-   // unimpl __NR_aio_writev          578
-   // unimpl __NR_aio_readv           579
+   // unimpl __NR_fspacectl           580
+   // unimpl __NR_sched_getcpu        581
+   // unimpl __NR_swapoff             582
 #endif
 
    BSDX_(__NR_fake_sigreturn,   sys_fake_sigreturn),    // 1000, fake sigreturn

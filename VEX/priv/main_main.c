@@ -1563,6 +1563,7 @@ void LibVEX_default_VexAbiInfo ( /*OUT*/VexAbiInfo* vbi )
    vbi->guest_stack_redzone_size       = 0;
    vbi->guest_amd64_assume_fs_is_const = False;
    vbi->guest_amd64_assume_gs_is_const = False;
+   vbi->guest_amd64_sigbus_on_misalign = False;
    vbi->guest_ppc_zap_RZ_at_blr        = False;
    vbi->guest_ppc_zap_RZ_at_bl         = NULL;
    vbi->guest__use_fallback_LLSC       = False;
@@ -2162,11 +2163,6 @@ static void check_hwcaps ( VexArch arch, UInt hwcaps )
          if (have_fp16 != have_vfp16)
             invalid_hwcaps(arch, hwcaps,
                     "Mismatch detected between scalar and vector FP16 features.\n");
-         Bool have_rdm = ((hwcaps & VEX_HWCAPS_ARM64_RDM) != 0);
-         Bool have_atomics = ((hwcaps & VEX_HWCAPS_ARM64_ATOMICS) != 0);
-         if (have_rdm != have_atomics)
-            invalid_hwcaps(arch, hwcaps,
-                    "Mismatch detected between RDMA and atomics features.\n");
          return;
       }
 

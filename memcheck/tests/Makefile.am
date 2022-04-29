@@ -90,6 +90,7 @@ EXTRA_DIST = \
 	addressable.stderr.exp addressable.stdout.exp addressable.vgtest \
 	atomic_incs.stderr.exp atomic_incs.vgtest \
 	atomic_incs.stdout.exp-32bit atomic_incs.stdout.exp-64bit \
+	atomic_incs.stdout.exp-64bit-and-128bit \
 	badaddrvalue.stderr.exp \
 	badaddrvalue.stdout.exp badaddrvalue.vgtest \
         exit_on_first_error.stderr.exp \
@@ -139,7 +140,6 @@ EXTRA_DIST = \
 		cxx17_aligned_new.stdout.exp \
 	deep-backtrace.vgtest deep-backtrace.stderr.exp \
 	demangle.stderr.exp demangle.vgtest \
-		demangle.stderr.exp-freebsd \
 	big_debuginfo_symbol.stderr.exp big_debuginfo_symbol.vgtest \
 	describe-block.stderr.exp describe-block.vgtest \
 	descr_belowsp.vgtest descr_belowsp.stderr.exp \
@@ -281,6 +281,7 @@ EXTRA_DIST = \
 	realloc3.stderr.exp realloc3.vgtest \
 	recursive-merge.stderr.exp recursive-merge.vgtest \
 	resvn_stack.stderr.exp resvn_stack.vgtest \
+	demangle-rust.vgtest demangle-rust.stderr.exp \
 	sbfragment.stdout.exp sbfragment.stderr.exp sbfragment.vgtest \
 	sem.stderr.exp sem.vgtest \
 	sendmsg.stderr.exp sendmsg.stderr.exp-solaris sendmsg.vgtest \
@@ -391,6 +392,7 @@ check_PROGRAMS = \
 	custom_alloc \
 	custom-overlap \
 	demangle \
+	demangle-rust \
 	big_debuginfo_symbol \
 	deep-backtrace \
 	describe-block \
@@ -504,6 +506,7 @@ endif
 leak_cpp_interior_SOURCES	= leak_cpp_interior.cpp
 
 demangle_SOURCES = demangle.cpp
+demangle_rust_SOURCES = demangle-rust.c
 
 # Suppress various gcc warnings which are correct, but for things
 # we are actually testing for at runtime.
