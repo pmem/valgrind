@@ -1391,6 +1391,14 @@ read_cache_line_size(void)
 {
     /* the assumed cache line size */
     Int ret_val = 64;
+#   if (defined(VGA_ppc64be) || defined(VGA_ppc64le))
+    VexArch     arch_host = VexArch_INVALID;
+    VexArchInfo archinfo_host;
+    VG_(bzero_inline)(&archinfo_host, sizeof(archinfo_host));
+    VG_(machine_get_VexArchInfo)( &arch_host, &archinfo_host );
+
+    ret_val = archinfo_host.ppc_icache_line_szB;
+#   else
 
     int fp;
     if ((fp = VG_(fd_open)("/proc/cpuinfo",O_RDONLY, 0)) < 0) {
@@ -1414,6 +1422,7 @@ read_cache_line_size(void)
     }
 
     VG_(close)(fp);
+#   endif
     return ret_val;
 }
 
