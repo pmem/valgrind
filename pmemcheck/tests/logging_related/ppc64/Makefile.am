@@ -1,5 +1,5 @@
 # Persistent memory checker.
-# Copyright (c) 2014-2015, Intel Corporation.
+# Copyright (C) 2022, IBM Corporation.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms and conditions of the GNU General Public License,
@@ -15,19 +15,11 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 SUBDIRS = .
 
-if VGCONF_ARCHS_INCLUDE_AMD64
-SUBDIRS += amd64
-endif
-if VGCONF_ARCHS_INCLUDE_PPC64
-SUBDIRS += ppc64
-endif
-
 dist_noinst_SCRIPTS = \
 	filter_stderr
 
 EXTRA_DIST = \
-	     register_file.stderr.exp register_file.vgtest
+	     logging.stderr.exp logging.vgtest
 
 check_PROGRAMS = \
-		 register_file
-
+	logging

@@ -23,6 +23,9 @@ SUBDIRS += amd64
 # to trigger 64-bit float store
 floats_CFLAGS = -mno-sse2 -g -O3
 endif
+if VGCONF_ARCHS_INCLUDE_PPC64
+SUBDIRS += ppc64
+endif
 
 noinst_HEADERS = common.h
 
