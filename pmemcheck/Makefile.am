@@ -81,3 +81,40 @@ endif
 # all the time. To maximise performance compile with -fomit-frame-pointer
 # Primary beneficiary is x86.
 pmc_main.o: CFLAGS += -fomit-frame-pointer
+
+#----------------------------------------------------------------------------
+# vgpreload_pmemcheck-<platform>.so
+#----------------------------------------------------------------------------
+# vgpreload_pmemcheck-<platform>.so
+#----------------------------------------------------------------------------
+
+if VGCONF_ARCHS_INCLUDE_PPC64
+noinst_PROGRAMS += vgpreload_pmemcheck-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so
+if VGCONF_HAVE_PLATFORM_SEC
+noinst_PROGRAMS += vgpreload_pmemcheck-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so
+endif
+
+# pmc_replace_memcmp.c runs on the simulated CPU, and is built with
+# AM_CFLAGS_PSO_* (see $(top_srcdir)/Makefile.all.am).
+VGPRELOAD_PMEMCHECK_SOURCES_COMMON = pmc_replace_memcmp.c
+
+vgpreload_pmemcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_SOURCES      = \
+	$(VGPRELOAD_PMEMCHECK_SOURCES_COMMON)
+vgpreload_pmemcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CPPFLAGS     = \
+	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+vgpreload_pmemcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CFLAGS       = \
+	$(AM_CFLAGS_PSO_@VGCONF_PLATFORM_PRI_CAPS@) -O2
+vgpreload_pmemcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_LDFLAGS      = \
+	$(PRELOAD_LDFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+
+if VGCONF_HAVE_PLATFORM_SEC
+vgpreload_pmemcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_SOURCES      = \
+	$(VGPRELOAD_PMEMCHECK_SOURCES_COMMON)
+vgpreload_pmemcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CPPFLAGS     = \
+	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+vgpreload_pmemcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CFLAGS       = \
+	$(AM_CFLAGS_PSO_@VGCONF_PLATFORM_SEC_CAPS@) -O2
+vgpreload_pmemcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_LDFLAGS      = \
+	$(PRELOAD_LDFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+endif
+endif
