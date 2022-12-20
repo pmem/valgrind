@@ -7069,6 +7069,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt, IREndness IEndianess )
    case Ist_MBE:
       switch (stmt->Ist.MBE.event) {
          case Imbe_Fence:
+         case Imbe_SFence:
             addInstr(env, PPCInstr_MFence());
             return;
          default:
@@ -7157,6 +7158,16 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt, IREndness IEndianess )
 
       /* Do we ever expect to see any other kind? */
       goto stmt_fail;
+   }
+   /* --------- FLUSH --------- */
+   case Ist_Flush: {
+      IRType    tya   = typeOfIRExpr(env->type_env, stmt->Ist.Flush.addr);
+
+      if (tya != Ity_I64)
+         goto stmt_fail;
+
+      return;
+      break;
    }
 
    default: break;
