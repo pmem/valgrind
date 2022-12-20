@@ -2452,6 +2452,25 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, const IRExpr* e,
             return r_dst;
          } 
          break;
+      case Iop_ReinterpF32asI64:
+        if (mode64) {
+            HReg fr_src = iselFltExpr(env, e->Iex.Unop.arg, IEndianess);
+            HReg r_dst = newVRegI(env);
+            PPCAMode* am_addr;
+
+            sub_from_sp( env, 16 );        // Move SP down 16 bytes
+            am_addr = PPCAMode_IR( 0, StackFramePtr(mode64) );
+
+            // store as F32
+            addInstr(env, PPCInstr_FpLdSt( False/*store*/, 4,
+                                        fr_src, am_addr ));
+            // load as Ity_I64
+            addInstr(env, PPCInstr_Load( 8, r_dst, am_addr, mode64 ));
+
+            add_to_sp( env, 16 );          // Reset SP
+            return r_dst;
+        }
+	break;
 
       case Iop_BCDtoDPB: {
          /* the following is only valid in 64 bit mode */

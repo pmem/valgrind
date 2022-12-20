@@ -450,6 +450,7 @@ void ppIROp ( IROp op )
       case Iop_ReinterpF64asI64: vex_printf("ReinterpF64asI64"); return;
       case Iop_ReinterpI64asF64: vex_printf("ReinterpI64asF64"); return;
       case Iop_ReinterpF32asI32: vex_printf("ReinterpF32asI32"); return;
+      case Iop_ReinterpF32asI64: vex_printf("ReinterpF32asI64"); return;
       case Iop_ReinterpI32asF32: vex_printf("ReinterpI32asF32"); return;
 
       case Iop_I32UtoF32x4_DEP: vex_printf("I32UtoF32x4_DEP"); return;
@@ -1449,7 +1450,7 @@ Bool primopMightTrap ( IROp op )
    case Iop_F32toI32U: case Iop_F32toI64U: case Iop_I32StoF32:
    case Iop_I64StoF32: case Iop_F32toF64: case Iop_F64toF32:
    case Iop_ReinterpF64asI64: case Iop_ReinterpI64asF64:
-   case Iop_ReinterpF32asI32: case Iop_ReinterpI32asF32:
+   case Iop_ReinterpF32asI32: case Iop_ReinterpF32asI64: case Iop_ReinterpI32asF32:
    case Iop_ReinterpV128asI128: case Iop_ReinterpI128asV128:
    case Iop_ReinterpF128asI128: case Iop_ReinterpI128asF128:
    case Iop_F64HLtoF128: case Iop_F128HItoF64: case Iop_F128LOtoF64:
@@ -3494,6 +3495,7 @@ void typeOfPrimop ( IROp op,
       case Iop_ReinterpF64asI64: UNARY(Ity_F64, Ity_I64);
       case Iop_ReinterpI32asF32: UNARY(Ity_I32, Ity_F32);
       case Iop_ReinterpF32asI32: UNARY(Ity_F32, Ity_I32);
+      case Iop_ReinterpF32asI64: UNARY(Ity_F32, Ity_I64);
 
       case Iop_I128StoF128: BINARY(ity_RMode, Ity_I128, Ity_F128);
       case Iop_I128UtoF128: BINARY(ity_RMode, Ity_I128, Ity_F128);
