@@ -884,6 +884,9 @@ tmp_needs_widen(IRType type)
         case Ity_I8:
         case Ity_I16:
         case Ity_I32:
+#       if (defined(VGA_ppc64be) || defined(VGA_ppc64le))
+        case Ity_F32:
+#       endif
             return True;
 
         default:
@@ -968,6 +971,11 @@ widen_operation(IRSB *sb, IRAtom *e)
 
         case Ity_I32:
             return Iop_32Uto64;
+
+#       if (defined(VGA_ppc64be) || defined(VGA_ppc64le))
+        case Ity_F32:
+            return Iop_ReinterpF32asI64;
+#       endif
 
         default:
             tl_assert(False); /* cannot happen */
