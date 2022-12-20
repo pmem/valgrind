@@ -1,6 +1,6 @@
 /*
  * Persistent memory checker.
- * Copyright (c) 2014-2015, Intel Corporation.
+ * Copyright (c) 2015, Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -12,7 +12,16 @@
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
  */
-#include "common.h"
+#include "../common.h"
+
+#define	_mm_clflush(addr)\
+	asm volatile("clflush %0" : "+m" (*(volatile char *)addr));
+#define	_mm_clflushopt(addr)\
+	asm volatile(".byte 0x66; clflush %0" : "+m" (*(volatile char *)addr));
+#define	_mm_clwb(addr)\
+	asm volatile(".byte 0x66, 0x0f, 0xae, 0x30" : "+m" (*(volatile char *)addr));
+#define	_mm_sfence()\
+	asm volatile(".byte 0x0f, 0xae, 0xf8");
 
 #define FILE_SIZE (16 * 1024 * 1024)
 
@@ -25,13 +34,23 @@ int main ( void )
 
     /* dirty stores */
     *i64p = 4;
-    VALGRIND_PMC_DO_FLUSH(base, 64);
+    _mm_clflush(base);
     /* flush should be registered as "invalid" */
-    VALGRIND_PMC_DO_FLUSH(base, 64);
-    VALGRIND_PMC_DO_FENCE;
+    _mm_clflush(base);
     /* flush should be registered as "invalid" */
-    VALGRIND_PMC_DO_FLUSH(base, 64);
+    _mm_clflush(base);
+
+    i64p += 8;
+    *i64p = 4;
+    _mm_clflushopt(i64p);
     /* flush should be registered as "invalid" */
-    VALGRIND_PMC_DO_FLUSH(base, 64);
+    _mm_clflush(i64p);
+
+    i64p += 8;
+    *i64p = 4;
+    _mm_clwb(i64p);
+    /* flush should be registered as "invalid" */
+    _mm_clflushopt(i64p);
+
     return 0;
 }

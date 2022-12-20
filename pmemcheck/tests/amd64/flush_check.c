@@ -1,6 +1,6 @@
 /*
  * Persistent memory checker.
- * Copyright (c) 2015, Intel Corporation.
+ * Copyright (c) 2014-2015, Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -12,9 +12,7 @@
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
  */
-#include <stdint.h>
-#include "common.h"
-#include <xmmintrin.h>
+#include "../common.h"
 
 #define FILE_SIZE (16 * 1024 * 1024)
 
@@ -23,20 +21,17 @@ int main ( void )
     /* make, map and register a temporary file */
     void *base = make_map_tmpfile(FILE_SIZE);
 
-    off_t dest_off = 4096;
+    int64_t *i64p = base;
 
-    __m128i r128;
-    __m128i *source128 = base;
-    __m128i *dest128 = (__m128i *)((uintptr_t)base + dest_off);
-
-    int source32 = 15;
-    int *dest32 = (int *)((uintptr_t)base + dest_off + sizeof (*dest128));
-
-    r128 = _mm_loadu_si128(source128);
-
-    /* do non-temporal stores */
-    _mm_stream_si128(dest128, r128);
-    _mm_stream_si32(dest32, source32);
-
+    /* dirty stores */
+    *i64p = 4;
+    VALGRIND_PMC_DO_FLUSH(base, 64);
+    /* flush should be registered as "invalid" */
+    VALGRIND_PMC_DO_FLUSH(base, 64);
+    VALGRIND_PMC_DO_FENCE;
+    /* flush should be registered as "invalid" */
+    VALGRIND_PMC_DO_FLUSH(base, 64);
+    /* flush should be registered as "invalid" */
+    VALGRIND_PMC_DO_FLUSH(base, 64);
     return 0;
 }

@@ -15,16 +15,11 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 SUBDIRS = .
 
-if VGCONF_ARCHS_INCLUDE_AMD64
-SUBDIRS += amd64
-endif
-
 dist_noinst_SCRIPTS = \
 	filter_stderr
 
 EXTRA_DIST = \
-	     register_file.stderr.exp register_file.vgtest
+	     logging.stderr.exp logging.vgtest
 
 check_PROGRAMS = \
-		 register_file
-
+	logging
