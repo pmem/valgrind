@@ -1657,6 +1657,9 @@ pmc_instrument(VgCallbackClosure *closure,
                 if (LIKELY(pmem.automatic_isa_rec)) {
                     switch (st->Ist.MBE.event) {
                         case Imbe_Fence:
+#                           if (defined(VGA_ppc64be) || defined(VGA_ppc64le))
+                            break;
+#                           endif
                         case Imbe_SFence:
                             add_simple_event(sbOut, do_fence, "do_fence");
                             break;
