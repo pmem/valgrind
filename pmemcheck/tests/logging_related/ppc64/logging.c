@@ -1,6 +1,7 @@
 /*
  * Persistent memory checker.
  * Copyright (c) 2014-2015, Intel Corporation.
+ * Copyright (c) 2022-2023, IBM Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -12,7 +13,7 @@
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
  */
-#include "../common.h"
+#include "../../common.h"
 #include <stdint.h>
 
 #define FILE_SIZE (16 * 1024 * 1024)

@@ -5163,6 +5163,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
          return mkPCastTo(mce, Ity_I128, vatom);
 
       case Iop_F16toF64:
+      case Iop_ReinterpF32asI64:
       case Iop_F32toF64: 
       case Iop_I32StoF64:
       case Iop_I32UtoF64:

@@ -708,7 +708,8 @@ typedef
       Iop_ReinterpV128asI128, Iop_ReinterpI128asV128,
       Iop_ReinterpF128asI128, Iop_ReinterpI128asF128,
       Iop_ReinterpF64asI64, Iop_ReinterpI64asF64,
-      Iop_ReinterpF32asI32, Iop_ReinterpI32asF32,
+      Iop_ReinterpF32asI32, Iop_ReinterpF32asI64,
+      Iop_ReinterpI32asF32,
 
       /* Support for 128-bit floating point */
       Iop_F64HLtoF128,/* (high half of F128,low half of F128) -> F128 */

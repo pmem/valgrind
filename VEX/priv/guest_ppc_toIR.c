@@ -11071,7 +11071,11 @@ static Bool dis_memsync ( UInt prefix, UInt theInstr,
          DIP("%ssync\n", flag_L == 1 ? "lw" : "");
          /* Insert a memory fence.  It's sometimes important that these
             are carried through to the generated code. */
-         stmt( IRStmt_MBE(Imbe_Fence) );
+         if ((flag_L == 4/*phwsync*/) ||
+	     (allow_isa_3_0 == True && flag_L == 0)) {
+            stmt( IRStmt_MBE(Imbe_SFence) );
+         } else
+            stmt( IRStmt_MBE(Imbe_Fence) );
          break;
 
       /* 64bit Memsync */
@@ -12138,7 +12142,7 @@ static Bool dis_proc_ctl ( const VexAbiInfo* vbi, UInt prefix, UInt theInstr )
 */
 static Bool dis_cache_manage ( UInt prefix, UInt theInstr,
                                DisResult*   dres,
-                               UInt allow_isa_3_1,
+                               UInt allow_isa_3_1, UInt allow_isa_3_0,
                                const VexArchInfo* guest_archinfo )
 {
    /* X-Form */
@@ -12197,6 +12201,8 @@ static Bool dis_cache_manage ( UInt prefix, UInt theInstr,
 //zz       break;
       
    case 0x056: // dcbf (Data Cache Block Flush, PPC32 p382)
+	   {
+      IRTemp  EA   = newTemp(ty);
       DIP("dcbf r%u,r%u\n", rA_addr, rB_addr);
 
       /* Check the L field and ISA version.
@@ -12206,13 +12212,17 @@ static Bool dis_cache_manage ( UInt prefix, UInt theInstr,
          dcbf ra, rb, 4          dcbf block fjush to persistent storage    isa 3.1
          dcbf ra, rb, 6          dcbf block store to persistent storage    isa 3.1
  */
-               if (!((flag_L == 0 || flag_L == 1 || flag_L == 3)
-               || ((flag_L == 4 || flag_L == 6) && allow_isa_3_1 == True)))
+               if (!((flag_L == 0 || flag_L == 1 || flag_L == 3) ||
+                     (flag_L == 2 && allow_isa_3_0 == True) ||
+		     ((flag_L == 4 || flag_L == 6) && allow_isa_3_1 == True)))
          {
             vex_printf("dis_cache_manage(ppc)(dcbf,flag_L)\n");
             return False;
          }
       /* nop as far as vex is concerned */
+      assign( EA, ea_rAor0_idxd(rA_addr, rB_addr) );
+      stmt( IRStmt_Flush(mkexpr(EA), Ifk_flush) );
+	   }
       break;
       
    case 0x036: // dcbst (Data Cache Block Store, PPC32 p384)
@@ -37402,7 +37412,7 @@ DisResult disInstr_PPC_WRK (
       case 0x116: case 0x0F6: case 0x3F6: // dcbt, dcbtst, dcbz
       case 0x3D6:                         // icbi
          if (dis_cache_manage( prefix, theInstr, &dres, allow_isa_3_1,
-                               archinfo ))
+                               allow_isa_3_0, archinfo ))
             goto decode_success;
          goto decode_failure;
 

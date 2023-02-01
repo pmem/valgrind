@@ -1,6 +1,6 @@
 /*
  * Persistent memory checker.
- * Copyright (c) 2014-2018, Intel Corporation.
+ * Copyright (c) 2014-2015, Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -12,9 +12,7 @@
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
  */
-#include "common.h"
-#include <stdint.h>
-#include <stdio.h>
+#include "../common.h"
 
 #define FILE_SIZE (16 * 1024 * 1024)
 
@@ -23,11 +21,17 @@ int main ( void )
     /* make, map and register a temporary file */
     void *base = make_map_tmpfile(FILE_SIZE);
 
-    float *floatp = (float *)((uintptr_t)base);
-    double *doublep = (double *)((uintptr_t)base + 16);
+    int64_t *i64p = base;
 
-    *floatp = 1.0;
-    *doublep = 2.0;
-
+    /* dirty stores */
+    *i64p = 4;
+    VALGRIND_PMC_DO_FLUSH(base, 64);
+    /* flush should be registered as "invalid" */
+    VALGRIND_PMC_DO_FLUSH(base, 64);
+    VALGRIND_PMC_DO_FENCE;
+    /* flush should be registered as "invalid" */
+    VALGRIND_PMC_DO_FLUSH(base, 64);
+    /* flush should be registered as "invalid" */
+    VALGRIND_PMC_DO_FLUSH(base, 64);
     return 0;
 }

@@ -1,6 +1,7 @@
 /*
  * Persistent memory checker.
- * Copyright (c) 2016, Intel Corporation.
+ * Copyright (c) 2014-2015, Intel Corporation.
+ * Copyright (c) 2022-2023, IBM Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -12,34 +13,22 @@
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
  */
-#include "common.h"
 #include <stdint.h>
+
+#include "../common.h"
 
 #define FILE_SIZE (16 * 1024 * 1024)
 
-static void do_overlap(int16_t *first, int16_t *second)
-{
-    *first = 0xFFFF;
-    *second = 0xAAAA;
-}
-
-int main(void)
+int main ( void )
 {
     /* make, map and register a temporary file */
     void *base = make_map_tmpfile(FILE_SIZE);
 
-
-    int16_t *i16p1 = (int16_t *)((uintptr_t)base);
-    int16_t *i16p2 = (int16_t *)((uintptr_t)base + 1);
-
-    do_overlap(i16p1, i16p2);
-    do_overlap(i16p1 + 2, i16p2 + 1);
-
-    int32_t *i32p = (int32_t *)((uintptr_t)base + 32);
-    int8_t *i8p = base + 33;
-
-    *i32p = 1;
-    *i8p = 2;
-
+    /* flush should be registered as superfluous */
+    VALGRIND_PMC_DO_FLUSH(base, 64);
+    /* flush should be registered as superfluous */
+    VALGRIND_PMC_DO_FLUSH((uintptr_t)base + 64, 65);
+    /* flush should be registered as superfluous */
+    VALGRIND_PMC_DO_FLUSH(0, 64);
     return 0;
 }

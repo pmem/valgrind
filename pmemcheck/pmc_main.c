@@ -884,6 +884,9 @@ tmp_needs_widen(IRType type)
         case Ity_I8:
         case Ity_I16:
         case Ity_I32:
+#       if (defined(VGA_ppc64be) || defined(VGA_ppc64le))
+        case Ity_F32:
+#       endif
             return True;
 
         default:
@@ -968,6 +971,11 @@ widen_operation(IRSB *sb, IRAtom *e)
 
         case Ity_I32:
             return Iop_32Uto64;
+
+#       if (defined(VGA_ppc64be) || defined(VGA_ppc64le))
+        case Ity_F32:
+            return Iop_ReinterpF32asI64;
+#       endif
 
         default:
             tl_assert(False); /* cannot happen */
@@ -1383,6 +1391,14 @@ read_cache_line_size(void)
 {
     /* the assumed cache line size */
     Int ret_val = 64;
+#   if (defined(VGA_ppc64be) || defined(VGA_ppc64le))
+    VexArch     arch_host = VexArch_INVALID;
+    VexArchInfo archinfo_host;
+    VG_(bzero_inline)(&archinfo_host, sizeof(archinfo_host));
+    VG_(machine_get_VexArchInfo)( &arch_host, &archinfo_host );
+
+    ret_val = archinfo_host.ppc_icache_line_szB;
+#   else
 
     int fp;
     if ((fp = VG_(fd_open)("/proc/cpuinfo",O_RDONLY, 0)) < 0) {
@@ -1406,6 +1422,7 @@ read_cache_line_size(void)
     }
 
     VG_(close)(fp);
+#   endif
     return ret_val;
 }
 
@@ -1649,6 +1666,9 @@ pmc_instrument(VgCallbackClosure *closure,
                 if (LIKELY(pmem.automatic_isa_rec)) {
                     switch (st->Ist.MBE.event) {
                         case Imbe_Fence:
+#                           if (defined(VGA_ppc64be) || defined(VGA_ppc64le))
+                            break;
+#                           endif
                         case Imbe_SFence:
                             add_simple_event(sbOut, do_fence, "do_fence");
                             break;
